@@ -95,9 +95,19 @@ export default function HistoryBar({ saved }: { saved: Record<string, number> })
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 20h-10.5l-4.21 -4.3a1 1 0 0 1 0 -1.41l10 -10a1 1 0 0 1 1.41 0l5 5a1 1 0 0 1 0 1.41l-9.2 9.3" /><path d="M18 13.3l-6.3 -6.3" /></svg>
             </button>
           </div>
-          <div ref={listRef} className="list" tabIndex={0} style={{ height }} title={tab === 'bible' ? t('This list contains verses that were sent to be shown') : t('This list contains songs that were sent to be shown')}>
+          <div ref={listRef} className="list hover-items" tabIndex={0} style={{ height }} title={tab === 'bible' ? t('This list contains verses that were sent to be shown') : t('This list contains songs that were sent to be shown')}>
             {entries.map((h, i) => (
-              <div key={i} className={`item ${i === sel ? 'sel' : ''}`} style={{ whiteSpace: 'nowrap' }} onClick={() => pick(i)} onDoubleClick={() => h.show()}>
+              <div key={i} className={`item ${i === sel ? 'sel' : ''}`} style={{ whiteSpace: 'nowrap', position: 'relative' }} onClick={() => pick(i)} onDoubleClick={() => h.show()}>
+                <button
+                  className="sched-del"
+                  title={t('Remove from History')}
+                  aria-label={t('Remove from History')}
+                  draggable={false}
+                  onClick={(e) => { e.stopPropagation(); setSel((s) => (s === i ? -1 : s > i ? s - 1 : s)); ui.removeHistory(tab, i); }}
+                  onDoubleClick={(e) => e.stopPropagation()}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                </button>
                 {h.right ? (
                   <div style={{ display: 'flex', gap: 12 }}>
                     <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.label}</span>

@@ -839,5 +839,10 @@
 "Tabs": "Вкладки",
 "Presentation": "Показ",
 "{key} is used by the program and cannot be assigned.": "{key} используется программой и не может быть назначена.",
-"Global Hotkeys": "Глобальные горячие клавиши"
+"Global Hotkeys": "Глобальные горячие клавиши",
+"All Books": "Все сборники",
+"Search all songbooks, not only the selected one": "Искать во всех сборниках, а не только в выбранном",
+"Preview Display": "Окно предпросмотра",
+"Show the preview above the live list": "Показывать предпросмотр над списком показа",
+"Remove from History": "Удалить из истории"
 }

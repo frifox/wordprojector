@@ -1020,5 +1020,10 @@
 "Tabs": "Karty",
 "Presentation": "Prezentace",
 "{key} is used by the program and cannot be assigned.": "{key} používá program a nelze ji přiřadit.",
-"Global Hotkeys": "Globální klávesové zkratky"
+"Global Hotkeys": "Globální klávesové zkratky",
+"All Books": "Všechny zpěvníky",
+"Search all songbooks, not only the selected one": "Hledat ve všech zpěvnících, ne jen ve vybraném",
+"Preview Display": "Náhled",
+"Show the preview above the live list": "Zobrazit náhled nad živým seznamem",
+"Remove from History": "Odebrat z historie"
 }

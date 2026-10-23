@@ -44,6 +44,8 @@ export interface UIContextValue {
   addBibleHistory: (r: BibleRef) => void;
   addSongHistory: (s: SongHistoryItem) => void;
   clearHistory: (tab: TabName) => void;
+  /** drops one item of a tab's history */
+  removeHistory: (tab: TabName, index: number) => void;
 }
 
 export interface SongHistoryItem {

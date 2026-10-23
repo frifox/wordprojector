@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import { t } from '../i18n';
-import { Icon } from '../lib/ui';
+import { Icon, useUI } from '../lib/ui';
 import ScaledSlide from '../projector/ScaledSlide';
 import type { RenderSlide } from '../lib/types';
 
@@ -12,8 +12,29 @@ const typeIcon: Record<string, string> = { bible: 'book.png', song: 'song_tab.pn
 
 /** The right hand "live" area: what is projected now. */
 export default function LivePanel() {
-  const { live } = useStore();
+  const { live, settings } = useStore();
+  const ui = useUI();
   const listRef = useRef<HTMLDivElement>(null);
+  // the arrow keys step through the slides unless the focus is in a list or table of its own or in a text field (see
+  // Operator): only then does the highlight of what is playing go quiet
+  const [quiet, setQuiet] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      const a = document.activeElement as HTMLElement | null;
+      const tag = a?.tagName;
+      const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!a?.isContentEditable;
+      const inOtherList = !!a?.closest?.('.list, .table') && !listRef.current?.contains(a);
+      setQuiet(typing || inOtherList);
+    };
+    check();
+    const later = () => { window.setTimeout(check, 0); };
+    document.addEventListener('focusin', check);
+    document.addEventListener('focusout', later);
+    return () => {
+      document.removeEventListener('focusin', check);
+      document.removeEventListener('focusout', later);
+    };
+  }, []);
   const anchor = useRef<number>(-1);
   const [multi, setMulti] = useState(false);
   const [pending, setPending] = useState<number[]>(live.selection);
@@ -105,8 +126,17 @@ export default function LivePanel() {
     const n = live.items.length;
     if (isBible && multi) {
       const cur = pendingRef.current;
+      // Shift extends the selection from the verse it started at (the other end follows the arrow)
+      if (e.shiftKey && cur.length) {
+        const from = cur.includes(anchor.current) ? anchor.current : cur[0];
+        const head = from === Math.min(...cur) ? Math.max(...cur) : Math.min(...cur);
+        anchor.current = from;
+        setPending(range(from, Math.max(0, Math.min(n - 1, head + d))));
+        return;
+      }
       const base = cur.length ? (d > 0 ? Math.max(...cur) : Math.min(...cur)) : -1;
       const next = Math.max(0, Math.min(n - 1, base + d));
+      anchor.current = next;
       setPending([next]);
       return;
     }
@@ -202,9 +232,9 @@ export default function LivePanel() {
             <span className="grow" />
           </>
         )}
-        <PresentationButtons show canPreview={dirty && pending.length > 0} holdPreview={holdPreview} canUpdate={dirty} onUpdate={update} />
+        <PresentationButtons show={ui.tab === 'bible' && multi} canPreview={dirty && pending.length > 0} holdPreview={holdPreview} canUpdate={dirty} onUpdate={update} />
       </div>
-      <LivePreview override={peek} />
+      {settings.app.livePreview && <LivePreview override={peek} />}
       {live.notes && (
         <div className="muted" style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>
           {t('Notes:')}
@@ -215,7 +245,7 @@ export default function LivePanel() {
       {live.type === 'video' ? (
         <VideoControls />
       ) : (
-        <div ref={listRef} className={`list grow active ${live.type === 'picture' ? 'thumb-list live-thumbs' : 'live-list hover-items'}`} tabIndex={0} onKeyDown={onListKey} onKeyUp={(e) => { if (e.key === ' ') holdPreview(false, 'key'); }} onBlur={() => { if (holdSource.current === 'key') holdPreview(false); }} style={{ background: 'var(--live-bg)' }}>
+        <div ref={listRef} className={`list grow active ${quiet ? 'quiet' : ''} ${live.type === 'picture' ? 'thumb-list live-thumbs' : 'live-list hover-items'}`} tabIndex={0} onKeyDown={onListKey} onKeyUp={(e) => { if (e.key === ' ') holdPreview(false, 'key'); }} onBlur={() => { if (holdSource.current === 'key') holdPreview(false); }} style={{ background: 'var(--live-bg)' }}>
           {live.items.map((it, i) => (
             <div
               key={i}
@@ -339,7 +369,7 @@ function PresentationButtons({ show, canPreview, holdPreview, canUpdate, onUpdat
         className="tbtn"
         title={t('Hold to preview the new selection')}
         aria-label={t('Preview')}
-        // only shown in multi-verse mode, but it always keeps its place so Play and Clear don't move
+        // only shown on the Bible tab in multi-verse mode, but it always keeps its place so Play and Clear don't move
         style={show ? undefined : { visibility: 'hidden' }}
         tabIndex={show ? 0 : -1}
         aria-hidden={!show}

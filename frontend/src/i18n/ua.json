@@ -945,5 +945,10 @@
 "Tabs": "Вкладки",
 "Presentation": "Показ",
 "{key} is used by the program and cannot be assigned.": "{key} використовується програмою й не може бути призначена.",
-"Global Hotkeys": "Глобальні гарячі клавіші"
+"Global Hotkeys": "Глобальні гарячі клавіші",
+"All Books": "Усі збірники",
+"Search all songbooks, not only the selected one": "Шукати в усіх збірниках, а не лише у вибраному",
+"Preview Display": "Вікно попереднього перегляду",
+"Show the preview above the live list": "Показувати попередній перегляд над списком показу",
+"Remove from History": "Видалити з історії"
 }

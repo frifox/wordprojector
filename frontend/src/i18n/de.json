@@ -1010,5 +1010,10 @@
 "Tabs": "Reiter",
 "Presentation": "Präsentation",
 "{key} is used by the program and cannot be assigned.": "{key} wird vom Programm verwendet und kann nicht zugewiesen werden.",
-"Global Hotkeys": "Globale Tastenkürzel"
+"Global Hotkeys": "Globale Tastenkürzel",
+"All Books": "Alle Liederbücher",
+"Search all songbooks, not only the selected one": "In allen Liederbüchern suchen, nicht nur im gewählten",
+"Preview Display": "Vorschau",
+"Show the preview above the live list": "Vorschau über der Live-Liste anzeigen",
+"Remove from History": "Aus dem Verlauf entfernen"
 }

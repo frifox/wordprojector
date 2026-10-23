@@ -48,6 +48,8 @@ export default function SongsPanel({ active }: { active: boolean }) {
   const [number, setNumber] = useState('');
   const [filter, setFilter] = useState('');
   const [searchType, setSearchType] = useState(0);
+  // look in every songbook for now, whichever one is selected
+  const [allBooks, setAllBooks] = useState(false);
   const [searchIds, setSearchIds] = useState<number[] | null>(null);
   const [highlight, setHighlight] = useState('');
   const [selectedId, setSelectedId] = useState<number>(0);
@@ -80,7 +82,7 @@ export default function SongsPanel({ active }: { active: boolean }) {
       const set = new Set(searchIds);
       l = l.filter((s) => set.has(s.id));
     }
-    if (songbook) l = l.filter((s) => s.songbookId === songbook);
+    if (songbook && !allBooks) l = l.filter((s) => s.songbookId === songbook);
     const f = filter.trim();
     if (f && !searchIds) {
       const esc = f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\W*');
@@ -95,7 +97,7 @@ export default function SongsPanel({ active }: { active: boolean }) {
       return String(av).localeCompare(String(bv)) * dir;
     });
     return l;
-  }, [songs, songbook, filter, searchIds, sort]);
+  }, [songs, songbook, allBooks, filter, searchIds, sort]);
 
   // auto sort: numeric filter sorts by number, text sorts by title
   useEffect(() => {
@@ -249,7 +251,10 @@ export default function SongsPanel({ active }: { active: boolean }) {
       console.error(e);
     }
   };
+  // choosing a songbook ends the look in all of them
+  useEffect(() => setAllBooks(false), [songbook]);
   const clearSearch = () => {
+    setAllBooks(false);
     setSearchIds(null);
     setHighlight('');
     setFilter('');
@@ -280,7 +285,7 @@ export default function SongsPanel({ active }: { active: boolean }) {
   const columns = [
     { key: 'number', label: '#', width: 52 },
     { key: 'title', label: t('Title'), width: 0 },
-    ...(songbook ? [] : [{ key: 'songbookName', label: t('Songbook'), width: 110 }]),
+    ...(songbook && !allBooks ? [] : [{ key: 'songbookName', label: t('Songbook'), width: 110 }]),
   ] as { key: string; label: string; width: number }[];
 
   const searching = searchIds !== null;
@@ -289,6 +294,7 @@ export default function SongsPanel({ active }: { active: boolean }) {
     <Splitter id="songs-main" initial={0.5} saved={settings.app.splitters} className="fill">
       <div className="col fill" style={{ gap: 4 }}>
         <div className="row">
+          <span style={{ minWidth: 46 }}>{t('Book:')}</span>
           <select className="grow" value={songbook} onChange={(e) => setSongbook(Number(e.target.value))} title={t('Use this menu to show only songs belonging to a particular Songbook')}>
             <option value={0}>{t('All songbooks')}</option>
             {songbooks.map((sb) => (
@@ -301,7 +307,7 @@ export default function SongsPanel({ active }: { active: boolean }) {
           </span>
         </div>
         <div className="row">
-          <span>{t('Search:')}</span>
+          <span style={{ minWidth: 46 }}>{t('Search:')}</span>
           <input ref={searchInput} className="grow" style={{ minWidth: 0 }} type="text" value={filter} onChange={(e) => setFilter(e.target.value)} onKeyDown={(e) => {
             // Right from the end of the box moves on to the stanza list
             if (e.key === 'ArrowRight' && !e.shiftKey && e.currentTarget.selectionStart === e.currentTarget.value.length && e.currentTarget.selectionEnd === e.currentTarget.value.length) { e.preventDefault(); stanzaList.current?.focus(); }
@@ -313,6 +319,9 @@ export default function SongsPanel({ active }: { active: boolean }) {
               const next = at < 0 ? 0 : Math.max(0, Math.min(list.length - 1, at + (e.key === 'ArrowDown' ? 1 : -1)));
               select(list[next]);
             }
+            // Ctrl/Cmd+Enter searches the words of the songs; Enter sends the song that is selected (the first match, or the one stepped to with the arrows) live
+            else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doSearch(); }
+            else if (e.key === 'Enter') { e.preventDefault(); goLive(); }
             // Esc empties the box and any search results; with nothing to clear it falls through and stops the presentation
             else if (e.key === 'Escape' && (filter !== '' || searching)) { e.preventDefault(); e.stopPropagation(); clearSearch(); }
           }} />
@@ -326,8 +335,8 @@ export default function SongsPanel({ active }: { active: boolean }) {
             </select>
           )}
           <span className="btn-group">
-            <button disabled={!searching && filter === ''} onClick={clearSearch}>{t('Clear')}</button>
-            <button onClick={doSearch}><img className="icon" src="/icons/search.png" alt="" />{t('Search')}</button>
+            <button disabled={!searching && filter === '' && !allBooks} onClick={clearSearch}>{t('Clear')}</button>
+            <button className={allBooks ? 'on' : ''} disabled={!songbook} aria-pressed={allBooks} onClick={() => setAllBooks((v) => !v)} title={t('Search all songbooks, not only the selected one')}>{t('All Books')}</button>
           </span>
         </div>
         <VirtualTable

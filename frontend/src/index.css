@@ -219,13 +219,17 @@ label.chk {
 .list.active .item.sel {
   background: var(--sel);
 }
-/* what is projected now: a clear accent wash and a bar at the left edge, much stronger than a plain selection */
+/* what is projected now: a clear accent wash, much stronger than a plain selection */
 .list.live-list .item.sel {
   background: color-mix(in srgb, var(--accent) 38%, var(--base));
-  box-shadow: inset 4px 0 0 var(--accent);
 }
 :root[data-theme='dark'] .list.live-list .item.sel {
   background: color-mix(in srgb, var(--accent) 55%, var(--base));
+}
+/* when the arrow keys belong to something else (another list, a text field) it is as quiet as in the lists of the tabs */
+.list.live-list.quiet .item.sel,
+:root[data-theme='dark'] .list.live-list.quiet .item.sel {
+  background: var(--sel-inactive);
 }
 /* the highlight under the pointer: the same gradient as the slide show list */
 .list.hover-items .item:hover:not(.sel) {
@@ -342,6 +346,12 @@ label.chk {
 }
 fieldset.group {
   min-width: 0;
+}
+/* WebKit (the macOS app) leaves a legend's height of extra room at the bottom of a fieldset that is a flex item: the
+   sections are stacked in a grid instead */
+.col:has(> fieldset.group) {
+  display: grid;
+  align-content: start;
 }
 .tabs {
   display: flex;
@@ -562,7 +572,8 @@ fieldset.group {
   border-color: var(--accent);
 }
 /* the slides list without focus: the quieter selection of the other lists */
-.thumb-list:not(.live-thumbs):not(:focus-within) .thumb.sel {
+.thumb-list:not(.live-thumbs):not(:focus-within) .thumb.sel,
+.thumb-list.live-thumbs.quiet .thumb.sel {
   background: var(--sel-inactive);
   border-color: var(--sel-inactive);
 }
@@ -583,8 +594,9 @@ mark {
   color: var(--muted);
   font-size: 11px;
 }
+/* vertical scrollbars take no room: lib/overlayScroll.ts draws one that floats over the content */
 ::-webkit-scrollbar {
-  width: 11px;
+  width: 0;
   height: 11px;
 }
 ::-webkit-scrollbar-thumb {
@@ -1483,8 +1495,8 @@ button.screen-tile.on {
 .theme-editor-form {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  align-content: start;
   gap: 6px;
 }
 .theme-editor-preview {
@@ -1575,4 +1587,31 @@ button.screen-tile.on {
   border: 1px solid var(--border-light);
   border-radius: 4px;
   padding: 4px 6px;
+}
+
+/* the floating vertical scrollbar (lib/overlayScroll.ts) */
+.ov-thumb {
+  position: fixed;
+  z-index: 100000;
+  width: 7px;
+  border-radius: 4px;
+  background: #b8b8b8;
+}
+:root[data-theme='dark'] .ov-thumb {
+  background: #5a5a5a;
+}
+.ov-thumb:hover,
+.ov-thumb.drag {
+  background: #a4a4a4;
+}
+:root[data-theme='dark'] .ov-thumb:hover,
+:root[data-theme='dark'] .ov-thumb.drag {
+  background: #707070;
+}
+
+/* no rubber band when a list is scrolled past its top or bottom (the macOS app) */
+html,
+body,
+* {
+  overscroll-behavior: none;
 }

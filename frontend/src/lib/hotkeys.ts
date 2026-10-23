@@ -25,18 +25,21 @@ export const HOTKEY_GROUPS: { title: string; items: HotkeyAction[] }[] = [
       { id: 'prev', label: 'Previous slide', def: 'PageUp' },
     ],
   },
+  {
+    title: 'Other',
+    items: [{ id: 'print', label: 'Print', def: '' }],
+  },
 ];
 
 export const HOTKEYS: HotkeyAction[] = HOTKEY_GROUPS.flatMap((g) => g.items);
 
 /** The keys that cannot be changed. */
 const FIXED: Record<string, string> = {
-  pause: 'Escape', // pressed again it turns the presentation off and clears the live list
+  pause: 'Escape', // pressed again it turns the presentation off, like the Off button
   pauseOnly: 'Shift+Escape',
   stop: 'Delete', // turn off and clear the live list
   removeItem: 'Mod+Delete',
   settings: 'Mod+,',
-  print: 'Mod+P',
   exit: 'Mod+Q',
 };
 

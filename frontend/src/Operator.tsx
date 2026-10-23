@@ -48,6 +48,11 @@ export default function Operator() {
   const [songHistory, setSongHistory] = useState<SongHistoryItem[]>([]);
   const addBibleHistory = useCallback((r: BibleRef) => setBibleHistory((h) => [...h, r]), []);
   const addSongHistory = useCallback((s: SongHistoryItem) => setSongHistory((h) => (h.length && h[h.length - 1].id === s.id ? h : [...h, s])), []);
+  const removeHistory = useCallback((tb: TabName, i: number) => {
+    const drop = <T,>(h: T[]) => h.filter((_, k) => k !== i);
+    if (tb === 'bible') setBibleHistory(drop);
+    else if (tb === 'songs') setSongHistory(drop);
+  }, []);
   const clearHistory = useCallback((tb: TabName) => {
     if (tb === 'bible') setBibleHistory([]);
     else if (tb === 'songs') setSongHistory([]);
@@ -78,8 +83,8 @@ export default function Operator() {
 
   const openDialog = useCallback((d: DialogSpec) => setDialog(d), []);
   const uiValue = useMemo(
-    () => ({ register: registry.register, actions: registry.actions, openDialog, setTab, tab, bibleHistory, songHistory, addBibleHistory, addSongHistory, clearHistory }),
-    [registry.register, registry.actions, openDialog, tab, bibleHistory, songHistory, addBibleHistory, addSongHistory, clearHistory],
+    () => ({ register: registry.register, actions: registry.actions, openDialog, setTab, tab, bibleHistory, songHistory, addBibleHistory, addSongHistory, clearHistory, removeHistory }),
+    [registry.register, registry.actions, openDialog, tab, bibleHistory, songHistory, addBibleHistory, addSongHistory, clearHistory, removeHistory],
   );
 
   const act = (tabName: TabName = tab) => registry.actions(tabName);
@@ -148,18 +153,20 @@ export default function Operator() {
     // a plain key (a letter, Del, ...) belongs to the focused text field while one is being typed in
     const plain = !!combo && !/^(Mod|Alt|Ctrl|Meta)\+|^F\d+$|^Escape$|^Shift\+Escape$|^Page(Up|Down)$/.test(combo);
     const is = (id: string) => !!combo && keys[id] === combo && !(typing && plain);
-    // Esc pauses; pressed again it turns the presentation off and clears the live list (decided by the engine)
+    // the cursor goes back to the tab's browser after the presentation stops, unless it is in the list of what is playing
+    const inLive = !!(document.activeElement as HTMLElement | null)?.closest?.('.live-list, .live-thumbs');
+    // Esc pauses; pressed again it turns the presentation off, like the Off button (decided by the engine)
     if (is('pause')) {
       // the second Esc stops the presentation (see Engine.Escape); the cursor then goes back to the tab's browser
       const stops = !(displaysOn && live.type && !live.cleared);
-      api.escape().then(() => { if (stops) act()?.focusBrowser?.(); });
+      api.escape().then(() => { if (stops && !inLive) act()?.focusBrowser?.(); });
       return true;
     }
     if (is('pauseOnly')) { api.pause(); return true; }
     // Del turns the presentation off and clears the live list, unless the focused control uses the key itself (text fields)
     // the Backspace key (the "delete" key on Mac laptops) also does it, but lists keep it: it edits the Bible filters
     const inList = !!(e.target as HTMLElement | null)?.closest?.('.list, .table');
-    if (is('stop') || (keys.stop === 'Delete' && combo === 'Backspace' && !typing && !inList)) { api.stop().then(() => act()?.focusBrowser?.()); return true; }
+    if (is('stop') || (keys.stop === 'Delete' && combo === 'Backspace' && !typing && !inList)) { api.stop().then(() => { if (!inLive) act()?.focusBrowser?.(); }); return true; }
     if (is('play')) {
       // in multi-verse mode Play first applies a pending selection from the live list
       const ev = { handled: false };

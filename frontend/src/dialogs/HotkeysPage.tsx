@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { t } from '../i18n';
 import type { Settings } from '../lib/types';
 import { HOTKEYS, HOTKEY_GROUPS, hotkeyMap, comboOf, comboLabel, isReserved } from '../lib/hotkeys';
@@ -18,6 +18,28 @@ export default function HotkeysPage({ s, setS }: { s: Settings; setS: (f: (x: Se
     m[id] = combo;
     store(m);
   };
+  // WebKit (the macOS app) does not focus a button that is clicked, so the key is taken from the window, ahead of the
+  // dialog's own Esc and the program's hotkeys
+  useEffect(() => {
+    if (!rec) return;
+    const h = (e: KeyboardEvent) => {
+      const combo = comboOf(e);
+      e.preventDefault();
+      e.stopPropagation();
+      if (!combo) return;
+      setRec(null);
+      if (isReserved(combo)) { setNote(t('{key} is used by the program and cannot be assigned.', { key: comboLabel(combo) })); return; }
+      setNote('');
+      assign(rec, combo);
+    };
+    window.addEventListener('keydown', h, true);
+    // the dialog closes on Esc unless the key is meant for the focused field
+    document.body.setAttribute('data-esc-own', '');
+    return () => {
+      window.removeEventListener('keydown', h, true);
+      document.body.removeAttribute('data-esc-own');
+    };
+  });
   const changed = HOTKEYS.some((h) => keys[h.id] !== h.def);
   return (
     <div className="col" style={{ gap: 6 }}>
@@ -32,20 +54,7 @@ export default function HotkeysPage({ s, setS }: { s: Settings; setS: (f: (x: Se
               <button
                 style={{ minWidth: 130 }}
                 className={rec === h.id ? 'primary' : ''}
-                data-esc-own={rec === h.id ? '' : undefined}
-                onClick={() => setRec(rec === h.id ? null : h.id)}
-                onBlur={() => setRec((r) => (r === h.id ? null : r))}
-                onKeyDown={(e) => {
-                  if (rec !== h.id) return;
-                  const combo = comboOf(e);
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (!combo) return;
-                  if (isReserved(combo)) { setNote(t('{key} is used by the program and cannot be assigned.', { key: comboLabel(combo) })); setRec(null); return; }
-                  setNote('');
-                  assign(h.id, combo);
-                  setRec(null);
-                }}
+                onClick={() => { setNote(''); setRec(rec === h.id ? null : h.id); }}
               >
                 {rec === h.id ? t('Press a key…') : mine ? comboLabel(mine) : <span className="muted">{t('Not set')}</span>}
               </button>

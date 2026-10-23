@@ -841,5 +841,10 @@
 "Tabs": "Ներդիրներ",
 "Presentation": "Ցուցադրություն",
 "{key} is used by the program and cannot be assigned.": "{key}-ը օգտագործվում է ծրագրի կողմից և չի կարող նշանակվել։",
-"Global Hotkeys": "Գլոբալ արագ ստեղներ"
+"Global Hotkeys": "Գլոբալ արագ ստեղներ",
+"All Books": "Բոլոր երգարանները",
+"Search all songbooks, not only the selected one": "Որոնել բոլոր երգարաններում, ոչ միայն ընտրվածում",
+"Preview Display": "Նախադիտման պատուհան",
+"Show the preview above the live list": "Ցույց տալ նախադիտումը ուղիղ ցանկի վերևում",
+"Remove from History": "Հեռացնել պատմությունից"
 }

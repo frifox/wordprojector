@@ -640,10 +640,8 @@ func (e *Engine) Prev() {
 func (e *Engine) Show() {
 	e.mu.Lock()
 	if e.state.Type != "" {
-		// resuming after Clear shows the content again; starting from a cleared preview starts blank
-		if e.state.Showing {
-			e.state.Cleared = false
-		}
+		// Play always brings the content back, also after a pause followed by turning the presentation off
+		e.state.Cleared = false
 		e.state.Showing = true
 		if e.screenCount() != 1 {
 			e.state.DisplayOn = true
@@ -695,7 +693,7 @@ func (e *Engine) TestDisplays(slots []int, d time.Duration) {
 }
 
 // Escape is the Esc key, the same wherever it is pressed (operator window or a display window): the first press
-// pauses what is displayed, the second turns the presentation off and clears the list of live items.
+// pauses what is displayed, the second turns the presentation off (the Off button): the list of live items stays.
 func (e *Engine) Escape() {
 	e.mu.Lock()
 	single := e.state.SingleScreen
@@ -709,11 +707,17 @@ func (e *Engine) Escape() {
 		e.Pause()
 		return
 	}
-	e.Stop()
+	e.TurnOff()
 }
 
-// Stop turns the presentation off and clears the list of live items (the second Esc, and Del).
+// Stop turns the presentation off and clears the list of live items (Del).
 func (e *Engine) Stop() {
+	e.TurnOff()
+	e.Clear()
+}
+
+// TurnOff is the Off button: the displays go dark and the list of live items stays.
+func (e *Engine) TurnOff() {
 	e.mu.Lock()
 	single := e.state.SingleScreen
 	on := e.state.DisplayOn
@@ -721,14 +725,14 @@ func (e *Engine) Stop() {
 		on = e.state.Showing
 	}
 	e.mu.Unlock()
-	if on {
-		if single {
-			e.Hide()
-		} else {
-			e.SetDisplayOn(false)
-		}
+	if !on {
+		return
 	}
-	e.Clear()
+	if single {
+		e.Hide()
+	} else {
+		e.SetDisplayOn(false)
+	}
 }
 
 // Hide shows the passive screen (Esc).

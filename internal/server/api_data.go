@@ -751,7 +751,6 @@ func (s *Server) routes() {
 			// (the layout, the language, the order of buttons, what Books last used) must not be put back to the old copy
 			cur := s.Engine.Settings.App
 			in.App.Window = cur.Window
-			in.App.LivePreview = cur.LivePreview
 			in.App.Splitters = cur.Splitters
 			in.App.Language = cur.Language
 			in.Main.UITranslation = s.Engine.Settings.Main.UITranslation

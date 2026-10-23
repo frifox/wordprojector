@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import BackgroundSection from './BackgroundSection';
 import Modal, { alertDialog, confirmDialog } from '../components/Modal';
 import { api } from '../lib/api';
+import { useStore } from '../lib/store';
 import { t } from '../i18n';
 import type { RenderSlide, Settings, Theme, ThemeInfo } from '../lib/types';
 import NameInfoDialog from './NameInfoDialog';
@@ -41,6 +42,30 @@ export default function ThemeEditor({ s, setS, currentId, onUse, onClose }: {
 
   // the Preview button: the sample on the previews goes to the real displays until it is turned off or the editor closes
   const [presenting, setPresenting] = useState(false);
+  // on a single screen the preview covers the editor, and the keyboard stays with the editor: Esc then turns the preview off
+  // (a second one closes the editor) instead of closing the editor under it
+  const { live } = useStore();
+  const escStopsPreview = presenting && live.singleScreen;
+  // the displays going dark while the preview is on (Esc on the preview itself, the server ending it) turns the Preview
+  // button off: left on, it would bring the preview back with the next change of the sample
+  const shown = live.singleScreen ? live.showing : live.displayOn;
+  const seenShown = useRef(false);
+  useEffect(() => {
+    if (!presenting) { seenShown.current = false; return; }
+    if (shown) seenShown.current = true;
+    else if (seenShown.current) setPresenting(false);
+  }, [presenting, shown]);
+  useEffect(() => {
+    if (!escStopsPreview) return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      e.stopPropagation();
+      setPresenting(false);
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [escStopsPreview]);
   const lastSlide = useRef<RenderSlide | null>(null);
   const present: PresentControl = {
     on: presenting,
@@ -219,7 +244,7 @@ export default function ThemeEditor({ s, setS, currentId, onUse, onClose }: {
   };
 
   return (
-    <Modal width={1180} height="min(780px, 92vh)" title={t('Theme Editor')} onClose={requestExit} buttons={<button onClick={requestExit}>{t('Close')}</button>}>
+    <Modal width={1180} height="min(780px, 92vh)" title={t('Theme Editor')} closeOnEscape={!escStopsPreview} onClose={requestExit} buttons={<button onClick={requestExit}>{t('Close')}</button>}>
       <div className="theme-editor">
         <div className="theme-editor-side">
           <div className="theme-editor-list">

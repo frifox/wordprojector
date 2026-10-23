@@ -136,6 +136,10 @@ function DisplayPage({ s, setS, setGeneral, screens }: { s: Settings; setS: (f: 
   return (
     <div className="col" style={{ gap: 4 }}>
       <fieldset className="group">
+        <legend>{t('Preview Display')}</legend>
+        <label className="chk"><input type="checkbox" checked={s.app.livePreview} onChange={(e) => setS((x) => ({ ...x, app: { ...x.app, livePreview: e.target.checked } }))} />{t('Show the preview above the live list')}</label>
+      </fieldset>
+      <fieldset className="group">
         <legend>{t('Display Screens')}</legend>
         {!bootInfo.desktop && <div className="muted" style={{ marginBottom: 6 }}>{t('Running without native windows: open /projector/1, /projector/2 … in a browser on each display screen.')}</div>}
         {screens.length === 1 && <div className="muted" style={{ marginBottom: 6 }}>{t('Only one screen detected. The display window opens on the main screen while something is shown.')}</div>}
