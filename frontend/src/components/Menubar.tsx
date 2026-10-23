@@ -97,6 +97,8 @@ export default function Menubar({ menus }: { menus: MenuDef[] }) {
 
 export function MenuPopup({ items, close, style }: { items: MenuEntry[]; close: () => void; style?: React.CSSProperties }) {
   const [sub, setSub] = useState<number | null>(null);
+  // room for a checkmark only in menus that have checkable items
+  const checks = items.some((x) => x.checked !== undefined);
   return (
     <div className="menu-popup" style={{ top: '100%', left: 0, ...style }}>
       {items.map((it, i) =>
@@ -115,7 +117,7 @@ export function MenuPopup({ items, close, style }: { items: MenuEntry[]; close: 
             }}
             style={{ position: 'relative' }}
           >
-            <span className="check">{it.checked ? '✓' : ''}</span>
+            {checks && <span className="check">{it.checked ? '✓' : ''}</span>}
             {it.icon && <img className="icon" src={`/icons/${it.icon}`} alt="" />}
             <span>{it.label}</span>
             {it.submenu && <span className="sc">▸</span>}

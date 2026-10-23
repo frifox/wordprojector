@@ -13,8 +13,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestCompare(t *testing.T) {
@@ -225,5 +227,68 @@ func TestSupported(t *testing.T) {
 	u.GOARCH = "riscv64"
 	if ok, _ := u.Supported(); ok {
 		t.Fatal("no build for riscv64")
+	}
+}
+
+// When GitHub refuses the API (the limit of questions an hour), the releases are read from the feed on the web page and
+// installed from the files named by rule.
+func TestRateLimitedUsesFeed(t *testing.T) {
+	dir := t.TempDir()
+	exe := filepath.Join(dir, "WordProjector")
+	os.WriteFile(exe, []byte("old"), 0o755)
+	data := tgzOf(map[string]string{"WordProjector/WordProjector": "new"})
+	sum := sha256.Sum256(data)
+	name := "WordProjector-2026-01-02-linux-x64.tar.gz"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/releases":
+			w.Header().Set("X-RateLimit-Remaining", "0")
+			http.Error(w, "rate limit", http.StatusForbidden)
+		case "/web/releases.atom":
+			w.Write([]byte(`<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">
+<entry><title>2026-01-02</title><updated>2026-01-02T10:00:00Z</updated><link href="https://github.com/x/y/releases/tag/2026-01-02"/><content type="html">&lt;p&gt;Faster &amp;amp; better&lt;/p&gt;</content></entry>
+<entry><title>2025-12-01</title><updated>2025-12-01T10:00:00Z</updated><link href="https://github.com/x/y/releases/tag/2025-12-01"/><content type="html"></content></entry></feed>`))
+		case "/web/releases/download/2026-01-02/" + name:
+			w.Write(data)
+		case "/web/releases/download/2026-01-02/checksums.txt":
+			w.Write([]byte(hex.EncodeToString(sum[:]) + "  " + name + "\n"))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+	u := &Updater{Repo: "x/y", API: srv.URL + "/api", Web: srv.URL + "/web", Current: "2025-12-01", Client: srv.Client(), GOOS: "linux", GOARCH: "amd64", Exe: exe, AllowTemp: true}
+	list, err := u.List(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 2 || list[0].Tag != "2026-01-02" || list[0].Published != "2026-01-02" || !strings.Contains(list[0].Notes, "Faster & better") {
+		t.Fatalf("list = %+v", list)
+	}
+	if !u.Newer(Latest(list)) {
+		t.Fatal("the latest release should be newer")
+	}
+	if err := u.Install(context.Background(), list[0], nil); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := os.ReadFile(exe); string(got) != "new" {
+		t.Fatalf("program = %q", got)
+	}
+}
+
+func TestRateLimitedAndNoFeedSaysWhen(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/releases" {
+			w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(time.Now().Add(20*time.Minute).Unix(), 10))
+			http.Error(w, "rate limit", http.StatusForbidden)
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+	u := &Updater{Repo: "x/y", API: srv.URL + "/api", Web: srv.URL + "/web", Current: "2025-12-01", Client: srv.Client(), GOOS: "linux", GOARCH: "amd64"}
+	_, err := u.List(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "limit") || !strings.Contains(err.Error(), "minutes") {
+		t.Fatalf("err = %v", err)
 	}
 }

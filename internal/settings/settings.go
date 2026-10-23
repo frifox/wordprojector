@@ -107,9 +107,18 @@ type App struct {
 	DefaultSongbook int `json:"defaultSongbook"`
 	// SkipUpdateCheck turns off the look for a newer release when the program starts (it is on by default).
 	SkipUpdateCheck bool `json:"skipUpdateCheck"`
+	// BibleButtonOrder is the order of the Bible version buttons (Bible ids), as the user dragged them.
+	BibleButtonOrder []string `json:"bibleButtonOrder"`
+	// ModuleSource ("softprojector" or "custom") and ModuleURLs (the address typed for Custom, per kind of book) are
+	// what Books > Import from Cloud last used.
+	ModuleSource string            `json:"moduleSource"`
+	ModuleURLs   map[string]string `json:"moduleUrls"`
 	// AutoInstallUpdates installs the latest release by itself when one is found; it is used the next time the
 	// program starts.
 	AutoInstallUpdates bool `json:"autoInstallUpdates"`
+	// Hotkeys maps an action to the key combination the user chose for it; an action that is missing has its default
+	// key, one set to "" has none.
+	Hotkeys map[string]string `json:"hotkeys"`
 }
 
 // Settings is everything stored in the Settings table.

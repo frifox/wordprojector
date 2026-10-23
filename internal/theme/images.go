@@ -231,8 +231,10 @@ type errEmptyName struct{}
 
 func (errEmptyName) Error() string { return "the name can't be empty" }
 
-// Duplicate copies a theme under a new name and returns the id of the copy.
-func (r *Repo) Duplicate(id int64, name string) (int64, error) { return r.duplicate(id, name, nil) }
+// Duplicate copies a theme under a new name, with its own copy of the pool of pictures, and returns the id of the copy.
+func (r *Repo) Duplicate(id int64, name string) (int64, error) {
+	return r.duplicate(id, name, []string{"passive"})
+}
 
 // duplicate copies a theme and the background images of the slide kinds listed.
 func (r *Repo) duplicate(id int64, name string, kinds []string) (int64, error) {
@@ -303,27 +305,4 @@ func (r *Repo) duplicate(id int64, name string, kinds []string) (int64, error) {
 		}
 	}
 	return newID, nil
-}
-
-// BackgroundMarker is the comment of the hidden theme that holds the background of the presentation when nothing is
-// shown (Settings > Background). It belongs to the program, not to a theme: switching themes keeps it.
-const BackgroundMarker = "wp:background"
-
-// EnsureBackground returns the id of the hidden background theme. The first time it is made from the passive
-// background of theme from, so what was on the screen stays.
-func (r *Repo) EnsureBackground(from int64) (int64, error) {
-	var id int64
-	err := r.DB.QueryRow("SELECT id FROM Themes WHERE comment = ? ORDER BY id LIMIT 1", BackgroundMarker).Scan(&id)
-	if err == nil {
-		return id, nil
-	}
-	if err != sql.ErrNoRows {
-		return 0, err
-	}
-	id, err = r.duplicate(from, "Background", []string{"passive"})
-	if err != nil {
-		return 0, err
-	}
-	_, err = r.DB.Exec("UPDATE Themes SET comment = ? WHERE id = ?", BackgroundMarker, id)
-	return id, err
 }

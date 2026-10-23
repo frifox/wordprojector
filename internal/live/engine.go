@@ -47,8 +47,6 @@ type Engine struct {
 
 	Settings settings.Settings
 	Theme    theme.Theme
-	// Background holds the passive screen's background (Settings > Background): same whatever the theme.
-	Background theme.BackgroundSet
 
 	// Broadcast sends a message to every websocket client.
 	Broadcast func(msg any)
@@ -109,9 +107,6 @@ func New(d *db.DB) (*Engine, error) {
 	if s.General.CurrentThemeID != t.ID {
 		e.Settings.General.CurrentThemeID = t.ID
 		_ = settings.Save(d, e.Settings)
-	}
-	if bid, err := e.Themes.EnsureBackground(t.ID); err == nil {
-		e.Background = e.Themes.LoadBackground(bid)
 	}
 	e.ensureBibleDefaults()
 	e.state = State{Items: []Item{}, Selection: []int{}, Displays: []DisplayState{}, Video: VideoState{Volume: 100}}
@@ -940,23 +935,13 @@ func (e *Engine) recompute() {
 	}
 }
 
-// themeIndex is the display whose idle screen settings display d uses.
-func (e *Engine) themeIndex(d int, useDisp1 bool) int {
-	if d <= 1 || d > theme.Displays || useDisp1 { // displays beyond the fourth use the look of display 1
-		return 0
-	}
-	return d - 1
-}
-
-// passiveBackground is the background shown when nothing is projected: the program's own (Settings > Background),
-// the same for every theme.
+// passiveBackground is the background shown when nothing is projected: the picture the theme has chosen for it,
+// else black.
 func (e *Engine) passiveBackground(d int) Background {
-	bg := e.Background
-	idx := e.themeIndex(d, bg.Passive[min(d-1, theme.Displays-1)].UseDisp1)
-	p := bg.Passive[idx]
-	if p.UseBackground && p.HasBackground {
+	p := e.Theme.Passive
+	if p.UseBackground && p.ImageID > 0 {
 		fit := map[int]string{0: "fill", 1: "cover", 2: "contain"}[p.BackgroundFit]
-		return Background{Type: "image", URL: fmt.Sprintf("/api/bg/theme/passive/%d?theme=%d&v=%d", idx+1, bg.ID, e.bgVer), Fit: fit}
+		return Background{Type: "image", URL: fmt.Sprintf("/api/bg/theme/passive/1?theme=%d&v=%d&i=%d", e.Theme.ID, e.bgVer, p.ImageID), Fit: fit}
 	}
 	return Background{Type: "color", Color: "#000000"}
 }

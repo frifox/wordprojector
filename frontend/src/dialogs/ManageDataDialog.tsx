@@ -24,15 +24,11 @@ export default function ManageDataDialog({ onClose, initialTab }: { onClose: () 
   const [edit, setEdit] = useState<{ kind: Tab; mode: 'new' | 'edit' } | null>(null);
   const [modules, setModules] = useState<{ kind: Tab; list: Module[] | null; msg?: string } | null>(null); // list is null while it is being fetched
   // where the module lists come from: softprojector or custom (an address the user types)
-  const [source, setSource] = useState<string>(() => { try { const v = localStorage.getItem('wp-module-source'); return v === 'custom' ? v : 'softprojector'; } catch { return 'softprojector'; } });
+  const [source, setSource] = useState<string>(() => (settings.app.moduleSource === 'custom' ? 'custom' : 'softprojector'));
   // the address typed for Custom, one for each kind of book; it starts as the address of the softprojector list
   const [customUrls, setCustomUrls] = useState<Record<string, string>>(() => {
     const out: Record<string, string> = {};
-    for (const k of Object.keys(DEFAULT_LIST_URL)) {
-      let v = '';
-      try { v = localStorage.getItem('wp-module-url-' + k) || ''; } catch { /* not remembered */ }
-      out[k] = v || DEFAULT_LIST_URL[k];
-    }
+    for (const k of Object.keys(DEFAULT_LIST_URL)) out[k] = settings.app.moduleUrls?.[k] || DEFAULT_LIST_URL[k];
     return out;
   });
   const listRequest = useRef(0);
@@ -112,12 +108,12 @@ export default function ManageDataDialog({ onClose, initialTab }: { onClose: () 
   const doDownload = () => fetchModules(tab, source, customUrls[tab]);
   const pickSource = (src: string) => {
     setSource(src);
-    try { localStorage.setItem('wp-module-source', src); } catch { /* not remembered */ }
+    api.patchApp({ moduleSource: src }).then(() => reloadSettings()).catch(() => {});
     if (modules) fetchModules(modules.kind, src, customUrls[modules.kind]);
   };
   const loadCustom = () => {
     if (!modules) return;
-    try { localStorage.setItem('wp-module-url-' + modules.kind, customUrls[modules.kind]); } catch { /* not remembered */ }
+    api.patchApp({ moduleUrls: { [modules.kind]: customUrls[modules.kind] } }).then(() => reloadSettings()).catch(() => {});
     fetchModules(modules.kind, 'custom', customUrls[modules.kind]);
   };
   const closeModules = () => { listRequest.current++; setModules(null); };

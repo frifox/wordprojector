@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import BackgroundSection from './BackgroundSection';
 import Modal, { alertDialog, confirmDialog } from '../components/Modal';
 import { api } from '../lib/api';
 import { t } from '../i18n';
@@ -102,11 +103,29 @@ export default function ThemeEditor({ s, setS, currentId, onUse, onClose }: {
       setBase((b) => ({ ...b, [sel]: clone(th) }));
     } catch (e) { fail(e); }
   };
+  // pictures are added and removed at once, outside of Save: take over what the server chose (the first picture of an empty
+  // pool is chosen, a removed one is replaced), but keep the other unsaved changes of the draft
+  const onPool = async (ids: number[]) => {
+    const id = sel;
+    try {
+      const fresh = await api.theme(id);
+      setBase((b) => (b[id] ? { ...b, [id]: { ...b[id], passive: fresh.passive } } : b));
+      setDraft((d) => {
+        if (!d[id]) return d;
+        const p = d[id].passive;
+        const gone = p.imageId > 0 && !ids.includes(p.imageId);
+        const empty = p.imageId === 0 && fresh.passive.imageId > 0;
+        return { ...d, [id]: { ...d[id], passive: gone || empty ? { ...p, imageId: fresh.passive.imageId, useBackground: fresh.passive.useBackground || p.useBackground && fresh.passive.imageId > 0 } : p } };
+      });
+    } catch (e) { fail(e); }
+  };
   // a new theme from the settings as they are on screen (changes not saved yet included)
   const copyFrom = async (name: string, from: number) => {
     const r = await api.copyTheme(from, name);
     const src = draft[from];
-    const made = { ...clone(src), id: r.id, name: name.trim() };
+    // the copy has its own pictures: point the choice at the copy's one
+    const own = await api.theme(r.id);
+    const made = { ...clone(src), id: r.id, name: name.trim(), passive: { ...src.passive, imageId: src.passive.imageId > 0 ? own.passive.imageId : 0 } };
     await api.saveTheme(made);
     await reloadList();
     setBase((b) => ({ ...b, [r.id]: clone(made) }));
@@ -180,6 +199,7 @@ export default function ThemeEditor({ s, setS, currentId, onUse, onClose }: {
                 <label className="chk"><input type="checkbox" checked={th.bible.useBlurShadow} onChange={(e) => setEffect({ useBlurShadow: e.target.checked })} />{t('Use blurred shadow')}</label>
               </div>
             </fieldset>
+            <BackgroundSection themeId={sel} v={th.passive} onChange={(p) => upd((tm) => { tm.passive = { ...tm.passive, ...p }; })} onPool={onPool} />
           </div>
           <div className="theme-editor-preview"><TransitionPreview theme={th} settings={s} present={present} /></div>
         </div>

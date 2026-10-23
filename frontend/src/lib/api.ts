@@ -1,6 +1,6 @@
 import { trackPicker } from './picker';
 import type {
-  Announcement, BackgroundSet, BibleInfo, Book, Bootstrap, ChapterVerse, CountRow, MediaItem, Module, ScheduleItem, ScheduleState,
+  Announcement, BibleInfo, Book, Bootstrap, ChapterVerse, CountRow, MediaItem, Module, ScheduleItem, ScheduleState,
   RenderSlide, ThemeImage, UpdateStatus, SearchHit, Settings, Slide, SlideShow, SlideShowFull, Song, Songbook, Theme, ThemeInfo, Screen,
 } from './types';
 
@@ -111,14 +111,12 @@ export const api = {
   removeThemeImage: (id: number, kind: string, disp: number, img: number) => del<ThemeImage[]>(`/api/themes/${id}/images/${kind}/${disp}/${img}`),
 
   settings: () => get<Settings>('/api/settings'),
-  backgroundTheme: () => get<BackgroundSet>('/api/background-theme'),
-  saveBackground: (b: BackgroundSet) => put('/api/background-theme', b),
   updateStatus: (refresh = false) => get<UpdateStatus>(`/api/update${refresh ? '?refresh=1' : ''}`),
   installUpdate: (tag: string, restart: boolean) => post('/api/update/install', { tag, restart }),
   restartApp: () => post('/api/update/restart', {}),
   remoteInfo: () => get<{ listen: string; urls: string[] }>('/api/remote/info'),
   saveSettings: (s: Settings) => put('/api/settings', s),
-  patchApp: (p: Partial<{ splitters: Record<string, number>; language: string; uiTheme: string; livePreview: boolean; slideshowOrder: number[] }>) =>
+  patchApp: (p: Partial<{ splitters: Record<string, number>; language: string; uiTheme: string; livePreview: boolean; slideshowOrder: number[]; bibleButtonOrder: string[]; moduleSource: string; moduleUrls: Record<string, string> }>) =>
     patch('/api/settings/app', p),
 
   // live

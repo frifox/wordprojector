@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useStore } from './lib/store';
 import { api } from './lib/api';
 import { t } from './i18n';
-import { useShortcuts, useT, useData, cmdKey, isTyping, shortcutLabel, isMac } from './lib/hooks';
+import { useShortcuts, useT, useData, cmdKey, isTyping, isMac } from './lib/hooks';
+import { hotkeyMap, comboOf, comboLabel } from './lib/hotkeys';
 import { UIContext, usePanelRegistry, type SongHistoryItem, type TabName, type DialogSpec, tabIcons, Icon } from './lib/ui';
 import Menubar, { type MenuDef, type MenuEntry } from './components/Menubar';
 import Splitter from './components/Splitter';
@@ -84,35 +85,6 @@ export default function Operator() {
   const act = (tabName: TabName = tab) => registry.actions(tabName);
 
   // ---- schedule / file actions ----
-  const askSave = async (question: string): Promise<boolean> => {
-    if (schedule.saved || !schedule.file) return true;
-    const r = await confirmDialog({
-      title: t('Save Schedule?'),
-      message: question,
-      buttons: [
-        { label: t('Yes'), value: 'yes', primary: true },
-        { label: t('No'), value: 'no' },
-        { label: t('Cancel'), value: 'cancel' },
-      ],
-    });
-    if (r === 'cancel') return false;
-    if (r === 'yes') await saveSchedule(false);
-    return true;
-  };
-  const newSchedule = async () => {
-    if (!(await askSave(t('Do you want to save current schedule before creating a new schedule?')))) return;
-    await api.scheduleNew();
-  };
-  const openSchedule = async () => {
-    if (!(await askSave(t('Do you want to save current schedule before opening a new schedule?')))) return;
-    if (boot.desktop) {
-      await api.scheduleOpen().catch((e) => confirmDialog({ title: t('Error'), message: String(e.message || e), buttons: [{ label: t('OK'), value: 'ok', primary: true }] }));
-    } else {
-      const { pickFiles } = await import('./lib/files');
-      const paths = await pickFiles(false, t('Open SoftProjector schedule:'), [{ name: t('SoftProjector schedule file (*.spsc)'), pattern: '*.spsc' }], false);
-      if (paths[0]) await api.scheduleOpen(paths[0]).catch((e) => confirmDialog({ title: t('Error'), message: String(e.message || e), buttons: [{ label: t('OK'), value: 'ok', primary: true }] }));
-    }
-  };
   const saveSchedule = async (as: boolean) => {
     const r = await api.scheduleSave(as).catch((e) => {
       confirmDialog({ title: t('Error'), message: String(e.message || e), buttons: [{ label: t('OK'), value: 'ok', primary: true }] });
@@ -143,18 +115,12 @@ export default function Operator() {
     else if (boot.desktop) api.quit();
     else window.close();
   };
-  const printSchedule = () => {
-    const name = schedule.file ? schedule.file.split(/[\\/]/).pop()!.replace(/\.spsc$/i, '') : '';
-    let s = name ? `${t('SoftProject Schedule: ')}${name}\n\n` : '';
-    s += schedule.items.map((it) => `${it.type}: ${it.name}`).join('\n');
-    openDialog({ kind: 'print', title: t('Print Schedule'), text: s, fontSize: 11 });
-  };
 
   // ---- edit actions (context sensitive) ----
   const editLabels: Record<TabName, { n?: string; e?: string; c?: string; d?: string; ni?: string; ei?: string; ci?: string; di?: string }> = {
-    bible: { d: t('&Clear Bible History List').replace('&', ''), di: 'bibleHistoryDelete.png' },
+    bible: {},
     songs: { n: t('New Song...'), e: t('Edit Song...'), c: t('Copy Song...'), d: t('Delete Song'), ni: 'song_new.png', ei: 'song_edit.png', ci: 'song_copy.png', di: 'song_delete.png' },
-    pictures: { n: t('New Slide Show...'), e: t('Edit Slide Show...'), d: t('Delete Slide Show'), ni: 'slideshow_new.png', ei: 'slideshow_edit.png', di: 'slideshow_delete.png' },
+    pictures: {},
     media: { n: t('Add Media Files...'), d: t('Remove Media Files'), ni: 'video_add.png', di: 'video_remove.png' },
     announce: { n: t('New Announcement...'), e: t('Edit Announcement...'), c: t('Copy Announcement...'), d: t('Delete Announcement'), ni: 'announce_new.png', ei: 'announce_edit.png', ci: 'announce_copy.png', di: 'announce_delete.png' },
   };
@@ -172,44 +138,48 @@ export default function Operator() {
   };
 
   // ---- shortcuts ----
+  const keys = hotkeyMap(settings.app.hotkeys);
   useShortcuts((e) => {
     if (dialog) return false;
     const typing = isTyping(e);
     const cmd = cmdKey(e);
     const k = e.key;
-    if (k === 'F4') { api.show(); return true; }
+    const combo = comboOf(e);
+    // a plain key (a letter, Del, ...) belongs to the focused text field while one is being typed in
+    const plain = !!combo && !/^(Mod|Alt|Ctrl|Meta)\+|^F\d+$|^Escape$|^Shift\+Escape$|^Page(Up|Down)$/.test(combo);
+    const is = (id: string) => !!combo && keys[id] === combo && !(typing && plain);
     // Esc pauses; pressed again it turns the presentation off and clears the live list (decided by the engine)
-    if (k === 'Escape' && !e.shiftKey) {
+    if (is('pause')) {
       // the second Esc stops the presentation (see Engine.Escape); the cursor then goes back to the tab's browser
       const stops = !(displaysOn && live.type && !live.cleared);
       api.escape().then(() => { if (stops) act()?.focusBrowser?.(); });
       return true;
     }
-    if (k === 'Escape' && e.shiftKey) { api.pause(); return true; }
+    if (is('pauseOnly')) { api.pause(); return true; }
     // Del turns the presentation off and clears the live list, unless the focused control uses the key itself (text fields)
-    if (!typing && !cmd && !e.altKey && !e.shiftKey) {
-      const inList = !!(e.target as HTMLElement | null)?.closest?.('.list, .table');
-      // the Backspace key (the "delete" key on Mac laptops) also edits the Bible filters, so lists keep it
-      if (k === 'Delete' || (k === 'Backspace' && !inList)) { api.stop().then(() => act()?.focusBrowser?.()); return true; }
-    }
-    if (k === 'F5') {
-      // in multi-verse mode F5 first applies a pending selection from the live list
+    // the Backspace key (the "delete" key on Mac laptops) also does it, but lists keep it: it edits the Bible filters
+    const inList = !!(e.target as HTMLElement | null)?.closest?.('.list, .table');
+    if (is('stop') || (keys.stop === 'Delete' && combo === 'Backspace' && !typing && !inList)) { api.stop().then(() => act()?.focusBrowser?.()); return true; }
+    if (is('play')) {
+      // in multi-verse mode Play first applies a pending selection from the live list
       const ev = { handled: false };
       window.dispatchEvent(new CustomEvent('wp-live-update', { detail: ev }));
       if (ev.handled) return true;
-      // F5 is Play; with a verse or song focused in a browser list it pushes that item instead
+      // with a verse or song focused in a browser list it pushes that item instead
       const inBrowserList = !!(e.target as HTMLElement | null)?.closest?.('.tabpage .list, .tabpage .table');
       if (inBrowserList && act()?.goLive) act()?.goLive?.();
       else api.show();
       return true;
     }
-    if (k === 'F6') { setTab('bible'); setTimeout(() => act('bible')?.focusBook?.(), 0); return true; }
-    if (k === 'F7') { setTab('songs'); setTimeout(() => act('songs')?.focusNumber?.(), 0); return true; }
-    if (k === 'F8') { setTab('pictures'); return true; }
-    if (k === 'F9') { setTab('bible'); setTimeout(() => act('bible')?.focusSearch?.(), 0); return true; }
-    if (k === 'F2') { act()?.addToSchedule?.(); return true; }
-    if (k === 'PageDown') { api.next(); return true; }
-    if (k === 'PageUp') { api.prev(); return true; }
+    if (is('tabBible')) { setTab('bible'); setTimeout(() => act('bible')?.focusBook?.(), 0); return true; }
+    if (is('tabSongs')) { setTab('songs'); setTimeout(() => act('songs')?.focusNumber?.(), 0); return true; }
+    if (is('tabSlides')) { setTab('pictures'); return true; }
+    if (is('next')) { api.next(); return true; }
+    if (is('prev')) { api.prev(); return true; }
+    if (is('removeItem') || (keys.removeItem === 'Mod+Delete' && combo === 'Mod+Backspace')) { act()?.remove?.(); return true; }
+    if (is('settings')) { openDialog({ kind: 'settings' }); return true; }
+    if (is('print')) { if (canPrint) act()?.print?.(); return true; }
+    if (is('exit')) { quit(); return true; }
     if (!typing && (k === 'Delete' || k === 'Backspace') && !cmd) {
       const target = e.target as HTMLElement;
       if (target && target.closest && target.closest('.schedule-area')) {
@@ -217,28 +187,6 @@ export default function Operator() {
         return true;
       }
       return false;
-    }
-    if (cmd && !e.shiftKey) {
-      switch (k.toLowerCase()) {
-        case 'n': act()?.newItem?.(); return true;
-        case 'e': act()?.edit?.(); return true;
-        case 'c':
-          if (typing || window.getSelection()?.toString()) return false;
-          act()?.copy?.(); return true;
-        case 'delete': case 'backspace': act()?.remove?.(); return true;
-        case 't': case ',': openDialog({ kind: 'settings' }); return true;
-        case 'm': openDialog({ kind: 'manage' }); return true;
-        case 's': saveSchedule(false); return true;
-        case 'o': openSchedule(); return true;
-        case 'p': if (canPrint) act()?.print?.(); return true;
-        case 'q': quit(); return true;
-      }
-    }
-    if (cmd && e.shiftKey) {
-      switch (k.toLowerCase()) {
-        case 'n': newSchedule(); return true;
-        case 'p': printSchedule(); return true;
-      }
     }
     if (!typing && !cmd) {
       const target = e.target as HTMLElement;
@@ -257,26 +205,26 @@ export default function Operator() {
   const newRelease = !!update?.newer && !settings.app.autoInstallUpdates;
 
   // ---- menus ----
-  const mi = (label: string, onClick: () => void, shortcut?: string, extra?: Partial<MenuEntry>): MenuEntry => ({ label, onClick, shortcut: shortcut ? shortcutLabel(shortcut) : undefined, ...extra });
+  const mi = (label: string, onClick: () => void, shortcut?: string, extra?: Partial<MenuEntry>): MenuEntry => ({ label: label.replace(/(\.{3}|…)$/, ''), onClick, shortcut: shortcut || undefined, ...extra });
   const sep: MenuEntry = { separator: true };
   const menus: MenuDef[] = [
     {
       title: t('File'),
       items: [
-        mi(t('Exit'), quit, 'Ctrl+Q', { icon: 'base-22x22-actions-application-exit.png' }),
+        mi(t('Exit'), quit, comboLabel(keys.exit), { icon: 'base-22x22-actions-application-exit.png' }),
       ],
     },
     {
       title: t('Edit'),
       items: [
-        ...(el.n ? [mi(el.n, () => act()?.newItem?.(), 'Ctrl+N', { icon: el.ni })] : []),
-        ...(el.e ? [mi(el.e, () => act()?.edit?.(), 'Ctrl+E', { icon: el.ei })] : []),
-        ...(el.c ? [mi(el.c, () => act()?.copy?.(), 'Ctrl+C', { icon: el.ci })] : []),
-        ...(el.d ? [mi(el.d, () => act()?.remove?.(), 'Ctrl+Del', { icon: el.di })] : []),
-        sep,
-        mi(t('Books...'), () => openDialog({ kind: 'manage' }), 'Ctrl+M', { icon: 'database.png' }),
+        ...(el.n ? [mi(el.n, () => act()?.newItem?.(), undefined, { icon: el.ni })] : []),
+        ...(el.e ? [mi(el.e, () => act()?.edit?.(), undefined, { icon: el.ei })] : []),
+        ...(el.c ? [mi(el.c, () => act()?.copy?.(), undefined, { icon: el.ci })] : []),
+        ...(el.d ? [mi(el.d, () => act()?.remove?.(), comboLabel(keys.removeItem), { icon: el.di })] : []),
+        ...(el.n || el.e || el.c || el.d ? [sep] : []),
+        mi(t('Books...'), () => openDialog({ kind: 'manage' }), undefined, { icon: 'database.png' }),
         mi(t('Theme Editor...'), () => openDialog({ kind: 'themeEditor' }), undefined, { icon: 'typography.png' }),
-        mi(t('Settings...'), () => openDialog({ kind: 'settings' }), 'Ctrl+,', { icon: 'settings.png' }),
+        mi(t('Settings...'), () => openDialog({ kind: 'settings' }), comboLabel(keys.settings), { icon: 'settings.png' }),
       ],
     },
     {
@@ -285,7 +233,7 @@ export default function Operator() {
       badge: newRelease ? t('New Release Available') : undefined,
       items: [
         ...(newRelease ? [mi(t('New Release Available'), () => openDialog({ kind: 'settings', page: 'updates' })), sep] : []),
-        mi(t('About'), () => openDialog({ kind: 'about' })),
+        mi(t('About'), () => openDialog({ kind: 'about' }), undefined, { icon: 'help.png' }),
       ],
     },
   ];

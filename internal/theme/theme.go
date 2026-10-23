@@ -41,13 +41,14 @@ type Text struct {
 	ScaleH        int     `json:"scaleH"` // width of the characters, percent of normal
 }
 
-// Passive is the idle screen configuration of one display (Settings > Background; not part of a theme).
+// Passive is the picture shown on the display screens when nothing is projected. Every theme has its own, with its
+// own pool of pictures (Images, AddImage...).
 type Passive struct {
-	BackgroundFit  int    `json:"backgroundFit"` // 0 scale (stretch), 1 fill (cover), 2 fit (contain)
-	UseBackground  bool   `json:"useBackground"`
-	BackgroundName string `json:"backgroundName"`
-	HasBackground  bool   `json:"hasBackground"`
-	UseDisp1       bool   `json:"useDisp1"`
+	// BackgroundFit: 0 scale (stretch), 1 fill (cover), 2 fit (contain)
+	BackgroundFit int  `json:"backgroundFit"`
+	UseBackground bool `json:"useBackground"`
+	// ImageID is the picture of the pool that is used (0: none).
+	ImageID int64 `json:"imageId"`
 }
 
 // Bible is the bible slide configuration.
@@ -98,13 +99,8 @@ type Theme struct {
 	BackgroundColor string `json:"backgroundColor"`
 	Bible           Bible  `json:"bible"`
 	Song            Song   `json:"song"`
-}
-
-// BackgroundSet is the picture shown on the display screens when nothing is projected (Settings > Background).
-// It belongs to the program, not to a theme.
-type BackgroundSet struct {
-	ID      int64             `json:"id"`
-	Passive [Displays]Passive `json:"passive"`
+	// Passive is the picture of the idle screen.
+	Passive Passive `json:"passive"`
 }
 
 func defaultText(size float64) Text {
@@ -132,7 +128,7 @@ type Repo struct {
 }
 
 func (r *Repo) List() ([]Info, error) {
-	rows, err := r.DB.Query("SELECT id, name FROM Themes WHERE COALESCE(comment, '') <> ? ORDER BY id", BackgroundMarker)
+	rows, err := r.DB.Query("SELECT id, name FROM Themes ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -156,9 +152,9 @@ func (r *Repo) List() ([]Info, error) {
 func (r *Repo) Load(id int64) (Theme, error) {
 	t := Default()
 	var n sql.NullString
-	err := r.DB.QueryRow("SELECT id, name FROM Themes WHERE id = ? AND COALESCE(comment, '') <> ?", id, BackgroundMarker).Scan(&t.ID, &n)
+	err := r.DB.QueryRow("SELECT id, name FROM Themes WHERE id = ?", id).Scan(&t.ID, &n)
 	if err != nil {
-		err = r.DB.QueryRow("SELECT id, name FROM Themes WHERE COALESCE(comment, '') <> ? ORDER BY id LIMIT 1", BackgroundMarker).Scan(&t.ID, &n)
+		err = r.DB.QueryRow("SELECT id, name FROM Themes ORDER BY id LIMIT 1").Scan(&t.ID, &n)
 		if err != nil {
 			id, err := r.Insert(t)
 			if err != nil {
@@ -176,36 +172,10 @@ func (r *Repo) Load(id int64) (Theme, error) {
 	}
 	r.loadBible(t.ID, 1, &t.Bible)
 	r.loadSong(t.ID, 1, &t.Song)
+	r.loadPassive(t.ID, &t.Passive)
 	// the text effects are one setting for both (older themes could differ)
 	t.Song.UseShadow, t.Song.UseBlurShadow = t.Bible.UseShadow, t.Bible.UseBlurShadow
 	return t, nil
-}
-
-// LoadBackground reads the settings of the passive screen's background.
-func (r *Repo) LoadBackground(id int64) BackgroundSet {
-	b := BackgroundSet{ID: id}
-	for d := 1; d <= Displays; d++ {
-		b.Passive[d-1] = Passive{UseDisp1: d > 1}
-		r.loadPassive(id, d, &b.Passive[d-1])
-	}
-	return b
-}
-
-// SaveBackground saves the settings of the passive screen's background (the picture itself is kept).
-func (r *Repo) SaveBackground(b BackgroundSet) error {
-	return r.DB.Tx(func(tx *sql.Tx) error {
-		for d := 1; d <= Displays; d++ {
-			p := b.Passive[d-1]
-			if err := upsert(tx, "ThemePassive", b.ID, d); err != nil {
-				return err
-			}
-			if _, err := tx.Exec("UPDATE ThemePassive SET use_background=?, background_name=?, use_disp_1=?, image_scale=? WHERE theme_id=? AND disp=?",
-				p.UseBackground, p.BackgroundName, p.UseDisp1, p.BackgroundFit, b.ID, d); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
 }
 
 // colorOrBlack keeps a "#rrggbb" color and makes anything else black.
@@ -230,21 +200,23 @@ func fontOf(s sql.NullString, def qt.Font) qt.Font {
 	return def
 }
 
-func (r *Repo) loadPassive(id int64, d int, p *Passive) {
-	var useBack, useDisp1 any
-	var name sql.NullString
-	var hasBack any
+func (r *Repo) loadPassive(id int64, p *Passive) {
+	var useBack any
 	var fit int
-	err := r.DB.QueryRow("SELECT use_background, background_name, (background IS NOT NULL AND length(background)>0), use_disp_1, image_scale FROM ThemePassive WHERE theme_id = ? AND disp = ?", id, d).
-		Scan(&useBack, &name, &hasBack, &useDisp1, &fit)
-	if err != nil {
-		return
+	if r.DB.QueryRow("SELECT use_background, image_scale FROM ThemePassive WHERE theme_id = ? AND disp = 1", id).Scan(&useBack, &fit) == nil {
+		p.BackgroundFit = fit
+		p.UseBackground = qt.ParseBool(useBack)
 	}
-	p.BackgroundFit = fit
-	p.UseBackground = qt.ParseBool(useBack)
-	p.BackgroundName = name.String
-	p.HasBackground = qt.ParseBool(hasBack)
-	p.UseDisp1 = qt.ParseBool(useDisp1)
+	p.ImageID = r.selectedImage(id)
+}
+
+// selectedImage is the picture of the idle screen the theme uses now (0: none).
+func (r *Repo) selectedImage(id int64) int64 {
+	var img int64
+	if r.DB.QueryRow("SELECT id FROM ThemeBackgrounds WHERE theme_id = ? AND kind = 'passive' AND disp = 1 AND selected <> 0 ORDER BY id LIMIT 1", id).Scan(&img) != nil {
+		return 0
+	}
+	return img
 }
 
 func (r *Repo) loadBible(id int64, d int, b *Bible) {
@@ -363,6 +335,9 @@ func writeRows(tx *sql.Tx, id int64, t Theme) error {
 				return err
 			}
 		}
+		if _, err := tx.Exec("UPDATE ThemePassive SET use_background=?, image_scale=?, use_disp_1=? WHERE theme_id=? AND disp=?", t.Passive.UseBackground && t.Passive.ImageID > 0, t.Passive.BackgroundFit, d > 1, id, d); err != nil {
+			return err
+		}
 		if _, err := tx.Exec(`UPDATE ThemeBible SET use_shadow=?, use_blur_shadow=?, text_font=?, text_color=?, text_align_v=?, text_align_h=?,
 			caption_font=?, caption_color=?, caption_align=?, caption_position=?, screen_use=?, screen_position=?, use_disp_1=?,
 			add_background_color_to_text=?, text_rec_background_color=?, bk_padding=?, bk_opacity=?, text_scale_h=? WHERE theme_id=? AND disp=?`,
@@ -390,8 +365,25 @@ func writeRows(tx *sql.Tx, id int64, t Theme) error {
 	return nil
 }
 
+// applyPassiveImage makes the picture of the idle screen the one wanted (0: no picture), if it is not already.
+func (r *Repo) applyPassiveImage(id, want int64) error {
+	if r.selectedImage(id) == want {
+		return nil
+	}
+	if want > 0 {
+		return r.SelectImage(id, "passive", 1, want)
+	}
+	if _, err := r.DB.Exec("UPDATE ThemeBackgrounds SET selected = 0 WHERE theme_id = ? AND kind = 'passive' AND disp = 1", id); err != nil {
+		return err
+	}
+	return r.SetBackground(id, "passive", 1, "", nil)
+}
+
 // Update saves a theme.
 func (r *Repo) Update(t Theme) error {
+	if err := r.applyPassiveImage(t.ID, t.Passive.ImageID); err != nil {
+		return err
+	}
 	return r.DB.Tx(func(tx *sql.Tx) error {
 		if _, err := tx.Exec("UPDATE Themes SET name = ?, bg_color = ? WHERE id = ?", t.Name, colorOrBlack(t.BackgroundColor), t.ID); err != nil {
 			return err

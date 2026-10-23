@@ -8,10 +8,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -47,6 +50,9 @@ type asset struct {
 type Updater struct {
 	// Repo is "owner/name" on GitHub; API is the base address of its API (changed in tests).
 	Repo, API string
+	// Web is the address of the repository's web pages (the release feed is read from there when the API will not
+	// answer).
+	Web string
 	// Current is the version of the running program (a date like "2026-10-22", or "dev" for an unnumbered build).
 	Current string
 	Client  *http.Client
@@ -65,6 +71,10 @@ func New(current string) *Updater {
 		u.Repo = v
 	}
 	u.API = "https://api.github.com/repos/" + u.Repo
+	u.Web = "https://github.com/" + u.Repo
+	if v := os.Getenv("WORDPROJECTOR_UPDATE_WEB"); v != "" {
+		u.Web = strings.TrimRight(v, "/")
+	}
 	if v := os.Getenv("WORDPROJECTOR_UPDATE_API"); v != "" {
 		u.API = strings.TrimRight(v, "/")
 	}
@@ -120,6 +130,15 @@ func (u *Updater) List(ctx context.Context) ([]Release, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusTooManyRequests {
+		// without a login GitHub allows 60 questions an hour for each internet address; the feed of releases on the web
+		// page has no such limit
+		list, ferr := u.listFromFeed(ctx)
+		if ferr == nil {
+			return list, nil
+		}
+		return nil, fmt.Errorf("GitHub's limit on questions was reached%s; try again later", resetNote(resp))
+	}
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("GitHub answered %s", resp.Status)
 	}
@@ -327,4 +346,67 @@ func (p *progressReader) Read(b []byte) (int, error) {
 		}
 	}
 	return n, err
+}
+
+// resetNote says when GitHub will answer again, when it said so (" (in about 12 minutes)").
+func resetNote(resp *http.Response) string {
+	if v := resp.Header.Get("X-RateLimit-Reset"); v != "" {
+		if sec, err := strconv.ParseInt(v, 10, 64); err == nil {
+			if d := time.Until(time.Unix(sec, 0)); d > 0 {
+				return fmt.Sprintf(" (in about %d minutes)", int(d.Minutes())+1)
+			}
+		}
+	}
+	return ""
+}
+
+type feed struct {
+	Entries []struct {
+		Title   string `xml:"title"`
+		Updated string `xml:"updated"`
+		Link    struct {
+			Href string `xml:"href,attr"`
+		} `xml:"link"`
+		Content string `xml:"content"`
+	} `xml:"entry"`
+}
+
+var tagText = regexp.MustCompile(`<[^>]*>`)
+
+// listFromFeed reads the latest releases from the Atom feed of the repository. The feed holds no list of files: the
+// files of a release are named by rule (and a release that has none fails to download, which is then reported).
+func (u *Updater) listFromFeed(ctx context.Context) ([]Release, error) {
+	resp, err := u.get(ctx, u.Web+"/releases.atom")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var f feed
+	if err := xml.NewDecoder(io.LimitReader(resp.Body, 8<<20)).Decode(&f); err != nil {
+		return nil, err
+	}
+	suf := u.suffix()
+	out := []Release{}
+	for _, e := range f.Entries {
+		tag := path.Base(e.Link.Href)
+		if tag == "" || tag == "." || tag == "/" {
+			continue
+		}
+		rel := Release{Tag: tag, Name: strings.TrimSpace(e.Title), URL: e.Link.Href}
+		if len(e.Updated) >= 10 {
+			rel.Published = e.Updated[:10]
+		}
+		rel.Notes = strings.TrimSpace(html.UnescapeString(tagText.ReplaceAllString(e.Content, " ")))
+		if suf != "" {
+			base := u.Web + "/releases/download/" + tag + "/"
+			rel.asset = &asset{Name: "WordProjector-" + tag + suf, URL: base + "WordProjector-" + tag + suf}
+			rel.sums = &asset{Name: "checksums.txt", URL: base + "checksums.txt"}
+			rel.Installable = true
+		}
+		out = append(out, rel)
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("the feed lists no releases")
+	}
+	return out, nil
 }

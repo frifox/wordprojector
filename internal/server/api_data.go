@@ -649,25 +649,6 @@ func (s *Server) routes() {
 		}
 		writeJSON(w, list)
 	}
-	m.HandleFunc("GET /api/background-theme", func(w http.ResponseWriter, r *http.Request) {
-		var t theme.BackgroundSet
-		s.Engine.Locked(func() { t = s.Engine.Background })
-		writeJSON(w, t)
-	})
-	m.HandleFunc("PUT /api/background-theme", func(w http.ResponseWriter, r *http.Request) {
-		var in theme.BackgroundSet
-		if err := readJSON(r, &in); err != nil {
-			writeErr(w, 400, err)
-			return
-		}
-		s.Engine.Locked(func() { in.ID = s.Engine.Background.ID })
-		if err := s.Engine.Themes.SaveBackground(in); err != nil {
-			writeErr(w, 500, err)
-			return
-		}
-		s.reloadTheme()
-		ok(w)
-	})
 	m.HandleFunc("GET /api/themes/{id}/images/{kind}/{disp}", func(w http.ResponseWriter, r *http.Request) {
 		id, _ := pathID(r, "id")
 		disp, _ := strconv.Atoi(r.PathValue("disp"))
@@ -766,9 +747,18 @@ func (s *Server) routes() {
 		}
 		var saveErr error
 		s.Engine.Locked(func() {
-			if in.App.Splitters == nil {
-				in.App.Splitters = s.Engine.Settings.App.Splitters
-			}
+			// the Settings window holds a copy from when it was opened: what other parts of the program save by themselves
+			// (the layout, the language, the order of buttons, what Books last used) must not be put back to the old copy
+			cur := s.Engine.Settings.App
+			in.App.Window = cur.Window
+			in.App.LivePreview = cur.LivePreview
+			in.App.Splitters = cur.Splitters
+			in.App.Language = cur.Language
+			in.Main.UITranslation = s.Engine.Settings.Main.UITranslation
+			in.App.SlideshowOrder = cur.SlideshowOrder
+			in.App.BibleButtonOrder = cur.BibleButtonOrder
+			in.App.ModuleSource = cur.ModuleSource
+			in.App.ModuleURLs = cur.ModuleURLs
 			s.Engine.Settings = in
 			saveErr = settings.Save(s.Engine.DB, in)
 		})
@@ -788,6 +778,9 @@ func (s *Server) routes() {
 			UITheme   *string            `json:"uiTheme"`
 			LivePreview *bool            `json:"livePreview"`
 			SlideshowOrder *[]int        `json:"slideshowOrder"`
+			BibleButtonOrder *[]string   `json:"bibleButtonOrder"`
+			ModuleSource *string         `json:"moduleSource"`
+			ModuleURLs map[string]string `json:"moduleUrls"`
 		}
 		if err := readJSON(r, &in); err != nil {
 			writeErr(w, 400, err)
@@ -809,6 +802,20 @@ func (s *Server) routes() {
 			}
 			if in.SlideshowOrder != nil {
 				s.Engine.Settings.App.SlideshowOrder = *in.SlideshowOrder
+			}
+			if in.BibleButtonOrder != nil {
+				s.Engine.Settings.App.BibleButtonOrder = *in.BibleButtonOrder
+			}
+			if in.ModuleSource != nil {
+				s.Engine.Settings.App.ModuleSource = *in.ModuleSource
+			}
+			if len(in.ModuleURLs) > 0 {
+				if s.Engine.Settings.App.ModuleURLs == nil {
+					s.Engine.Settings.App.ModuleURLs = map[string]string{}
+				}
+				for k, v := range in.ModuleURLs {
+					s.Engine.Settings.App.ModuleURLs[k] = v
+				}
 			}
 			_ = settings.Save(s.Engine.DB, s.Engine.Settings)
 		})
@@ -861,7 +868,6 @@ func (s *Server) reloadTheme() {
 		t, err = s.Engine.Themes.Load(s.Engine.Settings.General.CurrentThemeID)
 		if err == nil {
 			s.Engine.Theme = t
-			s.Engine.Background = s.Engine.Themes.LoadBackground(s.Engine.Background.ID)
 			if s.Engine.Settings.General.CurrentThemeID != t.ID {
 				s.Engine.Settings.General.CurrentThemeID = t.ID
 				_ = settings.Save(s.Engine.DB, s.Engine.Settings)

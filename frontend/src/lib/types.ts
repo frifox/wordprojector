@@ -143,11 +143,10 @@ export interface TextSettings {
 
 export interface PassiveSettings {
   /** how the image fills the screen: 0 scale (stretch), 1 fill (cover), 2 fit (contain) */
-  backgroundFit?: number;
+  backgroundFit: number;
   useBackground: boolean;
-  backgroundName: string;
-  hasBackground: boolean;
-  useDisp1: boolean;
+  /** the picture of the theme's own pool shown when nothing is projected, 0 for none */
+  imageId: number;
 }
 
 export interface BibleSettings extends TextSettings {
@@ -197,12 +196,8 @@ export interface Theme extends ThemeInfo {
   backgroundColor: string;
   bible: BibleSettings;
   song: SongSettings;
-}
-
-/** What the display screens show when nothing is projected (Settings > Background). */
-export interface BackgroundSet {
-  id: number;
-  passive: PassiveSettings[];
+  /** the picture shown when nothing is projected */
+  passive: PassiveSettings;
 }
 
 export interface DisplayControls {
@@ -251,9 +246,16 @@ export interface AppSettings {
   defaultSongbook?: number;
   slideshowOrder?: number[];
   /** the look for a newer release at start is on unless this is set */
+  /** the order of the Bible version buttons (Bible ids) */
+  bibleButtonOrder?: string[];
+  /** what Books > Import from Cloud last used */
+  moduleSource?: string;
+  moduleUrls?: Record<string, string>;
   skipUpdateCheck?: boolean;
   /** a newer release is installed by itself (used from the next start) */
   autoInstallUpdates?: boolean;
+  /** the keys the user chose for the program's actions (see lib/hotkeys.ts) */
+  hotkeys?: Record<string, string>;
 }
 
 export interface UpdateRelease {

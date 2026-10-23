@@ -24,13 +24,7 @@ export default function BibleVersionButtons({ large = false }: { large?: boolean
   };
   // Buttons keep their position when toggled; dragging rearranges the buttons, and the
   // translations on the display follow the button order.
-  const [btnOrder, setBtnOrder] = useState<string[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem('wp-bible-btn-order') || '[]');
-    } catch {
-      return [];
-    }
-  });
+  const [btnOrder, setBtnOrder] = useState<string[]>(() => settings.app.bibleButtonOrder ?? []);
   const orderedBibles = useMemo(() => {
     const ids = bibles.map((b) => String(b.id));
     const base = btnOrder.filter((id) => ids.includes(id));
@@ -45,11 +39,7 @@ export default function BibleVersionButtons({ large = false }: { large?: boolean
   const orderIds = orderedBibles.map((b) => String(b.id));
   const persistOrder = (o: string[]) => {
     setBtnOrder(o);
-    try {
-      localStorage.setItem('wp-bible-btn-order', JSON.stringify(o));
-    } catch {
-      /* ignore */
-    }
+    api.patchApp({ bibleButtonOrder: o }).then(() => reloadSettings()).catch(() => {});
   };
   const toggleVersion = (id: string) => {
     const lit = new Set(enabled.includes(id) ? enabled.filter((v) => v !== id) : [...enabled, id]);
