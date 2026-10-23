@@ -111,7 +111,6 @@ func New(d *db.DB) (*Engine, error) {
 		_ = settings.Save(d, e.Settings)
 	}
 	if bid, err := e.Themes.EnsureBackground(t.ID); err == nil {
-		_ = e.Themes.Tidy()
 		e.Background = e.Themes.LoadBackground(bid)
 	}
 	e.ensureBibleDefaults()

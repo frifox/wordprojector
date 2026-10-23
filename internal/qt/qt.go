@@ -1,6 +1,6 @@
 // Package qt converts between the Qt-specific encodings used by the original
 // SoftProjector database (QFont::toString, QColor::rgb, QVariant booleans)
-// and plain Go values, so the same spData.sqlite stays readable by both apps.
+// and plain Go values, so the same database stays readable by both apps.
 package qt
 
 import (

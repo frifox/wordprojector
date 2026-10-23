@@ -108,7 +108,7 @@ export default function UpdatesPage({ s, setS }: { s: Settings; setS: (f: (x: Se
             {st.canRestart && <button onClick={restartNow}>{t('Restart Now')}</button>}
           </div>
         )}
-        {!st.supported && <div className="muted" style={{ marginTop: 6 }}>{t('Updating from here is not possible: {why}', { why: st.reason || '' })}</div>}
+        {!st.supported && <div className="muted" style={{ marginTop: 6 }}>{t('Updating from here is not possible: {why}', { why: t(st.reason || '') })}</div>}
         <div className="row" style={{ margin: '6px 0' }}>
           <button onClick={check} disabled={checking || installing}>{checking ? t('Checking…') : t('Check Now')}</button>
           {checkedAt && <span className="muted">{t('Checked {when}', { when: checkedAt })}</span>}
@@ -135,7 +135,7 @@ export default function UpdatesPage({ s, setS }: { s: Settings; setS: (f: (x: Se
           <span className="grow" />
           {installing && <span className="muted">{st.progress || t('Installing…')}</span>}
           {rel && !sameVersion(rel.tag, st.current) && (
-            <button className="primary" disabled={!canInstall} onClick={install} title={!st.supported ? st.reason : !rel.installable ? t('This release has no download for this computer') : undefined}>
+            <button className="primary" disabled={!canInstall} onClick={install} title={!st.supported ? t(st.reason || '') : !rel.installable ? t('This release has no download for this computer') : undefined}>
               {t('Install Now')}
             </button>
           )}

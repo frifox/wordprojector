@@ -44,9 +44,6 @@ func parseFlags() runtimeOpts {
 	if v := os.Getenv("WORDPROJECTOR_LISTEN"); v != "" && o.listen == "" {
 		o.listen = v
 	}
-	if v := os.Getenv("WORDSPROJECTOR_LISTEN"); v != "" && o.listen == "" { // the old name of the variable
-		o.listen = v
-	}
 	return o
 }
 
@@ -84,18 +81,12 @@ func boot(o runtimeOpts, d desktop.Desktop) (*server.Server, *live.Engine, strin
 		log.Printf("slide show folder: %v (pictures stay in the database)", err)
 	} else {
 		engine.Slides.Dir = pics
-		if err := engine.Slides.Migrate(); err != nil {
-			log.Printf("moving slide show pictures: %v", err)
-		}
 	}
 	// background images of the themes (Settings > Background) go to ~/Documents/WordProjector/Backgrounds
 	if bgs, err := appdata.DocumentsDir("Backgrounds"); err != nil {
 		log.Printf("backgrounds folder: %v (images stay in the database)", err)
 	} else {
 		engine.Themes.Dir = bgs
-		if err := engine.Themes.Migrate(); err != nil {
-			log.Printf("moving background images: %v", err)
-		}
 	}
 	srv := server.New(engine, d, dir)
 	return srv, engine, dir, nil

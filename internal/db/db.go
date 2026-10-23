@@ -1,5 +1,5 @@
 // Package db opens the SoftProjector-compatible SQLite database and creates
-// the schema (identical to spData.sqlite version 2 of the original program).
+// the schema (identical to the spData.sqlite version 2 of the original program).
 package db
 
 import (
@@ -43,7 +43,7 @@ type DB struct {
 	mu   sync.Mutex
 }
 
-// Open opens (or creates) the database at dir/spData.sqlite.
+// Open opens (or creates) the database file at path.
 func Open(path string) (*DB, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return nil, err
@@ -137,19 +137,14 @@ func (d *DB) addColumns() error {
 		}
 	}
 	// the color behind the text: the space above and below the text, and how opaque it is (percent); and how wide the
-	// characters are (percent of normal; the older text_shrink_h column held the percent they were narrower)
+	// characters are (percent of normal)
 	for _, table := range []string{"ThemeBible", "ThemeSong"} {
-		for _, col := range []struct{ name, def string }{{"bk_padding", "10"}, {"bk_opacity", "100"}, {"text_shrink_h", "0"}, {"text_scale_h", "100"}} {
+		for _, col := range []struct{ name, def string }{{"bk_padding", "10"}, {"bk_opacity", "100"}, {"text_scale_h", "100"}} {
 			if n, err := d.colCount(table, col.name); err != nil {
 				return err
 			} else if n == 0 {
 				if _, err := d.Exec("ALTER TABLE " + table + " ADD COLUMN " + col.name + " INTEGER NOT NULL DEFAULT " + col.def); err != nil {
 					return fmt.Errorf("schema: %w", err)
-				}
-				if col.name == "text_scale_h" {
-					if _, err := d.Exec("UPDATE " + table + " SET text_scale_h = 100 - text_shrink_h"); err != nil {
-						return fmt.Errorf("schema: %w", err)
-					}
 				}
 			}
 		}

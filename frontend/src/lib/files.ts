@@ -1,5 +1,6 @@
 import { api, uploadFiles } from './api';
 import { trackPicker, pickerActive } from './picker';
+import { t } from '../i18n';
 
 export interface FileFilter {
   name: string;
@@ -103,8 +104,9 @@ export function downloadURL(url: string) {
   a.remove();
 }
 
-export const imageFilter: FileFilter = { name: 'Images', pattern: '*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.webp;*.tif;*.tiff' };
+// the names are looked up when the dialog opens, in the language chosen then
+export const imageFilter: FileFilter = { get name() { return t('Images'); }, pattern: '*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.webp;*.tif;*.tiff' };
 export const mediaFilter: FileFilter = {
-  name: 'Media Files',
+  get name() { return t('Media Files'); },
   pattern: '*.mp3;*.aac;*.ogg;*.oga;*.wma;*.wav;*.m4a;*.flac;*.wmv;*.avi;*.mkv;*.flv;*.mp4;*.mpg;*.mpeg;*.mov;*.ogv;*.ts;*.webm;*.m4v',
 };

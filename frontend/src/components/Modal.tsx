@@ -97,7 +97,7 @@ export function confirmDialog(opts: {
 }
 
 export function alertDialog(title: string, message: string, info?: string): Promise<void> {
-  return confirmDialog({ title, message, info, buttons: [{ label: 'OK', value: 'ok', primary: true }] }).then(() => undefined);
+  return confirmDialog({ title, message, info, buttons: [{ label: t('OK'), value: 'ok', primary: true }] }).then(() => undefined);
 }
 
 export function promptDialog(opts: { title: string; message: string; options: string[]; initial?: number }): Promise<string | null> {

@@ -5,7 +5,6 @@ package theme
 import (
 	"database/sql"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"wordprojector/internal/db"
@@ -490,8 +489,7 @@ func darkTheme() Theme {
 	return t
 }
 
-// EnsureBuiltins makes sure the Light and Dark themes exist. A lone untouched
-// "Default" theme (what older versions created) becomes the Dark theme.
+// EnsureBuiltins makes sure the Light and Dark themes exist.
 func (r *Repo) EnsureBuiltins() error {
 	list, err := r.List()
 	if err != nil {
@@ -500,18 +498,6 @@ func (r *Repo) EnsureBuiltins() error {
 	have := map[string]bool{}
 	for _, t := range list {
 		have[t.Name] = true
-	}
-	if !have[DarkName] {
-		for _, t := range list {
-			var c sql.NullString
-			if t.Name == "Default" && r.DB.QueryRow("SELECT comment FROM Themes WHERE id = ?", t.ID).Scan(&c) == nil && c.String == "Default SoftProjector Theme" {
-				if err := r.Rename(t.ID, DarkName); err != nil {
-					return err
-				}
-				have[DarkName] = true
-				break
-			}
-		}
 	}
 	if !have[DarkName] {
 		if _, err := r.Insert(darkTheme()); err != nil {
@@ -524,36 +510,4 @@ func (r *Repo) EnsureBuiltins() error {
 		}
 	}
 	return nil
-}
-
-// Tidy removes what themes no longer use: pictures behind Bible, song and announcement text, and the idle screen
-// pictures of themes (the idle screen belongs to the program). A theme's background is a color; the Light theme's
-// white picture becomes the color white.
-func (r *Repo) Tidy() error {
-	bg := r.DB.QueryRow
-	var keep int64
-	_ = bg("SELECT COALESCE((SELECT id FROM Themes WHERE comment = ? LIMIT 1), 0)", BackgroundMarker).Scan(&keep)
-	files := r.imageFiles("kind <> 'passive' OR theme_id <> ?", keep)
-	err := r.DB.Tx(func(tx *sql.Tx) error {
-		for _, q := range []string{
-			"DELETE FROM ThemeBackgrounds WHERE kind <> 'passive' OR theme_id <> " + strconv.FormatInt(keep, 10),
-			"UPDATE ThemeBible SET use_background = 0, background_name = '', background = x''",
-			"UPDATE ThemeSong SET use_background = 0, background_name = '', background = x''",
-			"UPDATE ThemeAnnounce SET use_background = 0, background_name = '', background = x''",
-			"UPDATE ThemePassive SET use_background = 0, background_name = '', background = x'' WHERE theme_id <> " + strconv.FormatInt(keep, 10),
-			"UPDATE Themes SET bg_color = '#ffffff' WHERE name = '" + LightName + "' AND COALESCE(bg_color, '#000000') = '#000000' AND COALESCE(comment, '') <> '" + BackgroundMarker + "'",
-			"UPDATE Themes SET comment = '' WHERE COALESCE(comment, '') <> '" + BackgroundMarker + "'",
-		} {
-			if _, err := tx.Exec(q); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err == nil {
-		for _, f := range files {
-			r.removeFile(f)
-		}
-	}
-	return err
 }

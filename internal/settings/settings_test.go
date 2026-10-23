@@ -8,7 +8,7 @@ import (
 )
 
 func TestRoundTrip(t *testing.T) {
-	d, err := db.Open(filepath.Join(t.TempDir(), "spData.sqlite"))
+	d, err := db.Open(filepath.Join(t.TempDir(), "wordprojector.sqlite"))
 	if err != nil {
 		t.Fatal(err)
 	}

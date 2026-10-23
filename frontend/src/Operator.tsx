@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useStore } from './lib/store';
 import { api } from './lib/api';
-import { t, languages, setLanguage, getLanguage } from './i18n';
+import { t } from './i18n';
 import { useShortcuts, useT, useData, cmdKey, isTyping, shortcutLabel, isMac } from './lib/hooks';
 import { UIContext, usePanelRegistry, type SongHistoryItem, type TabName, type DialogSpec, tabIcons, Icon } from './lib/ui';
 import Menubar, { type MenuDef, type MenuEntry } from './components/Menubar';
@@ -106,26 +106,22 @@ export default function Operator() {
   const openSchedule = async () => {
     if (!(await askSave(t('Do you want to save current schedule before opening a new schedule?')))) return;
     if (boot.desktop) {
-      await api.scheduleOpen().catch((e) => confirmDialog({ title: t('Error'), message: String(e.message || e), buttons: [{ label: 'OK', value: 'ok', primary: true }] }));
+      await api.scheduleOpen().catch((e) => confirmDialog({ title: t('Error'), message: String(e.message || e), buttons: [{ label: t('OK'), value: 'ok', primary: true }] }));
     } else {
       const { pickFiles } = await import('./lib/files');
-      const paths = await pickFiles(false, t('Open SoftProjector schedule:'), [{ name: 'SoftProjector schedule file (*.spsc)', pattern: '*.spsc' }], false);
-      if (paths[0]) await api.scheduleOpen(paths[0]).catch((e) => confirmDialog({ title: t('Error'), message: String(e.message || e), buttons: [{ label: 'OK', value: 'ok', primary: true }] }));
+      const paths = await pickFiles(false, t('Open SoftProjector schedule:'), [{ name: t('SoftProjector schedule file (*.spsc)'), pattern: '*.spsc' }], false);
+      if (paths[0]) await api.scheduleOpen(paths[0]).catch((e) => confirmDialog({ title: t('Error'), message: String(e.message || e), buttons: [{ label: t('OK'), value: 'ok', primary: true }] }));
     }
   };
   const saveSchedule = async (as: boolean) => {
     const r = await api.scheduleSave(as).catch((e) => {
-      confirmDialog({ title: t('Error'), message: String(e.message || e), buttons: [{ label: 'OK', value: 'ok', primary: true }] });
+      confirmDialog({ title: t('Error'), message: String(e.message || e), buttons: [{ label: t('OK'), value: 'ok', primary: true }] });
       return null;
     });
     if (r && r.download) {
       const { downloadURL } = await import('./lib/files');
       downloadURL(r.download);
     }
-  };
-  const closeSchedule = async () => {
-    if (!(await askSave(t('Do you want to save current schedule before closing it?')))) return;
-    await api.scheduleClose();
   };
   const quit = async () => {
     if (!schedule.saved && schedule.file) {
@@ -267,15 +263,6 @@ export default function Operator() {
     {
       title: t('File'),
       items: [
-        mi(t('New Schedule'), newSchedule, 'Ctrl+Shift+N', { icon: 'scheduleNew.png' }),
-        mi(t('Open Schedule'), openSchedule, 'Ctrl+O', { icon: 'scheduleOpen.png' }),
-        mi(t('Save Schedule'), () => saveSchedule(false), 'Ctrl+S', { icon: 'scheduleSave.png' }),
-        mi(t('Save Schedule As'), () => saveSchedule(true)),
-        mi(t('Close Schedule'), closeSchedule),
-        sep,
-        mi(t('Print'), () => act()?.print?.(), 'Ctrl+P', { icon: 'print.png', disabled: !canPrint }),
-        mi(t('Print Schedule'), printSchedule, 'Ctrl+Shift+P'),
-        sep,
         mi(t('Exit'), quit, 'Ctrl+Q', { icon: 'base-22x22-actions-application-exit.png' }),
       ],
     },
@@ -293,10 +280,6 @@ export default function Operator() {
       ],
     },
     {
-      title: t('Language'),
-      items: languages.map((l) => mi(l.name, () => changeLanguage(l.code), undefined, { checked: getLanguage() === l.code, icon: l.flag })),
-    },
-    {
       title: t('Help'),
       // a new release waits to be installed: a mark on the menu and an item that opens Settings > Updates
       badge: newRelease ? t('New Release Available') : undefined,
@@ -306,11 +289,6 @@ export default function Operator() {
       ],
     },
   ];
-
-  const changeLanguage = (code: string) => {
-    setLanguage(code);
-    api.patchApp({ language: code }).catch(() => {});
-  };
 
   const tabs: { id: TabName; label: string }[] = ([
     { id: 'bible', label: t('Bible') },
@@ -365,12 +343,6 @@ export default function Operator() {
               <LivePanel />
             </div>
           </Splitter>
-        </div>
-        <div className="status">
-          <span>{store.connected ? '●' : '○'} {store.connected ? t('Connected') : t('Reconnecting…')}</span>
-          <span>{live.singleScreen ? t('Single screen') : t('Displays: {n}', { n: live.displays.length })}</span>
-          {!boot.desktop && <span>{t('Projector page')}: {location.origin}/projector/1</span>}
-          <span style={{ marginLeft: 'auto' }}>Word Projector {boot.version}</span>
         </div>
       </div>
       {dialog?.kind === 'settings' && <SettingsDialog initialPage={dialog.page} onClose={() => setDialog(null)} />}

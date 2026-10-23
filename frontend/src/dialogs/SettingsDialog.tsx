@@ -2,17 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import Modal, { alertDialog, useDiscardGuard } from '../components/Modal';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
-import { t } from '../i18n';
+import { useT } from '../lib/hooks';
+import { t, languages, setLanguage, getLanguage } from '../i18n';
 import type { BackgroundSet, BibleSettings, PassiveSettings, Settings, SongSettings, TextSettings, Screen, ThemeImage } from '../lib/types';
 import { FontPicker, FontStyleButtons, ColorField, Select, AlignGroup, IconChoice, POSITION_ICONS } from '../components/Pickers';
 import { pickFiles, imageFilter } from '../lib/files';
-import PresentationPage, { UserInterfaceSection } from './PresentationPage';
-import ThemeEditor from './ThemeEditor';
+import { UserInterfaceSection } from './UiSections';
 import UpdatesPage from './UpdatesPage';
 import ScreenMap from '../components/ScreenMap';
 import { CountdownDisc } from '../projector/SlideView';
 
-type Page = 'general' | 'presentation' | 'passive' | 'remote' | 'updates';
+type Page = 'general' | 'display' | 'passive' | 'remote' | 'updates';
 
 export default function SettingsDialog({ onClose, initialPage }: { onClose: () => void; initialPage?: Page }) {
   const store = useStore();
@@ -62,19 +62,16 @@ export default function SettingsDialog({ onClose, initialPage }: { onClose: () =
     await apply();
     onClose();
   };
-  const changeTheme = (id: number) => setGeneral({ currentThemeId: id });
-
   const multi = screens.length !== 1;
   const activeDisplays = [1, ...(multi && s.general.displayScreen2 >= 0 ? [2] : []), ...(multi && s.general.displayScreen3 >= 0 ? [3] : []), ...(multi && s.general.displayScreen4 >= 0 ? [4] : [])];
 
   const pages: { id: Page; label: string }[] = [
-    { id: 'general', label: t('General') }, { id: 'passive', label: t('Background') }, { id: 'presentation', label: t('Presentation') },
+    { id: 'general', label: t('General') }, { id: 'display', label: t('Display') }, { id: 'passive', label: t('Background') },
     { id: 'remote', label: t('Remote') },
     { id: 'updates', label: t('Updates') },
   ];
   const section: Page = page;
-  const [editorOpen, setEditorOpen] = useState(false); // the full window theme editor
-  const headers: Record<Page, string> = { general: t('General Word Projector Settings'), presentation: t('Presentation Settings'), passive: t('Background Settings'), remote: t('Remote Access Settings'), updates: t('Updates') };
+  const headers: Record<Page, string> = { general: t('General Word Projector Settings'), display: t('Display Settings'), passive: t('Background Settings'), remote: t('Remote Access Settings'), updates: t('Updates') };
 
   return (
     <Modal title={t('Word Projector - Settings')} onClose={requestClose} width={900} height="90vh"
@@ -87,8 +84,8 @@ export default function SettingsDialog({ onClose, initialPage }: { onClose: () =
         <div className="col grow" style={{ overflow: 'auto', minHeight: 0, paddingRight: 4 }}>
           <div style={{ fontWeight: 600, fontSize: 14, borderBottom: '1px solid var(--border-light)', paddingBottom: 4 }}>{headers[page]}</div>
           {section === 'passive' && <div className="muted">{t('These settings are displayed when nothing is to be projected.')}</div>}
-          {page === 'general' && <GeneralPage s={s} setS={setS} setGeneral={setGeneral} screens={screens} applyNow={(next) => { setS(next); return apply(next); }} />}
-          {page === 'presentation' && <PresentationPage s={s} onOpenEditor={() => setEditorOpen(true)} themes={store.themes} currentId={s.general.currentThemeId} changeTheme={changeTheme} applyNow={(next) => { setS(next); return apply(next); }} />}
+          {page === 'general' && <GeneralPage s={s} setS={setS} applyNow={(next) => { setS(next); return apply(next); }} />}
+          {page === 'display' && <DisplayPage s={s} setS={setS} setGeneral={setGeneral} screens={screens} />}
           {page === 'passive' && bg && activeDisplays.map((d) => (
             <DisplaySection key={d} d={d} useDisp1={d > 1 ? bg.passive[d - 1].useDisp1 : false} setUseDisp1={(v) => updBg((tm) => { tm.passive[d - 1].useDisp1 = v; })}>
               <BackgroundRow themeId={bg.id} kind="passive" d={d} v={bg.passive[d - 1]} onChange={(p) => updBg((tm) => { tm.passive[d - 1] = { ...tm.passive[d - 1], ...p }; })} />
@@ -97,11 +94,6 @@ export default function SettingsDialog({ onClose, initialPage }: { onClose: () =
           {page === 'remote' && <RemotePage s={s} setS={setS} />}
           {page === 'updates' && <UpdatesPage s={s} setS={setS} />}
         </div>
-        {editorOpen && (
-          <ThemeEditor s={s} setS={setS} currentId={s.general.currentThemeId}
-            onUse={(id) => { const next = { ...s, general: { ...s.general, currentThemeId: id } }; setS(next); apply(next); }}
-            onClose={() => { setEditorOpen(false); store.reloadSettings(); }} />
-        )}
         </div>
       </div>
     </Modal>
@@ -119,7 +111,34 @@ export function DisplaySection({ d, useDisp1, setUseDisp1, children }: { d: numb
   );
 }
 
-function GeneralPage({ s, setS, setGeneral, screens, applyNow }: { s: Settings; setS: (f: (x: Settings) => Settings) => void; setGeneral: (p: Partial<Settings['general']>) => void; screens: Screen[]; applyNow: (next: Settings) => Promise<void> }) {
+/** Settings > General: the look of the program and its language. */
+function GeneralPage({ s, setS, applyNow }: { s: Settings; setS: (f: (x: Settings) => Settings) => void; applyNow: (next: Settings) => Promise<void> }) {
+  useT(); // the language buttons follow the chosen language
+  const chosen = getLanguage();
+  const pick = (code: string) => {
+    setLanguage(code);
+    api.patchApp({ language: code }).catch(() => {});
+  };
+  return (
+    <div className="col" style={{ gap: 4 }}>
+      <UserInterfaceSection s={s} setS={setS} applyNow={applyNow} />
+      <fieldset className="group">
+        <legend>{t('Language')}</legend>
+        <div className="row" style={{ gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          {languages.map((l) => (
+            <button key={l.code} className={`ui-thumb ${chosen === l.code ? 'on' : ''}`} onClick={() => pick(l.code)} aria-pressed={chosen === l.code}>
+              <img src={`/icons/${l.flag}`} alt="" width={32} height={32} draggable={false} />
+              <span>{l.name}</span>
+            </button>
+          ))}
+        </div>
+      </fieldset>
+    </div>
+  );
+}
+
+/** Settings > Display: which screens show the presentation, and the on-screen controls. */
+function DisplayPage({ s, setS, setGeneral, screens }: { s: Settings; setS: (f: (x: Settings) => Settings) => void; setGeneral: (p: Partial<Settings['general']>) => void; screens: Screen[] }) {
   const g = s.general;
   const { boot: bootInfo } = useStore();
   const [testing, setTesting] = useState(false);
@@ -139,7 +158,6 @@ function GeneralPage({ s, setS, setGeneral, screens, applyNow }: { s: Settings; 
   const mapScreens = screens.length ? screens : browserScreens;
   return (
     <div className="col" style={{ gap: 4 }}>
-      <UserInterfaceSection s={s} setS={setS} applyNow={applyNow} />
       <fieldset className="group">
         <legend>{t('Display Screens')}</legend>
         {!bootInfo.desktop && <div className="muted" style={{ marginBottom: 6 }}>{t('Running without native windows: open /projector/1, /projector/2 … in a browser on each display screen.')}</div>}

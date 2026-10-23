@@ -10,23 +10,8 @@ import (
 
 const AppName = "WordProjector"
 
-// legacyName is what the program was called before; its folders are renamed to the current name on first use.
-const legacyName = "WordsProjector"
-
-// adopt renames the folder of the old name to the new one when only the old one exists, so the data follows the rename.
-func adopt(oldDir, newDir string) {
-	if _, err := os.Stat(newDir); err == nil {
-		return
-	}
-	if fi, err := os.Stat(oldDir); err != nil || !fi.IsDir() {
-		return
-	}
-	_ = os.Rename(oldDir, newDir)
-}
-
-// DBFileName is kept identical to the original application so that an
-// existing SoftProjector database can be dropped in unchanged.
-const DBFileName = "spData.sqlite"
+// DBFileName is the database file in the data folder.
+const DBFileName = "wordprojector.sqlite"
 
 var override string
 
@@ -38,16 +23,13 @@ func SetDir(dir string) { override = dir }
 // Resolution order:
 //  0. a directory set with SetDir
 //  1. WORDPROJECTOR_DATA environment variable
-//  2. a spData.sqlite next to the executable (portable mode)
+//  2. a database file next to the executable (portable mode)
 //  3. the per-user application data directory for the platform
 func Dir() (string, error) {
 	if override != "" {
 		return override, os.MkdirAll(override, 0o755)
 	}
 	if v := os.Getenv("WORDPROJECTOR_DATA"); v != "" {
-		return v, os.MkdirAll(v, 0o755)
-	}
-	if v := os.Getenv("WORDSPROJECTOR_DATA"); v != "" { // the old name of the variable
 		return v, os.MkdirAll(v, 0o755)
 	}
 	if exe, err := os.Executable(); err == nil {
@@ -75,7 +57,6 @@ func Dir() (string, error) {
 		}
 	}
 	d := filepath.Join(base, AppName)
-	adopt(filepath.Join(base, legacyName), d)
 	return d, os.MkdirAll(d, 0o755)
 }
 
@@ -96,7 +77,6 @@ func DocumentsDir(sub string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	adopt(filepath.Join(home, "Documents", legacyName), filepath.Join(home, "Documents", AppName))
 	dir := filepath.Join(home, "Documents", AppName, sub)
 	return dir, os.MkdirAll(dir, 0o755)
 }

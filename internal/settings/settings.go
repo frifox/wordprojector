@@ -234,7 +234,7 @@ func Load(d *db.DB) (Settings, error) {
 			}
 			s.Slides.BoundType = atoi(kv["boundType"], 2)
 			s.Slides.BoundWidth = atoi(kv["boundWidth"], 1280)
-		case "wordsprojector": // the key the app settings were stored under; kept so that saved settings are still found
+		case "wordprojector":
 			var a App
 			if err := json.Unmarshal([]byte(sets.String), &a); err == nil {
 				if a.Splitters == nil {
@@ -289,7 +289,7 @@ func Save(d *db.DB, s Settings) error {
 	p := s.Slides
 	pset := fmt.Sprintf("expandSmall = %s\nfitType = %d\nresize = %s\nboundType = %d\nboundWidth = %d", b2s(p.ExpandSmall), p.FitType, b2s(p.Resize), p.BoundType, p.BoundWidth)
 	appJSON, _ := json.Marshal(s.App)
-	rowsToWrite := map[string]string{"general": gset, "spMain": spset, "bible1": bsets[0], "bible2": bsets[1], "bible3": bsets[2], "bible4": bsets[3], "pix": pset, "wordsprojector": string(appJSON)}
+	rowsToWrite := map[string]string{"general": gset, "spMain": spset, "bible1": bsets[0], "bible2": bsets[1], "bible3": bsets[2], "bible4": bsets[3], "pix": pset, "wordprojector": string(appJSON)}
 	return d.Tx(func(tx *sql.Tx) error {
 		for t, v := range rowsToWrite {
 			res, err := tx.Exec("UPDATE Settings SET sets = ? WHERE type = ?", v, t)

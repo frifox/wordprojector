@@ -17,7 +17,7 @@ func TestSongbookSQLiteRoundTrip(t *testing.T) {
 	if _, err := os.Stat(src); err != nil {
 		t.Skip("sample not present")
 	}
-	d, err := db.Open(filepath.Join(t.TempDir(), "spData.sqlite"))
+	d, err := db.Open(filepath.Join(t.TempDir(), "wordprojector.sqlite"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +80,7 @@ func TestBibleRoundTrip(t *testing.T) {
 	if _, err := os.Stat(src); err != nil {
 		t.Skip("sample not present")
 	}
-	d, err := db.Open(filepath.Join(t.TempDir(), "spData.sqlite"))
+	d, err := db.Open(filepath.Join(t.TempDir(), "wordprojector.sqlite"))
 	if err != nil {
 		t.Fatal(err)
 	}

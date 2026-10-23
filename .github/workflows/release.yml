@@ -122,4 +122,4 @@ jobs:
             * **Windows**: unzip and run `WordProjector.exe` (Windows 10/11 ship the required WebView2 runtime).
             * **Linux**: untar and run `./WordProjector` (needs the system WebKitGTK 4.1 library, present on most desktops: `libwebkit2gtk-4.1-0`).
 
-            Your data (database, downloaded modules) is stored in the per-user application data folder. An existing SoftProjector `spData.sqlite` can be copied there or placed next to the executable.
+            Your data (database, downloaded modules) is stored in the per-user application data folder. For a portable copy put `wordprojector.sqlite` next to the executable.

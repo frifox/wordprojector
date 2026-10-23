@@ -6,7 +6,7 @@ import type { RenderSlide, Settings, Theme, ThemeInfo } from '../lib/types';
 import NameInfoDialog from './NameInfoDialog';
 import { ColorField } from '../components/Pickers';
 import SlidePreview, { TransitionPreview, type PresentControl } from './SlidePreview';
-import { TransitionSection } from './PresentationPage';
+import { TransitionSection } from './UiSections';
 import { BiblePage, SongPage } from './SettingsDialog';
 
 type Tab = 'general' | 'bible' | 'songs';

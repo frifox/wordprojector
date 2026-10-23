@@ -63,46 +63,6 @@ func (r *Repo) insertImage(id int64, kind string, disp int, name string, jpeg []
 	return imgID, nil
 }
 
-// Migrate moves list pictures still stored in the database to files.
-func (r *Repo) Migrate() error {
-	if r.Dir == "" {
-		return nil
-	}
-	rows, err := r.DB.Query("SELECT id FROM ThemeBackgrounds WHERE COALESCE(file,'') = '' AND data IS NOT NULL")
-	if err != nil {
-		return err
-	}
-	var ids []int64
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			rows.Close()
-			return err
-		}
-		ids = append(ids, id)
-	}
-	rows.Close()
-	if len(ids) > 0 {
-		if err := os.MkdirAll(r.Dir, 0o755); err != nil {
-			return err
-		}
-	}
-	for _, id := range ids {
-		var data []byte
-		if err := r.DB.QueryRow("SELECT data FROM ThemeBackgrounds WHERE id=?", id).Scan(&data); err != nil {
-			return err
-		}
-		file := strconv.FormatInt(id, 10)
-		if err := os.WriteFile(r.filePath(file), data, 0o644); err != nil {
-			return err
-		}
-		if _, err := r.DB.Exec("UPDATE ThemeBackgrounds SET file=?, data=NULL WHERE id=?", file, id); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // ImageData returns the JPEG of one list entry.
 func (r *Repo) ImageData(imgID int64) ([]byte, error) {
 	var data []byte
