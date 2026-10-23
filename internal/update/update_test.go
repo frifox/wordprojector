@@ -186,6 +186,23 @@ func TestInstallWindowsKeepsOldUntilCleanup(t *testing.T) {
 	}
 }
 
+// Windows on ARM gets its own build, not the x64 one.
+func TestWindowsArmGetsItsOwnBuild(t *testing.T) {
+	dir := t.TempDir()
+	exe := filepath.Join(dir, "WordProjector.exe")
+	os.WriteFile(exe, []byte("old"), 0o755)
+	data := zipOf(map[string]string{"WordProjector.exe": "new-arm", "LICENSE.txt": "x"})
+	srv := fakeGitHub(t, "WordProjector-2026-01-02-windows-arm64.zip", data, true)
+	u := newUpdater(srv, "windows", "arm64", exe)
+	rel, _ := listed(t, u)
+	if err := u.Install(context.Background(), rel, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := os.ReadFile(exe); string(got) != "new-arm" {
+		t.Fatalf("exe %q", got)
+	}
+}
+
 func TestBadChecksumLeavesProgramAlone(t *testing.T) {
 	dir := t.TempDir()
 	exe := filepath.Join(dir, "WordProjector")

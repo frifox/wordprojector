@@ -570,7 +570,6 @@
 "Add...": "Ավելացնել...",
 "Added": "Ավելացված է",
 "An open source media projection program for churches:": "Բաց կոդով մեդիա պրոեկցիոն ծրագիր եկեղեցիների համար՝",
-"Bible, songs, slide shows.": "Աստվածաշունչ, երգեր, սլայդ շոուներ։",
 "Announce\n - Text of the announcement goes here\n\nSlide\n - Text of the announcement goes here\nYou can have both Announce or Slide as announcement block titles.": "Announce\n - Հայտարարության տեքստը գրվում է այստեղ\n\nSlide\n - Հայտարարության տեքստը գրվում է այստեղ\nՀայտարարության բլոկի վերնագիր կարող են լինել և՛ Announce, և՛ Slide։",
 "Announcements: {title}": "Հայտարարություններ՝ {title}",
 "Any Order": "Ցանկացած կարգով",
@@ -787,7 +786,6 @@
 "This action will permanently delete this theme": "Այս գործողությունը ընդմիշտ կհեռացնի այս թեման",
 "This is the browser version: it cannot open windows on other screens by itself. Open a display page in a browser window on each screen:": "Սա դիտարկիչի տարբերակն է. այն ինքնուրույն չի կարող պատուհաններ բացել այլ էկրաններին։ Բացեք էկրանի էջը դիտարկիչի պատուհանում՝ յուրաքանչյուր էկրանի համար՝",
 "This list contains songs that were sent to be shown": "Այս ցուցակը պարունակում է ցուցադրման ուղարկված երգերը",
-"This program is free software released under the GNU General Public License version 3.": "Այս ծրագիրը ազատ ծրագրային ապահովում է, որը թողարկվել է GNU General Public License-ի 3-րդ տարբերակով։",
 "This release has no download for this computer": "Այս թողարկումն այս համակարգչի համար ներբեռնում չունի",
 "Timed slides, every": "Ժամանակավորված սլայդներ, ամեն",
 "Total:": "Ընդամենը՝",
@@ -846,5 +844,11 @@
 "Search all songbooks, not only the selected one": "Որոնել բոլոր երգարաններում, ոչ միայն ընտրվածում",
 "Preview Display": "Նախադիտման պատուհան",
 "Show the preview above the live list": "Ցույց տալ նախադիտումը ուղիղ ցանկի վերևում",
-"Remove from History": "Հեռացնել պատմությունից"
+"Remove from History": "Հեռացնել պատմությունից",
+"Help and Support": "Օգնություն և աջակցություն",
+"Open the GitHub Page": "Բացել GitHub էջը",
+"Need help, found a bug or have an idea?": "Օգնության կարիք ունե՞ք, սխա՞լ եք գտել, թե՞ գաղափար ունեք։",
+"Ask on the project page on GitHub:": "Գրեք նախագծի GitHub էջում:",
+"Simple app to display Bible, songs, slide shows.": "Պարզ հավելված Աստվածաշունչը, երգերը, սլայդ շոուները ցուցադրելու համար։",
+"This program is free software released under the GNU GPL v3.": "Այս ծրագիրը ազատ ծրագրային ապահովում է, որը թողարկվել է GNU GPL v3-ով։"
 }

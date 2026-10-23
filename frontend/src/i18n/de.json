@@ -740,7 +740,6 @@
 "Add...": "Hinzufügen...",
 "Added": "Hinzugefügt",
 "An open source media projection program for churches:": "Ein freies Medienprojektionsprogramm für Gemeinden:",
-"Bible, songs, slide shows.": "Bibel, Lieder, Diashows.",
 "Announce\n - Text of the announcement goes here\n\nSlide\n - Text of the announcement goes here\nYou can have both Announce or Slide as announcement block titles.": "Announce\n - Text der Ankündigung steht hier\n\nSlide\n - Text der Ankündigung steht hier\nSie können sowohl Announce als auch Slide als Titel eines Ankündigungsblocks verwenden.",
 "Announcements: {title}": "Ankündigungen: {title}",
 "Any Order": "Beliebige Reihenfolge",
@@ -957,7 +956,6 @@
 "This action will permanently delete this theme": "Diese Aktion löscht dieses Design unwiderruflich",
 "This is the browser version: it cannot open windows on other screens by itself. Open a display page in a browser window on each screen:": "Dies ist die Browser-Version: Sie kann nicht selbst Fenster auf anderen Bildschirmen öffnen. Öffnen Sie auf jedem Bildschirm eine Anzeigeseite in einem Browserfenster:",
 "This list contains songs that were sent to be shown": "Diese Liste enthält Lieder, die zur Anzeige gesendet wurden",
-"This program is free software released under the GNU General Public License version 3.": "Dieses Programm ist freie Software, veröffentlicht unter der GNU General Public License Version 3.",
 "This release has no download for this computer": "Diese Version hat keinen Download für diesen Computer",
 "Timed slides, every": "Zeitgesteuerte Folien, alle",
 "Total:": "Gesamt:",
@@ -1015,5 +1013,11 @@
 "Search all songbooks, not only the selected one": "In allen Liederbüchern suchen, nicht nur im gewählten",
 "Preview Display": "Vorschau",
 "Show the preview above the live list": "Vorschau über der Live-Liste anzeigen",
-"Remove from History": "Aus dem Verlauf entfernen"
+"Remove from History": "Aus dem Verlauf entfernen",
+"Help and Support": "Hilfe und Support",
+"Open the GitHub Page": "GitHub-Seite öffnen",
+"Need help, found a bug or have an idea?": "Brauchen Sie Hilfe, haben einen Fehler gefunden oder eine Idee?",
+"Ask on the project page on GitHub:": "Fragen Sie auf der Projektseite bei GitHub:",
+"Simple app to display Bible, songs, slide shows.": "Einfache App zur Anzeige von Bibel, Liedern, Diashows.",
+"This program is free software released under the GNU GPL v3.": "Dieses Programm ist freie Software, veröffentlicht unter der GNU GPL v3."
 }

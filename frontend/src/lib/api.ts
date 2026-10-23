@@ -43,6 +43,7 @@ export const api = {
   fonts: () => get<string[]>('/api/fonts'),
   screens: () => get<Screen[]>('/api/screens'),
   quit: () => post('/api/app/quit'),
+  openURL: (url: string) => post('/api/open-url', { url }),
 
   songbooks: () => get<Songbook[]>('/api/songbooks'),
   addSongbook: (name: string, info: string) => post<{ id: number }>('/api/songbooks', { name, info }),

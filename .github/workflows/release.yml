@@ -25,6 +25,10 @@ jobs:
             goos: windows
             goarch: amd64
             name: windows-x64
+          - os: windows-latest # the ARM build is cross-compiled here: the program needs no C compiler on Windows
+            goos: windows
+            goarch: arm64
+            name: windows-arm64
           - os: ubuntu-22.04
             goos: linux
             goarch: amd64
@@ -67,6 +71,9 @@ jobs:
       - name: Build (windows)
         if: matrix.goos == 'windows'
         shell: bash
+        env:
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
         run: |
           mkdir -p dist
           go build -ldflags "-s -w -H windowsgui -X main.version=${{ steps.ver.outputs.version }}" -o dist/WordProjector.exe ./cmd/wordprojector
@@ -119,7 +126,7 @@ jobs:
             Standalone builds. No installation or extra dependencies are required:
 
             * **macOS**: unzip and move `WordProjector.app` to Applications. The app is not notarized; on first start right-click → Open (or run `xattr -cr WordProjector.app`).
-            * **Windows**: unzip and run `WordProjector.exe` (Windows 10/11 ship the required WebView2 runtime).
+            * **Windows**: unzip and run `WordProjector.exe`, from the x64 or the arm64 archive to match your PC (Windows 10/11 ship the required WebView2 runtime).
             * **Linux**: untar and run `./WordProjector` (needs the system WebKitGTK 4.1 library, present on most desktops: `libwebkit2gtk-4.1-0`).
 
             Your data (database, downloaded modules) is stored in the per-user application data folder. For a portable copy put `wordprojector.sqlite` next to the executable.

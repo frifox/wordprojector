@@ -674,7 +674,6 @@
 "Add...": "Додати...",
 "Added": "Додано",
 "An open source media projection program for churches:": "Відкрита програма для медіапроєкції в церквах:",
-"Bible, songs, slide shows.": "Біблія, пісні, слайд-шоу.",
 "Announce\n - Text of the announcement goes here\n\nSlide\n - Text of the announcement goes here\nYou can have both Announce or Slide as announcement block titles.": "Announce\n - Текст оголошення тут\n\nSlide\n - Текст оголошення тут\nЗаголовками блоків оголошення можуть бути і Announce, і Slide.",
 "Announcements: {title}": "Оголошення: {title}",
 "Any Order": "У будь-якому порядку",
@@ -892,7 +891,6 @@
 "This action will permanently delete this theme": "Ця дія остаточно видалить цю тему",
 "This is the browser version: it cannot open windows on other screens by itself. Open a display page in a browser window on each screen:": "Це версія для браузера: вона не може самостійно відкривати вікна на інших екранах. Відкрийте сторінку показу у вікні браузера на кожному екрані:",
 "This list contains songs that were sent to be shown": "Цей список містить пісні, надіслані для показу",
-"This program is free software released under the GNU General Public License version 3.": "Ця програма є вільним програмним забезпеченням, що поширюється за ліцензією GNU General Public License версії 3.",
 "This release has no download for this computer": "Цей випуск не має завантаження для цього комп’ютера",
 "Timed slides, every": "Слайди за таймером, кожні",
 "Total:": "Усього:",
@@ -950,5 +948,11 @@
 "Search all songbooks, not only the selected one": "Шукати в усіх збірниках, а не лише у вибраному",
 "Preview Display": "Вікно попереднього перегляду",
 "Show the preview above the live list": "Показувати попередній перегляд над списком показу",
-"Remove from History": "Видалити з історії"
+"Remove from History": "Видалити з історії",
+"Help and Support": "Допомога та підтримка",
+"Open the GitHub Page": "Відкрити сторінку на GitHub",
+"Need help, found a bug or have an idea?": "Потрібна допомога, знайшли помилку чи маєте ідею?",
+"Ask on the project page on GitHub:": "Напишіть на сторінці проєкту на GitHub:",
+"Simple app to display Bible, songs, slide shows.": "Простий застосунок для показу Біблії, пісень, слайд-шоу.",
+"This program is free software released under the GNU GPL v3.": "Ця програма є вільним програмним забезпеченням, що поширюється за ліцензією GNU GPL v3."
 }

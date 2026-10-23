@@ -750,7 +750,6 @@
 "Add...": "Přidat...",
 "Added": "Přidáno",
 "An open source media projection program for churches:": "Program s otevřeným zdrojovým kódem pro promítání médií v církvích:",
-"Bible, songs, slide shows.": "Bible, písně, prezentace.",
 "Announce\n - Text of the announcement goes here\n\nSlide\n - Text of the announcement goes here\nYou can have both Announce or Slide as announcement block titles.": "Announce\n - Text oznámení patří sem\n\nSlide\n - Text oznámení patří sem\nJako názvy bloků oznámení můžete použít Announce i Slide.",
 "Announcements: {title}": "Oznámení: {title}",
 "Any Order": "Libovolné pořadí",
@@ -967,7 +966,6 @@
 "This action will permanently delete this theme": "Tato akce trvale smaže tento motiv",
 "This is the browser version: it cannot open windows on other screens by itself. Open a display page in a browser window on each screen:": "Toto je verze pro prohlížeč: sama nemůže otevírat okna na jiných obrazovkách. Otevřete stránku zobrazení v okně prohlížeče na každé obrazovce:",
 "This list contains songs that were sent to be shown": "Tento seznam obsahuje písně, které byly odeslány k zobrazení",
-"This program is free software released under the GNU General Public License version 3.": "Tento program je svobodný software vydaný pod licencí GNU General Public License verze 3.",
 "This release has no download for this computer": "Toto vydání nemá ke stažení nic pro tento počítač",
 "Timed slides, every": "Časované snímky, každé",
 "Total:": "Celkem:",
@@ -1025,5 +1023,11 @@
 "Search all songbooks, not only the selected one": "Hledat ve všech zpěvnících, ne jen ve vybraném",
 "Preview Display": "Náhled",
 "Show the preview above the live list": "Zobrazit náhled nad živým seznamem",
-"Remove from History": "Odebrat z historie"
+"Remove from History": "Odebrat z historie",
+"Help and Support": "Nápověda a podpora",
+"Open the GitHub Page": "Otevřít stránku na GitHubu",
+"Need help, found a bug or have an idea?": "Potřebujete pomoc, našli jste chybu nebo máte nápad?",
+"Ask on the project page on GitHub:": "Zeptejte se na stránce projektu na GitHubu:",
+"Simple app to display Bible, songs, slide shows.": "Jednoduchá aplikace k zobrazení Bible, písní, prezentací.",
+"This program is free software released under the GNU GPL v3.": "Tento program je svobodný software vydaný pod licencí GNU GPL v3."
 }

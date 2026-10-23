@@ -62,6 +62,7 @@ func New(e *live.Engine, d desktop.Desktop, dataDir string) *Server {
 	s.mux = http.NewServeMux()
 	s.routes()
 	s.updateRoutes()
+	s.openRoutes()
 	return s
 }
 

@@ -14,7 +14,7 @@ Nothing else needs installing.
 | System  | File                                | Start it |
 |---------|-------------------------------------|----------|
 | macOS   | `WordProjector-<version>-macos-arm64.zip` (Apple Silicon), `-macos-x64.zip` (Intel) | Move the app to Applications. It is not notarized: right-click → Open the first time. |
-| Windows | `WordProjector-<version>-windows-x64.zip` | Run `WordProjector.exe`. |
+| Windows | `WordProjector-<version>-windows-x64.zip` (Intel/AMD), `-windows-arm64.zip` (ARM) | Run `WordProjector.exe`. |
 | Linux   | `WordProjector-<version>-linux-x64.tar.gz` | Run `./WordProjector` (needs `libwebkit2gtk-4.1-0`). |
 
 After that you can update/downgrade or configure auto-upate in **Settings → Updates**.

@@ -96,6 +96,8 @@ func (u *Updater) suffix() string {
 		return "-macos-x64.zip"
 	case "windows/amd64":
 		return "-windows-x64.zip"
+	case "windows/arm64":
+		return "-windows-arm64.zip"
 	case "linux/amd64":
 		return "-linux-x64.tar.gz"
 	}
