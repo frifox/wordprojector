@@ -1,0 +1,110 @@
+import { api, uploadFiles } from './api';
+import { trackPicker, pickerActive } from './picker';
+
+export interface FileFilter {
+  name: string;
+  pattern: string; // "*.sps;*.xml"
+}
+
+/**
+ * Picks files using the native dialog in desktop mode, or a browser file
+ * input otherwise (the files are uploaded and server paths returned).
+ */
+export function pickFiles(desktop: boolean, title: string, filters: FileFilter[], multiple: boolean): Promise<string[]> {
+  if (pickerActive()) return Promise.resolve([]); // one dialog at a time
+  return trackPicker(pickFilesNow(desktop, title, filters, multiple));
+}
+
+async function pickFilesNow(desktop: boolean, title: string, filters: FileFilter[], multiple: boolean): Promise<string[]> {
+  if (desktop) {
+    try {
+      const r = await api.dialogOpen(title, filters, multiple);
+      return r.cancelled ? [] : r.paths;
+    } catch (e) {
+      if ((e as { status?: number }).status !== 501) throw e;
+    }
+  }
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = multiple;
+    const accept = filters
+      .flatMap((f) => f.pattern.split(';'))
+      .map((p) => p.trim().replace(/^\*/, ''))
+      .filter((p) => p && p !== '.*')
+      .join(',');
+    if (accept) input.accept = accept;
+    input.onchange = async () => {
+      if (!input.files || input.files.length === 0) return resolve([]);
+      try {
+        resolve(await uploadFiles(input.files));
+      } catch {
+        resolve([]);
+      }
+    };
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.addEventListener('cancel', () => resolve([]));
+    input.click();
+    setTimeout(() => input.remove(), 60000);
+  });
+}
+
+export interface FolderPick {
+  name: string; // folder name
+  dir?: string; // server side path (desktop)
+  paths?: string[]; // uploaded images (browser)
+}
+
+/** Picks a folder with the native dialog; in a browser the images of the chosen folder are uploaded. */
+export function pickFolder(desktop: boolean, title: string): Promise<FolderPick | null> {
+  if (pickerActive()) return Promise.resolve(null);
+  return trackPicker(pickFolderNow(desktop, title));
+}
+
+async function pickFolderNow(desktop: boolean, title: string): Promise<FolderPick | null> {
+  if (desktop) {
+    try {
+      const r = await api.dialogFolder(title);
+      return r.cancelled || !r.path ? null : { name: r.name || r.path, dir: r.path };
+    } catch (e) {
+      if ((e as { status?: number }).status !== 501) throw e;
+    }
+  }
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.setAttribute('webkitdirectory', '');
+    input.onchange = async () => {
+      const files = Array.from(input.files ?? []).filter((f) => /\.(jpe?g|png|gif|bmp|webp|tiff?)$/i.test(f.name) && !f.name.startsWith('.'));
+      const rel = (input.files?.[0] as (File & { webkitRelativePath?: string }) | undefined)?.webkitRelativePath ?? '';
+      const name = rel.split('/')[0] || '';
+      try {
+        resolve({ name, paths: files.length ? await uploadFiles(files) : [] });
+      } catch {
+        resolve(null);
+      }
+    };
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.addEventListener('cancel', () => resolve(null));
+    input.click();
+    setTimeout(() => input.remove(), 60000);
+  });
+}
+
+/** Triggers a browser download of a server side export (browser mode). */
+export function downloadURL(url: string) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+export const imageFilter: FileFilter = { name: 'Images', pattern: '*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.webp;*.tif;*.tiff' };
+export const mediaFilter: FileFilter = {
+  name: 'Media Files',
+  pattern: '*.mp3;*.aac;*.ogg;*.oga;*.wma;*.wav;*.m4a;*.flac;*.wmv;*.avi;*.mkv;*.flv;*.mp4;*.mpg;*.mpeg;*.mov;*.ogv;*.ts;*.webm;*.m4v',
+};

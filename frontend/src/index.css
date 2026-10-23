@@ -1,0 +1,1586 @@
+:root {
+  --bg: #ececec;
+  --panel: #f5f5f5;
+  --base: #ffffff;
+  --text: #1c1c1c;
+  --muted: #666;
+  --border: #b9b9b9;
+  --border-light: #d6d6d6;
+  --accent: #2f6fcf;
+  --accent-text: #fff;
+  --sel: #cfe0f7;
+  --sel-inactive: #dbe6f5; /* a selection that has no focus: a quieter blue than --sel */
+  --btn: linear-gradient(#fdfdfd, #e6e6e6);
+  --btn-hover: linear-gradient(#ffffff, #f0f0f0);
+  /* under the pointer in lists: a faint tint, well below the selection colour */
+  --row-hover: linear-gradient(#ffffff, #f0f0f0);
+  --btn-active: #d8d8d8;
+  --tab: #e4e4e4;
+  --tab-active: #f8f8f8;
+  --stanza-title: #fff176;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --radius: 4px;
+  --live-bg: #fafafa;
+  --highlight: #fff176;
+  --highlight-text: #1a1a1a;
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  --bg: #2b2b2b;
+  --panel: #333;
+  --base: #1e1e1e;
+  --text: #e4e4e4;
+  --muted: #a0a0a0;
+  --border: #555;
+  --border-light: #444;
+  --accent: #4a8ae0;
+  --sel: #2d4b73;
+  --sel-inactive: #27374c;
+  --btn: linear-gradient(#4a4a4a, #383838);
+  --btn-hover: linear-gradient(#555, #444);
+  --row-hover: linear-gradient(#272727, #313131);
+  --btn-active: #2e2e2e;
+  --tab: #3a3a3a;
+  --tab-active: #474747;
+  --stanza-title: #7a6a00;
+  --live-bg: #262626;
+  --highlight: #a68b00;
+  --highlight-text: #fff;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+input,
+textarea,
+select,
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+input[type='text'],
+input[type='number'],
+input[type='search'],
+textarea,
+select {
+  background: var(--base);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 3px 5px;
+  -webkit-user-select: text;
+  user-select: text;
+}
+input[type='text']:focus,
+input[type='number']:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+textarea {
+  resize: none;
+}
+button,
+.btn {
+  background: var(--btn);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px 10px;
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+button:hover:not(:disabled) {
+  background: var(--btn-hover);
+}
+button:active:not(:disabled) {
+  background: var(--btn-active);
+}
+button:disabled {
+  opacity: 0.45;
+}
+/* blue buttons share the raised look of the grey ones: light top fading to a darker bottom, a darker edge and a thin highlight */
+button.primary,
+button.ver-btn.on,
+.btn-group > button.on {
+  --blue-top: color-mix(in srgb, var(--accent) 78%, white);
+  --blue-bottom: color-mix(in srgb, var(--accent) 90%, black);
+  background: linear-gradient(var(--blue-top), var(--blue-bottom));
+  color: var(--accent-text);
+  border-color: color-mix(in srgb, var(--accent) 68%, black);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+button.primary:hover:not(:disabled),
+button.ver-btn.on:hover:not(:disabled),
+.btn-group > button.on:hover:not(:disabled) {
+  --blue-top: color-mix(in srgb, var(--accent) 62%, white);
+  --blue-bottom: color-mix(in srgb, var(--accent) 100%, white);
+  background: linear-gradient(var(--blue-top), var(--blue-bottom));
+}
+button.primary:active:not(:disabled),
+button.ver-btn.on:active:not(:disabled),
+.btn-group > button.on:active:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 82%, black);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+/* Go Live in the light interface: a lighter blue than the other blue buttons */
+:root:not([data-theme='dark']) button.primary.golive {
+  background: linear-gradient(#a7c8f5, #6fa3ea);
+  border-color: #5a8fd6;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+:root:not([data-theme='dark']) button.primary.golive:hover:not(:disabled) {
+  background: linear-gradient(#98bdf2, #5f97e6);
+}
+:root:not([data-theme='dark']) button.primary.golive:active:not(:disabled) {
+  background: #5f97e6;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+button.small {
+  padding: 1px 6px;
+  font-size: 12px;
+}
+button.icon-btn {
+  padding: 3px;
+}
+.icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  image-rendering: auto;
+}
+.icon.lg {
+  width: 22px;
+  height: 22px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+.fill {
+  width: 100%;
+  height: 100%;
+}
+label.chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.muted {
+  color: var(--muted);
+}
+.list {
+  background: var(--base);
+  border: 1px solid var(--border);
+  overflow: auto;
+  outline: none;
+  -webkit-user-select: none;
+}
+.list .item {
+  padding: 2px 6px;
+  cursor: default;
+  white-space: pre-wrap;
+  border-bottom: 1px solid transparent;
+}
+.list .item.sel {
+  background: var(--sel-inactive);
+}
+.list:focus-within .item.sel,
+.list.active .item.sel {
+  background: var(--sel);
+}
+/* what is projected now: a clear accent wash and a bar at the left edge, much stronger than a plain selection */
+.list.live-list .item.sel {
+  background: color-mix(in srgb, var(--accent) 38%, var(--base));
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+:root[data-theme='dark'] .list.live-list .item.sel {
+  background: color-mix(in srgb, var(--accent) 55%, var(--base));
+}
+/* the highlight under the pointer: the same gradient as the slide show list */
+.list.hover-items .item:hover:not(.sel) {
+  background: var(--row-hover);
+}
+.list .item.spaced {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--border-light);
+}
+.list .item.nowrap {
+  white-space: pre;
+}
+.table {
+  background: var(--base);
+  border: 1px solid var(--border);
+  overflow: auto;
+  outline: none;
+  position: relative;
+}
+.table table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+}
+.table th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border-light);
+  text-align: left;
+  padding: 2px 6px;
+  font-weight: 600;
+  z-index: 1;
+  cursor: default;
+}
+.table td {
+  padding: 1px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-right: 1px solid transparent;
+  cursor: default;
+}
+/* the cell borders are transparent, and between cells the table's own background shows through them: a highlighted row
+   gives them the colour of its background so the line between cells does not show */
+.table tr.sel td {
+  background: var(--sel-inactive);
+  border-right-color: var(--sel-inactive);
+}
+.table:focus-within tr.sel td,
+.table.active tr.sel td {
+  background: var(--sel);
+  border-right-color: var(--sel);
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg);
+  flex-wrap: wrap;
+}
+.toolbar .sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 4px;
+}
+.toolbar .tbtn {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 2px;
+  border-radius: 3px;
+}
+.toolbar .tbtn:hover:not(:disabled) {
+  background: var(--btn-hover);
+  border-color: var(--border);
+}
+.toolbar .tbtn.checked {
+  background: var(--sel);
+  border-color: var(--border);
+}
+/* the on state keeps its colour on hover and gets slightly brighter, like the blue Go Live button */
+.toolbar .tbtn.checked:hover:not(:disabled) {
+  background: color-mix(in oklch, var(--sel) 90%, white);
+  /* lighter at the same hue and saturation (mixing with white would wash the blue out) */
+  background: hsl(from var(--sel) h s calc(l + 6));
+}
+.toolbar .tbtn img {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+.toolbar .tbtn:disabled img {
+  opacity: 0.4;
+}
+.group {
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin: 4px 0;
+}
+.group > legend {
+  padding: 0 4px;
+  font-weight: 600;
+  /* the same height whether the title is plain text or holds a checkbox, so every section has the same space inside its top */
+  line-height: 19px;
+  min-height: 21px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+fieldset.group {
+  min-width: 0;
+}
+.tabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.tabs .tabbar {
+  display: flex;
+  gap: 2px;
+  padding: 4px 4px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.tabs .tab {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background: var(--tab);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: -1px;
+}
+.tabs .tab.active {
+  background: var(--tab-active);
+  border-bottom: 1px solid var(--tab-active);
+}
+.tabs .tabpage {
+  flex: 1;
+  min-height: 0;
+  background: var(--tab-active);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+}
+.splitter {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+.splitter.v {
+  flex-direction: column;
+}
+.splitter > .pane {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.splitter > .gutter {
+  flex: 0 0 6px;
+  background: transparent;
+  cursor: col-resize;
+  position: relative;
+}
+.splitter.v > .gutter {
+  cursor: row-resize;
+}
+.splitter > .gutter::after {
+  content: '';
+  position: absolute;
+  inset: 40% 2px;
+  border-left: 1px dotted var(--border);
+  border-right: 1px dotted var(--border);
+}
+.splitter.v > .gutter::after {
+  inset: 2px 40%;
+  border-left: none;
+  border-right: none;
+  border-top: 1px dotted var(--border);
+  border-bottom: 1px dotted var(--border);
+}
+.menubar {
+  display: flex;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border-light);
+  padding: 0 2px;
+  position: relative;
+  z-index: 50;
+}
+.menubar .menu-title {
+  padding: 3px 8px;
+  cursor: default;
+}
+.menubar .menu-title.open,
+.menubar .menu-title:hover {
+  background: var(--sel);
+}
+.menu-popup {
+  position: absolute;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  min-width: 220px;
+  padding: 3px 0;
+  z-index: 100;
+}
+.menu-popup .mi {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 24px 4px 10px;
+  white-space: nowrap;
+}
+.menu-popup .mi:hover:not(.disabled),
+.menu-popup .mi.hot:not(.disabled) {
+  background: var(--sel);
+}
+.menu-popup .mi.disabled {
+  opacity: 0.45;
+}
+.menu-popup .mi .sc {
+  margin-left: auto;
+  color: var(--muted);
+  padding-left: 20px;
+}
+.menu-popup .mi .check {
+  width: 14px;
+  text-align: center;
+}
+.menu-popup .msep {
+  border-top: 1px solid var(--border-light);
+  margin: 3px 0;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+.modal-backdrop.top {
+  z-index: 300;
+}
+.modal {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  max-width: 96vw;
+  max-height: 94vh;
+  min-width: 320px;
+}
+.modal.full {
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  border-radius: 0;
+  border: none;
+}
+.modal .modal-title {
+  padding: 6px 10px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--panel);
+  border-radius: 6px 6px 0 0;
+}
+.modal .modal-body {
+  padding: 10px;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.modal .modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-light);
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 10px;
+  align-items: center;
+}
+.status {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 2px 8px;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  gap: 16px;
+}
+.color-swatch {
+  width: 26px;
+  height: 18px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  display: inline-block;
+}
+.thumb-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-content: flex-start;
+  padding: 4px;
+}
+.thumb-list .thumb {
+  width: 108px;
+  height: 108px;
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111;
+}
+.thumb-list .thumb img {
+  max-width: 100px;
+  max-height: 100px;
+}
+/* the selected thumbnail: the black square turns accent blue behind the photo */
+.thumb-list .thumb.sel {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+/* the slides list without focus: the quieter selection of the other lists */
+.thumb-list:not(.live-thumbs):not(:focus-within) .thumb.sel {
+  background: var(--sel-inactive);
+  border-color: var(--sel-inactive);
+}
+/* the live list shows the same thumbnails */
+.live-thumbs .thumb {
+  cursor: default;
+}
+.live-thumbs .thumb:hover:not(.sel) {
+  background: var(--row-hover);
+}
+mark {
+  background: var(--highlight);
+  color: var(--highlight-text);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+.kbd {
+  color: var(--muted);
+  font-size: 11px;
+}
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-thumb {
+  background: #b8b8b8;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 6px;
+}
+:root[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #5a5a5a;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar {
+  display: flex;
+  flex: none;
+  min-width: 0;
+  position: relative;
+  transition: width 0.12s ease;
+}
+.sidebar-edge {
+  flex: 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 6px;
+  gap: 8px;
+  background: var(--bg);
+  border-right: 1px solid var(--border-light);
+  color: var(--muted);
+  cursor: pointer;
+}
+.sidebar-edge:hover {
+  background: var(--sel);
+  color: var(--text);
+}
+.sidebar-edge-label {
+  writing-mode: vertical-rl;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.sidebar-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  padding: 0 2px 0 4px;
+}
+.sidebar-grip {
+  flex: 0 0 6px;
+  cursor: col-resize;
+  margin-right: -3px;
+  z-index: 5;
+}
+.sidebar-grip:hover {
+  background: var(--sel);
+}
+.sidebar.dragging, .sidebar.dragging * {
+  transition: none;
+}
+button.tbtn-s {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 1px;
+  border-radius: 3px;
+}
+button.tbtn-s:hover:not(:disabled) {
+  background: var(--btn-hover);
+  border-color: var(--border);
+}
+button.tbtn-s:disabled img {
+  opacity: 0.4;
+}
+.history-bar {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  border-top: 1px solid var(--border-light);
+}
+.history-grip {
+  height: 5px;
+  cursor: row-resize;
+  margin-bottom: -2px;
+  z-index: 5;
+}
+.history-grip:hover {
+  background: var(--sel);
+}
+.history-header {
+  display: flex;
+  align-items: center;
+  padding: 2px 6px;
+  gap: 4px;
+}
+.history-edge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 18px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  border-top: 1px solid var(--border-light);
+}
+.history-edge:hover {
+  background: var(--sel);
+  color: var(--text);
+}
+.list .item.verse {
+  display: grid;
+  grid-template-columns: 3.4ch 1fr;
+  column-gap: 0.6ch;
+  white-space: normal;
+}
+.verse-num {
+  text-align: left;
+  white-space: nowrap;
+}
+.verse-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border-light);
+  position: relative;
+  z-index: 50;
+}
+.topbar .menubar {
+  border-bottom: none;
+  flex: none;
+}
+.topbar .toolbar {
+  border-bottom: none;
+  margin-left: auto;
+  flex-wrap: nowrap;
+}
+.topbar {
+  align-items: stretch;
+}
+.topbar .menubar {
+  align-items: stretch;
+}
+.topbar .menubar > div {
+  display: flex;
+}
+.topbar .menu-title {
+  display: flex;
+  align-items: center;
+}
+.topbar .toolbar {
+  align-items: center;
+}
+.results-table {
+  padding: 0;
+}
+.results-head,
+.results-row {
+  display: grid;
+  grid-template-columns: 170px 56px 1fr;
+  min-width: 0;
+}
+.results-head {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  z-index: 1;
+}
+.results-head span,
+.results-row .cell {
+  padding: 2px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-right: 1px solid var(--border-light);
+  min-width: 0;
+}
+.results-row {
+  border-bottom: 1px solid var(--border-light);
+  cursor: default;
+}
+.results-row.sel {
+  background: var(--sel-inactive);
+}
+.results-table:focus-within .results-row.sel {
+  background: var(--sel);
+}
+.results-row.sel .cell {
+  font-weight: 600;
+}
+.results-row .cell {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+.results-row .cell.verse-cell {
+  display: grid;
+  grid-template-columns: 3.4ch 1fr;
+  column-gap: 0.6ch;
+}
+.col-label {
+  height: 18px;
+  line-height: 18px;
+  flex: none;
+}
+.hdr-ctl {
+  height: 26px;
+  box-sizing: border-box;
+  flex: none;
+}
+button.ver-btn[draggable='true'] {
+  cursor: grab;
+}
+button.ver-btn.over-unused {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.btn-group {
+  display: inline-flex;
+  align-items: stretch;
+}
+.btn-group > button {
+  border-radius: 0;
+  margin-left: -1px;
+}
+.btn-group > button:first-child {
+  border-radius: var(--radius) 0 0 var(--radius);
+  margin-left: 0;
+}
+.btn-group > button:last-child {
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.btn-group > button:only-child {
+  border-radius: var(--radius);
+}
+.btn-group > button.on {
+  z-index: 1;
+  position: relative;
+}
+.btn-group > button.over {
+  z-index: 2;
+  position: relative;
+}
+
+/* Play / Clear / Off buttons in the top bar */
+.toolbar .tbtn svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.toolbar .tbtn:disabled svg {
+  opacity: 0.4;
+}
+
+/* hover delete button on schedule rows */
+.sched-del {
+  position: absolute;
+  right: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+}
+.list .item:hover > .sched-del {
+  display: flex;
+}
+.sched-del:hover {
+  background: var(--btn-hover);
+  color: #d33;
+}
+.sched-del svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* highlight the hovered schedule row so the delete button is easy to aim for */
+.schedule-area .list .item:hover:not(.sel) {
+  background: var(--row-hover);
+}
+
+/* line icons on the small header buttons (Schedule) */
+button.tbtn-s svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+button.tbtn-s:disabled svg {
+  opacity: 0.4;
+}
+
+/* an input and a button joined into one control */
+.input-group {
+  display: inline-flex;
+  align-items: stretch;
+}
+.input-group > input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.input-group > button {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: -1px;
+  padding: 2px 6px;
+}
+.input-group > input:focus {
+  position: relative;
+  z-index: 1;
+}
+/* while the box is being typed in, the grey border of the whole control (button included) turns blue; no ring is added.
+   The blue border is drawn over the group, so it stays at full strength when the button is disabled (and faded). */
+.input-group {
+  position: relative;
+}
+.input-group:has(> input:focus)::after {
+  content: '';
+  position: absolute;
+  /* a 2px ring inside the control's own edge: the same on all four sides, and nothing outside it to be cut off */
+  inset: 0;
+  border: 2px solid var(--accent);
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 2;
+}
+.input-group:has(> input:focus) > input,
+.input-group:has(> input:focus) > button {
+  border-color: var(--accent) !important; /* wins over the colored borders of primary buttons */
+}
+.input-group > input:focus {
+  outline: none;
+}
+
+/* number boxes without the spinner arrows (they reserve space and clip the text) */
+input.no-spin {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input.no-spin::-webkit-inner-spin-button,
+input.no-spin::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+/* a line between slide shows, like between songs; the rename button appears at the right when hovering */
+.show-list .item {
+  border-bottom-color: var(--border-light);
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 78px;
+  column-gap: 8px;
+  white-space: nowrap;
+}
+.show-list .item .show-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* the hover buttons sit at the right edge of the row, over the date: delete at the edge, rename to its left */
+.show-edit {
+  right: 25px;
+}
+.show-edit:hover {
+  color: var(--accent);
+}
+/* the header of the slide show list */
+.show-head {
+  display: grid;
+  grid-template-columns: 1fr 78px;
+  column-gap: 8px;
+  padding: 2px 6px;
+  font-weight: 600;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  margin-bottom: -4px;
+}
+/* hovered slide show */
+.show-list .item:hover:not(.sel) {
+  background: var(--row-hover);
+}
+
+/* the song list: a line between songs, like the verse list */
+.table.hover-rows td {
+  border-bottom: 1px solid var(--border-light);
+}
+/* hovered row in the song list, the same gradient (on the row, not the cells: it runs unbroken across them, also over the cell borders) */
+.table.hover-rows tbody tr:hover:not(.sel) {
+  background: var(--row-hover);
+}
+
+/* collapsed schedule edge while a verse or song is dragged over it */
+.sidebar-edge.drop-hot {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+/* "server unreachable" page */
+.conn-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--text);
+}
+.conn-card {
+  width: min(520px, 100%);
+  padding: 28px 32px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  text-align: center;
+}
+.conn-icon {
+  width: 52px;
+  height: 52px;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.conn-card h1 {
+  margin: 10px 0 6px;
+  font-size: 20px;
+  font-weight: 600;
+}
+.conn-card p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.conn-card ul {
+  margin: 0 auto 16px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  display: inline-block;
+  line-height: 1.6;
+}
+.conn-card li::before {
+  content: '•';
+  margin-right: 8px;
+  color: var(--muted);
+}
+.conn-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.conn-card details {
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted);
+}
+.conn-card summary {
+  cursor: pointer;
+  text-align: center;
+}
+.conn-card pre {
+  margin: 8px 0 0;
+  padding: 8px;
+  background: var(--base);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* appearance choices on the Theme settings page */
+button.ui-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+button.ui-thumb:hover {
+  background: var(--btn-hover);
+}
+button.ui-thumb.on {
+  border-color: var(--accent);
+}
+.ui-thumb-pic {
+  position: relative;
+  width: 132px;
+  height: 80px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+/* connected screens on the General settings page */
+.screen-map {
+  position: relative;
+  margin: 4px 0 2px;
+}
+button.screen-tile {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px;
+  overflow: hidden;
+  box-sizing: border-box;
+  border-radius: 4px;
+  background: var(--base);
+  color: var(--muted);
+  border: 2px dashed var(--border);
+  cursor: pointer;
+}
+button.screen-tile:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+button.screen-tile.on {
+  background: color-mix(in srgb, var(--accent) 22%, var(--base));
+  color: var(--text);
+  border: 2px solid var(--accent);
+}
+.screen-num {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+.screen-res {
+  font-size: 11px;
+}
+.screen-state {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* countdown disc: empties clockwise from 12 o'clock */
+@keyframes wp-countdown {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -100; }
+}
+
+/* the Play / Clear / Off buttons inside the live header */
+.toolbar.present-btns {
+  border-bottom: none;
+  padding: 0;
+  background: transparent;
+  flex-wrap: nowrap;
+  flex: none;
+  margin-left: auto;
+}
+
+/* rename and remove buttons on a background image tile, shown on hover */
+.bg-tile .bg-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: none;
+  gap: 3px;
+}
+.bg-tile:hover .bg-actions {
+  display: flex;
+}
+.bg-tile .bg-actions button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  justify-content: center;
+  background: rgba(20, 20, 20, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 5px;
+  color: #fff;
+}
+.bg-tile .bg-actions button:hover {
+  background: rgba(60, 60, 60, 0.95);
+}
+.bg-tile .bg-actions svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* spinner on an image tile that is not ready yet */
+.bg-spinner-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel);
+}
+.bg-spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: wp-spin 0.8s linear infinite;
+}
+@keyframes wp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* photos in the Photos tab: hover delete, multi-select, drag to re-order */
+.thumb-list .thumb {
+  position: relative;
+  cursor: grab;
+}
+.thumb-list .thumb.dragging {
+  opacity: 0.4;
+}
+.thumb-list .thumb .thumb-actions {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: none;
+}
+.thumb-list .thumb:hover .thumb-actions {
+  display: flex;
+}
+.thumb-list .thumb .thumb-actions button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  justify-content: center;
+  background: rgba(20, 20, 20, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 5px;
+  color: #fff;
+}
+.thumb-list .thumb .thumb-actions button:hover {
+  background: rgba(150, 40, 40, 0.95);
+}
+.thumb-list .thumb .thumb-actions svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* full window photo viewer (Photos tab, Space) */
+.photo-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  background: #000;
+  color: #ddd;
+  display: flex;
+  flex-direction: column;
+}
+.photo-viewer .pv-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+}
+.photo-viewer .pv-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.photo-viewer .pv-count {
+  color: #999;
+}
+.photo-viewer .pv-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+}
+.photo-viewer .pv-main img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.photo-viewer .pv-strip {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px;
+  overflow-x: auto;
+  background: #111;
+}
+.photo-viewer .pv-thumb {
+  flex: none;
+  width: 96px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  background: #000;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.photo-viewer .pv-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+}
+.photo-viewer .pv-thumb:hover {
+  opacity: 1;
+}
+.photo-viewer .pv-thumb.sel {
+  border-color: var(--accent);
+  opacity: 1;
+}
+
+/* underline tabs (theme editor): the open tab has brighter text and a line in the accent color; the font never changes, so the tabs don't shift */
+.underline-tabs .tabbar {
+  gap: 22px;
+  padding: 0 8px;
+  background: transparent;
+  border-bottom: 1px solid var(--border);
+}
+.underline-tabs .tab {
+  padding: 9px 2px 8px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  margin-bottom: -1px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.underline-tabs .tab:hover {
+  color: var(--text);
+}
+.underline-tabs .tab.active {
+  background: none;
+  color: var(--text);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* theme editor (Settings > Presentation > Theme Editor) */
+.theme-editor {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: 10px;
+}
+.theme-editor-side {
+  width: 230px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--base);
+  min-height: 0;
+}
+.theme-editor-list {
+  flex: 1;
+  overflow: auto;
+}
+.theme-editor-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px; /* the same with and without the hover buttons */
+  box-sizing: border-box;
+  padding: 0 10px;
+  cursor: default;
+  position: relative;
+}
+.theme-editor-item:hover:not(.sel) {
+  background: var(--btn-hover);
+}
+.theme-editor-item.sel {
+  background: var(--sel);
+}
+.theme-editor-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.theme-editor-dot {
+  color: var(--accent);
+  font-size: 10px;
+}
+/* the badge of the theme in use: the size and shape of the Switch button, in the blue of the primary buttons */
+.theme-editor-badge {
+  --blue-top: color-mix(in srgb, var(--accent) 78%, white);
+  --blue-bottom: color-mix(in srgb, var(--accent) 90%, black);
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--accent) 68%, black);
+  background: linear-gradient(var(--blue-top), var(--blue-bottom));
+  color: var(--accent-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.theme-editor-use {
+  display: none;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 12px;
+  line-height: 1;
+}
+.theme-editor-item:hover .theme-editor-use {
+  display: block;
+}
+.theme-editor-tools svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+.theme-editor-tools {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+}
+.theme-editor-card {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+.theme-editor-head {
+  gap: 10px;
+  align-items: center;
+}
+.theme-editor-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 4px 4px;
+}
+.theme-editor-split {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.theme-editor-form {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.theme-editor-preview {
+  width: 42%;
+  max-width: 560px;
+  flex: none;
+  position: sticky;
+  top: 0;
+}
+.theme-editor-bar {
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel);
+  align-items: center;
+}
+
+/* a slide fading in over the one under it (the projector and the theme editor preview) */
+@keyframes wp-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* the bar under the Bibles / Songbooks list (Books) */
+.books-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-top: none;
+  background: var(--panel);
+}
+
+/* the mark in the menu bar when a new release is waiting */
+.menu-badge {
+  width: 13px;
+  height: 13px;
+  margin-left: 4px;
+  vertical-align: -2px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Settings > Updates */
+.update-list .item {
+  display: grid;
+  grid-template-columns: 84px 1fr auto 86px;
+  column-gap: 8px;
+  align-items: center;
+  white-space: nowrap;
+}
+.update-list .update-tag {
+  font-weight: 600;
+}
+.update-list .update-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted);
+}
+.update-list .update-marks {
+  display: inline-flex;
+  gap: 4px;
+}
+.update-list .update-date {
+  text-align: right;
+  color: var(--muted);
+}
+.update-chip {
+  font-size: 11px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+}
+.update-chip.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.update-notes {
+  margin-top: 6px;
+  max-height: 110px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 12px;
+  color: var(--muted);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 4px 6px;
+}

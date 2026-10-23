@@ -1,0 +1,15 @@
+/dist/
+/bin/
+/frontend/node_modules/
+/frontend/dist/
+/internal/server/dist/*
+*.log
+.DS_Store
+/data/
+.claude
+!/internal/server/dist/.gitkeep
+/wordsprojector
+/wordprojector
+.idea/
+# the original SoftProjector sources (reference only)
+/src/

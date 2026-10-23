@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Word Projector
+Comment=Church projection software (songs, Bible, pictures, media, announcements)
+Exec=WordProjector
+Icon=icon
+Terminal=false
+Categories=AudioVideo;Audio;Video;
