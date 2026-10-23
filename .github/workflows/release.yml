@@ -17,7 +17,7 @@ jobs:
             goos: darwin
             goarch: arm64
             name: macos-arm64
-          - os: macos-13
+          - os: macos-14 # the Intel build is cross-compiled here (the macos-13 runners are gone)
             goos: darwin
             goarch: amd64
             name: macos-x64
@@ -52,9 +52,18 @@ jobs:
       - name: Build (unix)
         if: matrix.goos != 'windows'
         shell: bash
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '1'
+          # the Linux window uses GTK 3 and WebKitGTK 4.1 (libwebkit2gtk-4.1)
+          TAGS: ${{ matrix.goos == 'linux' && 'gtk3' || '' }}
+          # macOS: the C parts target the oldest macOS the program supports
+          CGO_CFLAGS: ${{ matrix.goos == 'darwin' && '-mmacosx-version-min=11.0' || '' }}
+          CGO_LDFLAGS: ${{ matrix.goos == 'darwin' && '-mmacosx-version-min=11.0' || '' }}
         run: |
           mkdir -p dist
-          go build -ldflags "-s -w -X main.version=${{ steps.ver.outputs.version }}" -o dist/wordprojector ./cmd/wordprojector
+          go build -tags "$TAGS" -ldflags "-s -w -X main.version=${{ steps.ver.outputs.version }}" -o dist/wordprojector ./cmd/wordprojector
       - name: Build (windows)
         if: matrix.goos == 'windows'
         shell: bash

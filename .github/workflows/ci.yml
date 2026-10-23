@@ -14,7 +14,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
       - run: cd frontend && npm ci && npx tsc -b && npm run build
-      - run: go vet -tags headless ./...
-      - run: go test ./...
+      - run: go vet -tags gtk3 ./...
+      - run: go test -tags gtk3 ./...
+      - run: go build -tags gtk3 ./cmd/wordprojector
       - run: go build -tags headless ./cmd/wordprojector
