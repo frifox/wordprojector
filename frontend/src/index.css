@@ -246,13 +246,6 @@ label.chk {
 .list.active .item.sel {
   background: var(--sel-bg);
 }
-/* what is projected now: a clear accent wash, much stronger than a plain selection */
-.list.live-list .item.sel {
-  background: color-mix(in srgb, var(--accent) 38%, var(--base));
-}
-:root[data-theme='dark'] .list.live-list .item.sel {
-  background: color-mix(in srgb, var(--accent) 55%, var(--base));
-}
 /* when the arrow keys belong to something else (another list, a text field) it is as quiet as in the lists of the tabs */
 .list.live-list.quiet .item.sel,
 :root[data-theme='dark'] .list.live-list.quiet .item.sel {
@@ -277,14 +270,6 @@ label.chk {
 .list.active .item.sel.spaced,
 .list.active .item.sel.verse {
   border-bottom-color: color-mix(in srgb, var(--sel) 80%, black);
-}
-.list.live-list .item.sel.spaced,
-.list.live-list .item.sel.verse {
-  border-bottom-color: color-mix(in srgb, var(--accent) 52%, var(--base));
-}
-:root[data-theme='dark'] .list.live-list .item.sel.spaced,
-:root[data-theme='dark'] .list.live-list .item.sel.verse {
-  border-bottom-color: color-mix(in srgb, var(--accent) 72%, var(--base));
 }
 .list.live-list.quiet .item.sel.spaced,
 .list.live-list.quiet .item.sel.verse,
