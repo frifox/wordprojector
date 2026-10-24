@@ -3,6 +3,7 @@ import BackgroundSection from './BackgroundSection';
 import Modal, { alertDialog, confirmDialog } from '../components/Modal';
 import { api } from '../lib/api';
 import { useStore } from '../lib/store';
+import { pickFiles, downloadURL } from '../lib/files';
 import { t } from '../i18n';
 import type { RenderSlide, Settings, Theme, ThemeInfo } from '../lib/types';
 import NameInfoDialog from './NameInfoDialog';
@@ -17,6 +18,9 @@ const Pencil = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h
 const Plus = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>;
 const Copy = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z" /><path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2" /></svg>;
 const Trash = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>;
+
+const Download = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 11l5 5l5 -5" /><path d="M12 4l0 12" /></svg>;
+const Upload = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 9l5 -5l5 5" /><path d="M12 4l0 12" /></svg>;
 
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
 
@@ -44,7 +48,7 @@ export default function ThemeEditor({ s, setS, currentId, onUse, onClose }: {
   const [presenting, setPresenting] = useState(false);
   // on a single screen the preview covers the editor, and the keyboard stays with the editor: Esc then turns the preview off
   // (a second one closes the editor) instead of closing the editor under it
-  const { live } = useStore();
+  const { live, boot } = useStore();
   const escStopsPreview = presenting && live.singleScreen;
   // the displays going dark while the preview is on (Esc on the preview itself, the server ending it) turns the Preview
   // button off: left on, it would bring the preview back with the next change of the sample
@@ -180,6 +184,22 @@ export default function ThemeEditor({ s, setS, currentId, onUse, onClose }: {
       setNaming(null);
     } catch (e) { fail(e); }
   };
+  // a theme as a zip file with its pictures: what is saved is what goes into the file
+  const exportTheme = async () => {
+    try {
+      const r = await api.exportThemePack(sel);
+      if (r.download) downloadURL(r.download);
+    } catch (e) { fail(e); }
+  };
+  const importTheme = async () => {
+    const paths = await pickFiles(boot.desktop, t('Select a theme file to import'), [{ name: t('Theme file (*.zip)'), pattern: '*.zip' }], false);
+    if (!paths[0]) return;
+    try {
+      const r = await api.importThemePack(paths[0]);
+      await reloadList();
+      setSel(r.id);
+    } catch (e) { fail(e); }
+  };
   const remove = async () => {
     if (!info || info.builtin) return;
     const r = await confirmDialog({
@@ -265,6 +285,9 @@ export default function ThemeEditor({ s, setS, currentId, onUse, onClose }: {
             <button className="tbtn-s" title={t('Duplicate Theme')} disabled={!th} onClick={() => setNaming('copy')}><Copy /></button>
             <button className="tbtn-s" title={info?.builtin ? t('Light and Dark can\'t be renamed') : t('Rename Theme')} disabled={!info || info.builtin} onClick={() => setNaming(sel)}><Pencil /></button>
             <button className="tbtn-s" title={info?.builtin ? t('Light and Dark can\'t be deleted') : t('Delete Theme')} disabled={!info || info.builtin} onClick={remove}><Trash /></button>
+            <span className="grow" />
+            <button className="tbtn-s" title={dirty ? t('Save the changes first to export the theme') : t('Export Theme')} disabled={!th || dirty} onClick={exportTheme}><Upload /></button>
+            <button className="tbtn-s" title={t('Import Theme')} onClick={importTheme}><Download /></button>
           </div>
         </div>
         <div className="theme-editor-card">

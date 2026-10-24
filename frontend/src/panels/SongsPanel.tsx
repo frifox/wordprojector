@@ -1,3 +1,4 @@
+import { DropSelect } from '../components/Pickers';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { phoneticContains, phoneticRange } from '../lib/translit';
 import StanzaText from '../components/StanzaText';
@@ -305,12 +306,8 @@ export default function SongsPanel({ active }: { active: boolean }) {
       <div className="col fill" style={{ gap: 4 }}>
         <div className="row">
           <span style={{ minWidth: 46 }}>{t('Book:')}</span>
-          <select className="grow" value={songbook} onChange={(e) => { const id = Number(e.target.value); setSongbook(id); if (!id) setNumber(''); }} title={t('Use this menu to show only songs belonging to a particular Songbook')}>
-            <option value={0}>{t('All songbooks')}</option>
-            {songbooks.map((sb) => (
-              <option key={sb.id} value={sb.id}>{sb.name}</option>
-            ))}
-          </select>
+          <DropSelect className="grow" value={songbook} onChange={(v) => { const id = Number(v); setSongbook(id); if (!id) setNumber(''); }} title={t('Use this menu to show only songs belonging to a particular Songbook')}
+            options={[{ value: 0, label: t('All songbooks') }, ...songbooks.map((sb) => ({ value: sb.id, label: sb.name }))]} />
           <span className="input-group">
             <input ref={numberInput} className="no-spin" type="number" min={1} placeholder={t('Number')} style={{ width: 70 }} value={number} disabled={!songbook} onChange={(e) => selectByNumber(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') goLiveNumber(); }} title={t('Selects a song by the number in the selected Songbook')} />
             <button className="primary golive" disabled={!songbook || !number} onClick={goLiveNumber} title={t('Go Live (F5)')}><GoLiveIcon /></button>
@@ -336,13 +333,8 @@ export default function SongsPanel({ active }: { active: boolean }) {
             else if (e.key === 'Escape' && (filter !== '' || searching)) { e.preventDefault(); e.stopPropagation(); clearSearch(); }
           }} />
           {searching && (
-            <select title={t('Search Type:')} value={searchType} onChange={(e) => setSearchType(Number(e.target.value))}>
-              <option value={0}>{t('Contains Phrase')}</option>
-              <option value={1}>{t('Contains Word Phrase')}</option>
-              <option value={2}>{t('Line Begins')}</option>
-              <option value={3}>{t('Contains Any Word')}</option>
-              <option value={4}>{t('Contains All Words')}</option>
-            </select>
+            <DropSelect title={t('Search Type:')} value={searchType} onChange={(v) => setSearchType(Number(v))}
+              options={[t('Contains Phrase'), t('Contains Word Phrase'), t('Line Begins'), t('Contains Any Word'), t('Contains All Words')].map((label, i) => ({ value: i, label }))} />
           )}
           <span className="btn-group">
             <button disabled={!searching && filter === '' && !allBooks} onClick={clearSearch}>{t('Clear')}</button>

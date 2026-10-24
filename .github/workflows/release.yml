@@ -112,21 +112,34 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
       - name: Checksums
         run: cd artifacts && sha256sum * > checksums.txt # the program checks its downloads against this file
+      - name: Release notes
+        # the summary of the changes is the message of the (annotated) tag: git tag -a <tag> -m "<summary>"
+        run: |
+          git fetch --tags --force origin
+          git for-each-ref "${GITHUB_REF}" --format='%(contents)' > notes.md
+          [ -s notes.md ] && printf '\n\n' >> notes.md
+          cat >> notes.md <<'EOF'
+          Standalone builds. No installation or extra dependencies are required:
+
+          * **macOS**: unzip and move `WordProjector.app` to Applications. The app is not notarized; on first start right-click → Open (or run `xattr -cr WordProjector.app`).
+          * **Windows**: unzip and run `WordProjector.exe`, from the x64 or the arm64 archive to match your PC (Windows 10/11 ship the required WebView2 runtime).
+          * **Linux**: untar and run `./WordProjector` (needs the system WebKitGTK 4.1 library, present on most desktops: `libwebkit2gtk-4.1-0`).
+
+          Your data (database, downloaded modules) is stored in the per-user application data folder. For a portable copy put `wordprojector.sqlite` next to the executable.
+          EOF
+          # the link GitHub puts at the bottom of its own notes: every change since the previous release
+          prev=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          if [ -n "$prev" ]; then
+            printf '\n**Full Changelog**: https://github.com/%s/compare/%s...%s\n' "${GITHUB_REPOSITORY}" "$prev" "${GITHUB_REF_NAME}" >> notes.md
+          fi
       - uses: softprops/action-gh-release@v2
         with:
           files: artifacts/*
-          generate_release_notes: true
-          body: |
-            Standalone builds. No installation or extra dependencies are required:
-
-            * **macOS**: unzip and move `WordProjector.app` to Applications. The app is not notarized; on first start right-click → Open (or run `xattr -cr WordProjector.app`).
-            * **Windows**: unzip and run `WordProjector.exe`, from the x64 or the arm64 archive to match your PC (Windows 10/11 ship the required WebView2 runtime).
-            * **Linux**: untar and run `./WordProjector` (needs the system WebKitGTK 4.1 library, present on most desktops: `libwebkit2gtk-4.1-0`).
-
-            Your data (database, downloaded modules) is stored in the per-user application data folder. For a portable copy put `wordprojector.sqlite` next to the executable.
+          body_path: notes.md

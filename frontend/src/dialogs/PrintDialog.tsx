@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Modal from '../components/Modal';
 import { t } from '../i18n';
-import { useFonts } from '../components/Pickers';
+import { useFonts, DropSelect } from '../components/Pickers';
 
 /** Print preview: pick font/size then print through the browser (PDF via the print dialog). */
 export default function PrintDialog({ title, text, fontSize = 12, onClose }: { title: string; text: string; fontSize?: number; onClose: () => void }) {
@@ -42,9 +42,7 @@ export default function PrintDialog({ title, text, fontSize = 12, onClose }: { t
       </>}>
       <div className="row">
         <span>{t('Font:')}</span>
-        <select value={family} onChange={(e) => setFamily(e.target.value)} style={{ maxWidth: 200 }}>
-          {(fonts.includes(family) ? fonts : [family, ...fonts]).map((f) => <option key={f} value={f}>{f}</option>)}
-        </select>
+        <DropSelect value={family} onChange={(v) => setFamily(String(v))} style={{ maxWidth: 200 }} options={(fonts.includes(family) ? fonts : [family, ...fonts]).map((f) => ({ value: f, label: f }))} />
         <input type="number" min={6} max={72} value={size} style={{ width: 60 }} onChange={(e) => setSize(Number(e.target.value) || 12)} />
         <span>{t('Margins (in):')}</span>
         <input type="number" min={0} max={3} step={0.1} value={margin} style={{ width: 60 }} onChange={(e) => setMargin(Number(e.target.value) || 0)} />

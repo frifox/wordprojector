@@ -1,5 +1,10 @@
 package main
 
+// The icon and version of WordProjector.exe are in the rsrc_windows_*.syso files next to this one (the linker picks them up
+// for Windows builds). Run `go generate ./cmd/wordprojector` after changing build/icon.png to make them again.
+//
+//go:generate go run github.com/tc-hib/go-winres@v0.3.3 simply --icon ../../build/icon.png --manifest none --product-name "Word Projector" --file-description "Word Projector" --original-filename WordProjector.exe --copyright "GNU GPL v3" --arch amd64,arm64
+
 import (
 	"encoding/json"
 	"errors"

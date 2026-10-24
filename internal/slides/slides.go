@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/image/draw"
@@ -53,6 +54,9 @@ type Slide struct {
 	Path  string `json:"path"`
 	// Temp is set for images added but not saved yet (kept in memory).
 	Temp string `json:"temp,omitempty"`
+	// Linked slides show the picture where it is on disk (Path): only the small thumbnails are kept. The others
+	// hold a copy of it.
+	Linked bool `json:"linked,omitempty"`
 	Width  int `json:"width"`
 	Height int `json:"height"`
 }
@@ -88,7 +92,7 @@ func (r *Repo) filePath(file, size string) string {
 	return filepath.Join(r.Dir, file+".jpg")
 }
 
-func (r *Repo) writeFiles(file string, img *Images) error {
+func (r *Repo) writeFiles(file string, img *Images, linked bool) error {
 	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
 		return err
 	}
@@ -96,6 +100,9 @@ func (r *Repo) writeFiles(file string, img *Images) error {
 		size string
 		b    []byte
 	}{{"full", img.Full}, {"small", img.Small}, {"prev", img.Preview}} {
+		if linked && v.size == "full" {
+			continue // the picture stays where it is
+		}
 		if err := os.WriteFile(r.filePath(file, v.size), v.b, 0o644); err != nil {
 			return err
 		}
@@ -138,7 +145,7 @@ func (r *Repo) Get(id int64) (ShowWithSlides, error) {
 		return s, err
 	}
 	s.Name, s.Info = n.String, i.String
-	rows, err := r.DB.Query("SELECT id, p_order, name, path, pix, COALESCE(file,'') FROM Slides WHERE ss_id = ? ORDER BY p_order, id", id)
+	rows, err := r.DB.Query("SELECT id, p_order, name, path, pix, COALESCE(file,''), COALESCE(linked,0) FROM Slides WHERE ss_id = ? ORDER BY p_order, id", id)
 	if err != nil {
 		return s, err
 	}
@@ -150,11 +157,20 @@ func (r *Repo) Get(id int64) (ShowWithSlides, error) {
 		var name, path sql.NullString
 		var pix []byte
 		var file string
-		if err := rows.Scan(&sl.ID, &ord, &name, &path, &pix, &file); err != nil {
+		var linked int
+		if err := rows.Scan(&sl.ID, &ord, &name, &path, &pix, &file, &linked); err != nil {
 			return s, err
 		}
-		sl.Order, sl.Name, sl.Path = int(ord.Int64), name.String, path.String
-		if file != "" {
+		sl.Order, sl.Name, sl.Path, sl.Linked = int(ord.Int64), name.String, path.String, linked != 0
+		if sl.Linked {
+			// the size of the picture where it lies (nothing when it has been moved away)
+			if f, err := os.Open(sl.Path); err == nil {
+				if cfg, _, err := image.DecodeConfig(f); err == nil {
+					sl.Width, sl.Height = cfg.Width, cfg.Height
+				}
+				f.Close()
+			}
+		} else if file != "" {
 			if f, err := os.Open(r.filePath(file, "full")); err == nil {
 				if cfg, _, err := image.DecodeConfig(f); err == nil {
 					sl.Width, sl.Height = cfg.Width, cfg.Height
@@ -170,7 +186,8 @@ func (r *Repo) Get(id int64) (ShowWithSlides, error) {
 	return s, rows.Err()
 }
 
-// Image returns the stored image of a slide: size is "full", "small" or "prev".
+// Image returns the stored image of a slide: size is "full", "small" or "prev". The full picture of a linked slide is
+// read from where it lies.
 func (r *Repo) Image(id int64, size string) ([]byte, error) {
 	col := "pix"
 	switch size {
@@ -180,12 +197,37 @@ func (r *Repo) Image(id int64, size string) ([]byte, error) {
 		col = "pix_prev"
 	}
 	var b []byte
-	var file string
-	err := r.DB.QueryRow("SELECT "+col+", COALESCE(file,'') FROM Slides WHERE id = ?", id).Scan(&b, &file)
-	if err == nil && file != "" {
+	var file, path string
+	var linked int
+	err := r.DB.QueryRow("SELECT "+col+", COALESCE(file,''), COALESCE(path,''), COALESCE(linked,0) FROM Slides WHERE id = ?", id).Scan(&b, &file, &path, &linked)
+	if err != nil {
+		return b, err
+	}
+	if linked != 0 && size != "small" && size != "prev" {
+		return readLinked(path)
+	}
+	if file != "" {
 		return os.ReadFile(r.filePath(file, size))
 	}
-	return b, err
+	return b, nil
+}
+
+// readLinked is the picture at path as the browser can show it: as it is when it is in a format every browser reads,
+// else as a JPEG.
+func readLinked(path string) ([]byte, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".jpg", ".jpeg", ".png", ".gif", ".webp":
+		return b, nil
+	}
+	img, err := DecodeBytes(b)
+	if err != nil {
+		return nil, err
+	}
+	return EncodeJPEG(img), nil
 }
 
 // Save stores a slide show. New slides (ID == 0) take their images from
@@ -227,7 +269,7 @@ func (r *Repo) Save(s ShowWithSlides, newImages map[string]*Images) (int64, erro
 				res, err = tx.Exec("INSERT INTO Slides (ss_id, p_order, name, path, pix, pix_small, pix_prev) VALUES (?,?,?,?,?,?,?)",
 					id, i, sl.Name, sl.Path, img.Full, img.Small, img.Preview)
 			} else {
-				res, err = tx.Exec("INSERT INTO Slides (ss_id, p_order, name, path) VALUES (?,?,?,?)", id, i, sl.Name, sl.Path)
+				res, err = tx.Exec("INSERT INTO Slides (ss_id, p_order, name, path, linked) VALUES (?,?,?,?,?)", id, i, sl.Name, sl.Path, b2i(sl.Linked))
 			}
 			if err != nil {
 				return err
@@ -236,7 +278,7 @@ func (r *Repo) Save(s ShowWithSlides, newImages map[string]*Images) (int64, erro
 			if r.Dir != "" {
 				file := strconv.FormatInt(nid, 10)
 				written = append(written, file)
-				if err := r.writeFiles(file, img); err != nil {
+				if err := r.writeFiles(file, img, sl.Linked); err != nil {
 					return err
 				}
 				if _, err := tx.Exec("UPDATE Slides SET file = ? WHERE id = ?", file, nid); err != nil {
@@ -282,6 +324,13 @@ func (r *Repo) Save(s ShowWithSlides, newImages map[string]*Images) (int64, erro
 		r.removeFiles(f)
 	}
 	return id, nil
+}
+
+func b2i(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }
 
 func (r *Repo) Delete(id int64) error {

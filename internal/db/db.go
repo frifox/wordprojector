@@ -186,6 +186,15 @@ func (d *DB) addColumns() error {
 			return fmt.Errorf("schema: %w", err)
 		}
 	}
+	// a slide can be linked to its picture on disk instead of holding a copy of it
+	if err := d.QueryRow("SELECT count(*) FROM pragma_table_info('Slides') WHERE name = 'linked'").Scan(&n); err != nil {
+		return err
+	}
+	if n == 0 {
+		if _, err := d.Exec("ALTER TABLE Slides ADD COLUMN linked INTEGER"); err != nil {
+			return fmt.Errorf("schema: %w", err)
+		}
+	}
 	return nil
 }
 

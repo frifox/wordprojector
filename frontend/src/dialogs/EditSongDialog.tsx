@@ -4,7 +4,7 @@ import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import { t } from '../i18n';
 import type { Song, Songbook } from '../lib/types';
-import { FontPicker, ColorField, AlignGroup, HighlightTextarea } from '../components/Pickers';
+import { FontPicker, ColorField, AlignGroup, HighlightTextarea, DropSelect } from '../components/Pickers';
 import { pickFiles, imageFilter } from '../lib/files';
 import { useUI } from '../lib/ui';
 import NameInfoDialog from './NameInfoDialog';
@@ -168,11 +168,7 @@ export default function EditSongDialog({ mode, song, onClose }: { mode: 'new' | 
           <div className="row">
             <input type="text" value={s.tune} style={{ width: 120 }} onChange={(e) => set({ tune: e.target.value })} />
             <span>{t('Category:')}</span>
-            <select className="grow" value={s.category} onChange={(e) => set({ category: Number(e.target.value) })}>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <DropSelect className="grow" value={s.category} onChange={(v) => set({ category: Number(v) })} options={categories.map((c) => ({ value: c.id, label: c.name }))} />
           </div>
         </div>
         <label className="chk"><input type="checkbox" checked={s.usePrivate} onChange={(e) => set({ usePrivate: e.target.checked })} />{t('Use Private Song Settings')}</label>

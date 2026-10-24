@@ -20,6 +20,8 @@ export default function SettingsDialog({ onClose, initialPage }: { onClose: () =
   const [s, setS] = useState<Settings>(() => JSON.parse(JSON.stringify(store.settings)));
   const [screens, setScreens] = useState<Screen[]>(store.boot.screens || []);
   const baseline = useRef(JSON.stringify(store.settings));
+  // the address settings as the window was opened with them: the restart note shows when they are changed from these
+  const openedRemote = useRef(store.settings.app.remote ?? { public: false, port: 8777 });
   const dirty = JSON.stringify(s) !== baseline.current;
   const requestClose = useDiscardGuard(dirty, onClose, () => ok());
   // screens can be plugged in or removed while the dialog is open: reload on the server's notice, and now and then
@@ -67,7 +69,7 @@ export default function SettingsDialog({ onClose, initialPage }: { onClose: () =
           {page === 'general' && <GeneralPage s={s} setS={setS} applyNow={(next) => { setS(next); return apply(next); }} />}
           {page === 'display' && <DisplayPage s={s} setS={setS} setGeneral={setGeneral} screens={screens} />}
           {page === 'hotkeys' && <HotkeysPage s={s} setS={setS} />}
-          {page === 'remote' && <RemotePage s={s} setS={setS} />}
+          {page === 'remote' && <RemotePage s={s} setS={setS} opened={openedRemote.current} />}
           {page === 'updates' && <UpdatesPage s={s} setS={setS} />}
         </div>
         </div>
@@ -282,14 +284,45 @@ export function SongPage({ v, onChange, onPreview }: { v: SongSettings; onChange
 }
 
 /** Where the backend listens. The server binds once at start up, so changes apply after a restart. */
-function RemotePage({ s, setS }: { s: Settings; setS: (f: (x: Settings) => Settings) => void }) {
+/** An address of the program: a button to copy it, and the address itself as a link in the colour of the text. */
+function UrlRow({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const ta = document.createElement('textarea'); // where the clipboard is not offered
+      ta.value = url;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1200);
+  };
+  return (
+    <div className="row" style={{ gap: 6 }}>
+      <button className="tbtn-s" title={copied ? t('Copied') : t('Copy')} aria-label={t('Copy')} onClick={copy}>
+        {copied
+          ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5l10 -10" /></svg>
+          : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z" /><path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2" /></svg>}
+      </button>
+      <a className="url-link" href={url} target="_blank" rel="noreferrer">{url}</a>
+    </div>
+  );
+}
+
+function RemotePage({ s, setS, opened }: { s: Settings; setS: (f: (x: Settings) => Settings) => void; opened: { public: boolean; port: number } }) {
   const remote = s.app.remote ?? { public: false, port: 8777 };
-  const [info, setInfo] = useState<{ listen: string; urls: string[] } | null>(null);
+  const [info, setInfo] = useState<{ listen: string; urls: string[]; ips: string[] } | null>(null);
   const [portText, setPortText] = useState(String(remote.port || 8777));
   useEffect(() => { api.remoteInfo().then(setInfo).catch(() => setInfo(null)); }, []);
   const set = (p: Partial<{ public: boolean; port: number }>) => setS((x) => ({ ...x, app: { ...x.app, remote: { ...remote, ...p } } }));
   const portNum = Number(portText);
   const portOK = Number.isInteger(portNum) && portNum >= 1 && portNum <= 65535;
+  // the address is taken when the program starts: a different choice than the window was opened with waits for the next start
+  const restartNeeded = remote.public !== opened.public || remote.port !== opened.port;
   return (
     <div className="col" style={{ gap: 8 }}>
       <fieldset className="group">
@@ -309,17 +342,17 @@ function RemotePage({ s, setS }: { s: Settings; setS: (f: (x: Settings) => Setti
           <input type="checkbox" checked={remote.public} onChange={(e) => set({ public: e.target.checked })} />
           {t('Enable Public Access')}
         </label>
-        <div className="muted" style={{ marginTop: 4 }}>{t('Off: only this computer can connect (127.0.0.1). On: other devices on the network can connect too (0.0.0.0).')}</div>
-        {remote.public && <div style={{ marginTop: 4, color: 'var(--warning, #b9770e)' }}>{t('Anyone on your network will be able to open Word Projector and control the presentation. There is no password.')}</div>}
       </fieldset>
-      <div className="muted">{t('Changes take effect the next time Word Projector starts. If the port is taken then, you are asked whether to connect to the running one, use the next free port, or quit.')}</div>
-      {info && (
-        <fieldset className="group">
-          <legend>{t('Right now')}</legend>
-          <div>{t('Listening on {addr}', { addr: info.listen })}</div>
-          {info.urls.length > 0 && <div style={{ marginTop: 4 }}>{t('Open from other devices:')} {info.urls.map((u) => <a key={u} href={u} target="_blank" rel="noreferrer" style={{ marginRight: 10 }}>{u}</a>)}</div>}
-        </fieldset>
-      )}
+      <fieldset className="group">
+        <legend>{t('Access URLs')}</legend>
+        {/* where the program can be opened: only this computer, or every address of it on the network (public access) */}
+        {portOK ? (
+          <div className="col" style={{ gap: 3 }}>
+            {(remote.public ? info?.ips ?? [] : ['127.0.0.1']).map((ip) => <UrlRow key={ip} url={`http://${ip}:${portNum}`} />)}
+          </div>
+        ) : <span className="muted">{t('Enter a port between 1 and 65535.')}</span>}
+      </fieldset>
+      {restartNeeded && <div style={{ color: 'var(--warning, #b9770e)' }}>{t('Changes will apply the next time Word Projector starts.')}</div>}
     </div>
   );
 }

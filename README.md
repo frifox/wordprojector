@@ -1,8 +1,6 @@
 # Word Projector
 
-Church projection software: Bible, Songs, Slide shows on one or more screens.
-
-A vibecode rewrite of [SoftProjector](http://softprojector.org) (Go, React,
+Church projection software: Bible, Songs, Slide shows on one or more screens. A vibecode rewrite of [SoftProjector](http://softprojector.org) (Go, React,
 SQLite) for macOS, Windows and Linux. It can read SoftProjector
 file formats: Songbooks (`.sps`), Bibles (`.spb`), etc.
 

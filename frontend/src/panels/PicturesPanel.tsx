@@ -8,12 +8,12 @@ import Splitter from '../components/Splitter';
 import { useData } from '../lib/hooks';
 import type { SlideShow, SlideShowFull, Slide, ScheduleItem } from '../lib/types';
 import { confirmDialog, alertDialog } from '../components/Modal';
-import { pickFiles, pickFolder, imageFilter, type FolderPick } from '../lib/files';
+import { pickFiles, imageFilter, type FolderPick } from '../lib/files';
 import NameInfoDialog from '../dialogs/NameInfoDialog';
 import { usePickerActive } from '../lib/picker';
 import { startScheduleDrag } from '../lib/dnd';
 import PhotoViewer from '../components/PhotoViewer';
-import FolderShowDialog from '../dialogs/FolderShowDialog';
+import FolderImportDialog, { type FolderImportOptions } from '../dialogs/FolderImportDialog';
 
 export function slideURL(s: Slide, size: 'full' | 'small' | 'prev') {
   return s.id > 0 ? `/api/slides/${s.id}/image?size=${size}` : `/api/blob/${encodeURIComponent(s.temp || '')}?size=${size}`;
@@ -38,7 +38,7 @@ export default function PicturesPanel({ active }: { active: boolean }) {
   const [creating, setCreating] = useState(false);
   const picking = usePickerActive(); // a native file dialog is open
   const [viewing, setViewing] = useState(false); // full window photo view
-  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [folderDialog, setFolderDialog] = useState<null | 'new' | 'add'>(null); // slides from a folder: for a new show, or for this one
   const fromSchedule = useRef(false); // a copy that came from the schedule: edits stay local to it
 
   // ---- slide shows ------------------------------------------------------------------------------------------
@@ -91,11 +91,13 @@ export default function PicturesPanel({ active }: { active: boolean }) {
     setSelectedId(r.id);
     load(r.id);
   };
-  const folderSlides = (f: FolderPick) => (f.dir ? api.folderImages(f.dir) : api.addImages(f.paths ?? []));
-  const createShowFromFolder = async (f: FolderPick, name: string) => {
-    const imgs = await folderSlides(f);
+  // the pictures of the folder as slides: with or without those of its subfolders, copied or linked
+  const folderSlides = (f: FolderPick, o: FolderImportOptions) =>
+    f.dir ? api.folderImages(f.dir, o.recursive, !o.copy) : api.addImages((o.recursive ? f.paths : f.topPaths ?? f.paths) ?? [], false);
+  const createShowFromFolder = async (f: FolderPick, o: FolderImportOptions, name: string) => {
+    const imgs = await folderSlides(f, o);
     if (!imgs.length) return false;
-    setCreatingFolder(false);
+    setFolderDialog(null);
     const r = await api.saveSlideshow({ id: 0, name, info: '', slides: imgs });
     await reload();
     fromSchedule.current = false;
@@ -178,14 +180,14 @@ export default function PicturesPanel({ active }: { active: boolean }) {
     await saveSlides(next, added.map((_, i) => slides.length + i));
     anchor.current = slides.length;
   };
-  const addFolder = async () => {
-    if (!current) return;
-    const f = await pickFolder(boot.desktop, t('Select Folder with Images'));
-    if (!f) return;
-    const added = await folderSlides(f);
-    if (!added.length) return alertDialog(t('No images found'), t('The selected folder has no images.'), t('Please select another folder.'));
+  const addFolder = async (f: FolderPick, o: FolderImportOptions) => {
+    if (!current) return false;
+    const added = await folderSlides(f, o);
+    if (!added.length) return false;
+    setFolderDialog(null);
     await saveSlides([...slides, ...added], added.map((_, i) => slides.length + i));
     anchor.current = slides.length;
+    return true;
   };
   const removePhotos = (idxs: number[]) => {
     if (!idxs.length) return;
@@ -310,7 +312,7 @@ export default function PicturesPanel({ active }: { active: boolean }) {
           <div className="row" style={{ gap: 2 }}>
             <span style={{ fontWeight: 600 }}>{t('Slide Shows:')}</span>
             <span className="grow" />
-            <button className="tbtn-s" title={t('New Slide Show from Folder...')} disabled={picking} onClick={() => setCreatingFolder(true)}><FolderPlusIcon /></button>
+            <button className="tbtn-s" title={t('New Slide Show from Folder...')} disabled={picking} onClick={() => setFolderDialog('new')}><FolderPlusIcon /></button>
             <button className="tbtn-s" title={t('New Slide Show...')} onClick={() => setCreating(true)}><PlusIcon /></button>
             <button className="tbtn-s" title={t('Delete Slide Show')} disabled={!selectedId} onClick={removeShow}><MinusIcon /></button>
           </div>
@@ -368,7 +370,7 @@ export default function PicturesPanel({ active }: { active: boolean }) {
           <div className="row" style={{ gap: 2 }}>
             <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{current && current.name ? current.name : ''}</span>
             <span className="grow" />
-            <button className="tbtn-s" title={t('Add Images from Folder...')} disabled={!current || picking} onClick={addFolder}><FolderPlusIcon /></button>
+            <button className="tbtn-s" title={t('Add Images from Folder...')} disabled={!current || picking} onClick={() => setFolderDialog('add')}><FolderPlusIcon /></button>
             <button className="tbtn-s" title={t('Add Images...')} disabled={!current || picking} onClick={addImages}><PlusIcon /></button>
             <button className="tbtn-s" title={t('Remove Image')} disabled={!picked.length} onClick={() => removePhotos(picked)}><MinusIcon /></button>
             <button style={{ marginLeft: 14 }} onClick={() => setViewing(true)} disabled={!slides.length} title={t('Preview (Space)')}>{t('Preview')}</button>
@@ -419,7 +421,10 @@ export default function PicturesPanel({ active }: { active: boolean }) {
         </div>
       </Splitter>
       {viewing && slides.length > 0 && <PhotoViewer slides={slides} index={Math.min(idx, slides.length - 1)} url={slideURL} onIndex={(n) => { setPicked([n]); anchor.current = n; }} onClose={() => { setViewing(false); gridRef.current?.focus(); }} />}
-      {creatingFolder && <FolderShowDialog onCreate={createShowFromFolder} onClose={() => setCreatingFolder(false)} />}
+      {folderDialog && (
+        <FolderImportDialog mode={folderDialog} onClose={() => setFolderDialog(null)}
+          onImport={(f, o, name) => (folderDialog === 'new' ? createShowFromFolder(f, o, name) : addFolder(f, o))} />
+      )}
       {renaming && <NameInfoDialog title={t('Rename Slide Show')} nameLabel={t('Title:')} name={renaming.name} onSave={(n) => renameShow(n)} onClose={() => setRenaming(null)} />}
       {creating && <NameInfoDialog title={t('New Slide Show')} nameLabel={t('Title:')} infoLabel={t('Information:')} onSave={createShow} onClose={() => setCreating(false)} />}
     </>

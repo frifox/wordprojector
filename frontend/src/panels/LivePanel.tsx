@@ -8,7 +8,6 @@ import { Icon, useUI } from '../lib/ui';
 import ScaledSlide from '../projector/ScaledSlide';
 import type { RenderSlide } from '../lib/types';
 
-const typeIcon: Record<string, string> = { bible: 'book.png', song: 'song_tab.png', announce: 'announce.png', picture: 'photo.png', video: 'video.png' };
 
 /** The right hand "live" area: what is projected now. */
 export default function LivePanel() {
@@ -222,19 +221,17 @@ export default function LivePanel() {
               {t('Multi-Verse Mode')}
             </label>
             <span className="grow" />
-            <BibleVersionButtons />
-            <span className="grow" />
+            {/* the version buttons float over the preview box (see LivePreview); without the box they stay here */}
+            {!settings.app.livePreview && <><BibleVersionButtons /><span className="grow" /></>}
           </>
         ) : (
           <>
-            {live.type && <Icon name={typeIcon[live.type]} />}
-            <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{live.title}</span>
             <span className="grow" />
           </>
         )}
         <PresentationButtons show={ui.tab === 'bible' && multi} canPreview={dirty && pending.length > 0} holdPreview={holdPreview} canUpdate={dirty} onUpdate={update} />
       </div>
-      {settings.app.livePreview && <LivePreview override={peek} />}
+      {settings.app.livePreview && <LivePreview override={peek} overlay={isBible ? <BibleVersionButtons /> : undefined} />}
       {live.notes && (
         <div className="muted" style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>
           {t('Notes:')}
@@ -262,7 +259,8 @@ export default function LivePanel() {
   );
 }
 
-export function LivePreview({ override }: { override?: RenderSlide | null }) {
+/** `overlay` is shown at the bottom, in the middle, while the pointer is over the box (or something in it has the focus). */
+export function LivePreview({ override, overlay }: { override?: RenderSlide | null; overlay?: React.ReactNode }) {
   const { live } = useStore();
   const ref = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(300);
@@ -280,7 +278,7 @@ export function LivePreview({ override }: { override?: RenderSlide | null }) {
   const aspect = d?.width && d?.height ? Math.max(1, Math.min(4, d.width / d.height)) : 16 / 9;
   const slide = useMemo(() => override ?? d?.preview ?? d?.slide, [d, override]);
   return (
-    <div ref={ref} style={{ width: '100%', aspectRatio: String(aspect), position: 'relative', overflow: 'hidden', background: '#000', border: '1px solid var(--border)', flex: 'none', boxSizing: 'border-box' }}>
+    <div ref={ref} className="live-preview" style={{ width: '100%', aspectRatio: String(aspect), position: 'relative', overflow: 'hidden', background: '#000', border: '1px solid var(--border)', flex: 'none', boxSizing: 'border-box' }}>
       {slide && (
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
           {slide.kind === 'video' ? (
@@ -290,6 +288,7 @@ export function LivePreview({ override }: { override?: RenderSlide | null }) {
           )}
         </div>
       )}
+      {overlay && <div className="lp-overlay"><div className="lp-overlay-in">{overlay}</div></div>}
     </div>
   );
 }

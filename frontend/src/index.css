@@ -21,6 +21,7 @@
   --tab: #e4e4e4;
   --tab-active: #f8f8f8;
   --stanza-title: #fff176;
+  --control-h: 24px; /* the height of the text fields, drop-downs and ordinary buttons */
   --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --radius: 4px;
   --live-bg: #fafafa;
@@ -91,17 +92,23 @@ select {
   -webkit-user-select: text;
   user-select: text;
 }
-/* macOS draws a select a little shorter than the text fields beside it: it gets their height */
+/* every field, drop-down and ordinary button is as high as the others in its row, on every system (the browsers and the
+   systems draw them a pixel or two apart). The vertical padding goes: the text is centred in the height. */
+input[type='text'],
+input[type='number'],
+input[type='search'],
 select {
   box-sizing: border-box;
-  height: 24px;
+  height: var(--control-h);
+  padding-top: 0;
+  padding-bottom: 0;
 }
 input[type='text']:focus,
 input[type='number']:focus,
 textarea:focus,
 select:focus {
   outline: 2px solid var(--accent);
-  outline-offset: -1px;
+  outline-offset: -2px;
 }
 textarea {
   resize: none;
@@ -118,6 +125,13 @@ button,
   gap: 5px;
   line-height: 1.4;
   white-space: nowrap;
+}
+/* ordinary buttons (not the icon buttons of the toolbars, the small ones, the tiles) have the same height as the fields */
+button:where(:not(.small, .tbtn, .tbtn-s, .ui-thumb, .screen-tile, .icon-btn, .sched-del, .pv-use, .ver-btn, .theme-editor-use, .dd-select)) {
+  box-sizing: border-box;
+  height: var(--control-h);
+  padding-top: 0;
+  padding-bottom: 0;
 }
 button:hover:not(:disabled) {
   background: var(--btn-hover);
@@ -217,6 +231,9 @@ label.chk {
   -webkit-user-select: none;
 }
 .list .item {
+  /* the same line height on every system: "normal" is taller in Segoe UI (Windows) than in San Francisco (macOS), which
+     made the rows of the lists a couple of pixels higher there */
+  line-height: 1.15;
   padding: 2px 6px;
   cursor: default;
   white-space: pre-wrap;
@@ -249,6 +266,32 @@ label.chk {
   padding: 5px 6px;
   border-bottom: 1px solid var(--border-light);
 }
+/* the line under a selected row is a darker shade of its highlight, like a grey line on white: between selected rows it
+   shows as a darker blue line */
+.list .item.sel.spaced,
+.list .item.sel.verse {
+  border-bottom-color: color-mix(in srgb, var(--sel-inactive) 82%, black);
+}
+.list:focus-within .item.sel.spaced,
+.list:focus-within .item.sel.verse,
+.list.active .item.sel.spaced,
+.list.active .item.sel.verse {
+  border-bottom-color: color-mix(in srgb, var(--sel) 80%, black);
+}
+.list.live-list .item.sel.spaced,
+.list.live-list .item.sel.verse {
+  border-bottom-color: color-mix(in srgb, var(--accent) 52%, var(--base));
+}
+:root[data-theme='dark'] .list.live-list .item.sel.spaced,
+:root[data-theme='dark'] .list.live-list .item.sel.verse {
+  border-bottom-color: color-mix(in srgb, var(--accent) 72%, var(--base));
+}
+.list.live-list.quiet .item.sel.spaced,
+.list.live-list.quiet .item.sel.verse,
+:root[data-theme='dark'] .list.live-list.quiet .item.sel.spaced,
+:root[data-theme='dark'] .list.live-list.quiet .item.sel.verse {
+  border-bottom-color: color-mix(in srgb, var(--sel-inactive) 82%, black);
+}
 .list .item.nowrap {
   white-space: pre;
 }
@@ -277,11 +320,13 @@ label.chk {
   cursor: default;
 }
 .table td {
+  line-height: 1.15;
   padding: 1px 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-right: 1px solid transparent;
+  /* no border between the cells: a highlighted or hovered row must be one unbroken colour (the header has its own lines) */
+  border-right: 0;
   cursor: default;
 }
 /* the number column: no room to the right of the digits, so the space before the title is the one the digits have to the
@@ -290,18 +335,12 @@ label.chk {
 .table.num-tight th:first-child {
   padding-right: 0;
 }
-/* the cell borders are transparent, and between cells the table's own background shows through them: a highlighted row
-   gives them the colour of its background so the line between cells does not show */
+/* the highlight of the selected row: one gradient per cell, equal cells, so it runs on unbroken across the row */
 .table tr.sel td {
   background: var(--sel-inactive-bg);
-  background-origin: border-box; /* the gradient runs under the transparent cell border too */
-  border-right-color: transparent;
 }
-.table:focus-within tr.sel td,
-.table.active tr.sel td {
+.table:focus-within tr.sel td {
   background: var(--sel-bg);
-  background-origin: border-box;
-  border-right-color: transparent;
 }
 .toolbar {
   display: flex;
@@ -379,7 +418,7 @@ fieldset.group {
 }
 /* the tab pages of the main window start at the height of the preview box beside them */
 .tabs.grow > .tabbar {
-  padding-top: 6px;
+  padding-top: 2px;
 }
 .tabs .tabbar {
   display: flex;
@@ -731,6 +770,7 @@ button.tbtn-s:disabled img {
   color: var(--text);
 }
 .list .item.verse {
+  border-bottom: 1px solid var(--border-light);
   display: grid;
   grid-template-columns: 3.4ch 1fr;
   column-gap: 0.6ch;
@@ -835,7 +875,7 @@ button.tbtn-s:disabled img {
   flex: none;
 }
 .hdr-ctl {
-  height: 26px;
+  height: var(--control-h);
   box-sizing: border-box;
   flex: none;
 }
@@ -1708,4 +1748,93 @@ textarea,
 [style*='overflow: scroll'],
 [style*='overflow-y: scroll'] {
   overscroll-behavior: none;
+}
+
+/* the drop-down list of Windows (components/Pickers.tsx, DropSelect): looks like the select it stands for */
+button.dd-select {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  box-sizing: border-box;
+  height: var(--control-h);
+  padding: 0 5px;
+  background: var(--base);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  text-align: left;
+  min-width: 0;
+}
+button.dd-select:hover:not(:disabled),
+button.dd-select:active:not(:disabled) {
+  background: var(--base);
+}
+button.dd-select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.dd-select .dd-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.dd-list {
+  position: fixed;
+  z-index: 100000;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: 3px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  padding: 2px;
+}
+.dd-item {
+  padding: 3px 8px;
+  white-space: nowrap;
+  border-radius: 2px;
+  cursor: default;
+}
+.dd-item.sel {
+  font-weight: 600;
+}
+.dd-item.cur {
+  background: var(--accent);
+  color: var(--accent-text, #fff);
+}
+
+/* an address that is also a link: the colour of the text, underlined when the pointer is over it */
+a.url-link {
+  color: inherit;
+  text-decoration: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+a.url-link:hover {
+  text-decoration: underline;
+}
+
+/* what floats over the bottom of the live preview (the Bible version buttons): there while the pointer is over the box */
+.live-preview .lp-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  display: flex;
+  justify-content: center;
+  padding: 0 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.live-preview:hover .lp-overlay,
+.live-preview:focus-within .lp-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+.live-preview .lp-overlay-in {
+  max-width: 100%;
+  padding: 3px;
+  border-radius: 6px;
+  background: rgba(20, 20, 20, 0.7);
 }

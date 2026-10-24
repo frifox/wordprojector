@@ -55,6 +55,7 @@ export interface FolderPick {
   name: string; // folder name
   dir?: string; // server side path (desktop)
   paths?: string[]; // uploaded images (browser)
+  topPaths?: string[]; // those of them that are not in a subfolder
 }
 
 /** Picks a folder with the native dialog; in a browser the images of the chosen folder are uploaded. */
@@ -81,7 +82,10 @@ async function pickFolderNow(desktop: boolean, title: string): Promise<FolderPic
       const rel = (input.files?.[0] as (File & { webkitRelativePath?: string }) | undefined)?.webkitRelativePath ?? '';
       const name = rel.split('/')[0] || '';
       try {
-        resolve({ name, paths: files.length ? await uploadFiles(files) : [] });
+        const paths = files.length ? await uploadFiles(files) : [];
+        // uploadFiles answers in the order of the files: the ones straight in the folder have one slash in their path
+        const top = paths.filter((_, i) => ((files[i] as File & { webkitRelativePath?: string }).webkitRelativePath ?? '').split('/').length <= 2);
+        resolve({ name, paths, topPaths: top });
       } catch {
         resolve(null);
       }

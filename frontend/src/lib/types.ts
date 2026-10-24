@@ -110,6 +110,8 @@ export interface Slide {
   order: number;
   name: string;
   path: string;
+  /** the picture is shown from where it lies on disk (path); only thumbnails are kept */
+  linked?: boolean;
   temp?: string;
   width: number;
   height: number;

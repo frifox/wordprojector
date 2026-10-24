@@ -1,3 +1,4 @@
+import { DropSelect } from '../components/Pickers';
 import { useEffect, useRef, useState } from 'react';
 import Modal, { alertDialog, confirmDialog, useDiscardGuard } from '../components/Modal';
 import { useStore } from '../lib/store';
@@ -183,10 +184,7 @@ export default function ManageDataDialog({ onClose, initialTab }: { onClose: () 
           buttons={<><button onClick={closeModules}>{t('Cancel')}</button><button className="primary" onClick={startDownload} disabled={!modSel.size}>{t('OK')}</button></>}>
           <div className="row">
             <span>{t('Source:')}</span>
-            <select value={source} onChange={(e) => pickSource(e.target.value)}>
-              <option value="softprojector">softprojector.org</option>
-              <option value="custom">{t('Custom')}</option>
-            </select>
+            <DropSelect value={source} onChange={(v) => pickSource(String(v))} options={[{ value: 'softprojector', label: 'softprojector.org' }, { value: 'custom', label: t('Custom') }]} />
             {source === 'custom' && (
               <>
                 <input type="text" className="grow" style={{ minWidth: 0 }} placeholder="http://example.org" value={customUrls[modules.kind]} onChange={(e) => setCustomUrls((u) => ({ ...u, [modules.kind]: e.target.value }))}

@@ -90,8 +90,8 @@ export const api = {
   slideshow: (id: number) => get<SlideShowFull>(`/api/slideshows/${id}`),
   saveSlideshow: (ss: SlideShowFull) => post<{ id: number }>('/api/slideshows', ss),
   deleteSlideshow: (id: number) => del(`/api/slideshows/${id}`),
-  folderImages: (path: string) => post<Slide[]>('/api/slideshows/folder-images', { path }),
-  addImages: (paths: string[]) => post<Slide[]>('/api/slideshows/images', { paths }),
+  folderImages: (path: string, recursive = true, link = false) => post<Slide[]>('/api/slideshows/folder-images', { path, recursive, link }),
+  addImages: (paths: string[], link = false) => post<Slide[]>('/api/slideshows/images', { paths, link }),
 
   media: () => get<MediaItem[]>('/api/media'),
   addMedia: (paths: string[]) => post<{ added: number }>('/api/media', { paths }),
@@ -115,7 +115,7 @@ export const api = {
   updateStatus: (refresh = false) => get<UpdateStatus>(`/api/update${refresh ? '?refresh=1' : ''}`),
   installUpdate: (tag: string, restart: boolean) => post('/api/update/install', { tag, restart }),
   restartApp: () => post('/api/update/restart', {}),
-  remoteInfo: () => get<{ listen: string; urls: string[] }>('/api/remote/info'),
+  remoteInfo: () => get<{ listen: string; urls: string[]; ips: string[] }>('/api/remote/info'),
   saveSettings: (s: Settings) => put('/api/settings', s),
   patchApp: (p: Partial<{ splitters: Record<string, number>; language: string; uiTheme: string; livePreview: boolean; slideshowOrder: number[]; bibleButtonOrder: string[]; moduleSource: string; moduleUrls: Record<string, string> }>) =>
     patch('/api/settings/app', p),
@@ -167,6 +167,10 @@ export const api = {
   dialogFolder: (title: string) => post<{ path: string; name?: string; cancelled?: boolean }>('/api/dialog/folder', { title }),
   dialogSave: (title: string, filename: string, filters: { name: string; pattern: string }[]) =>
     post<{ path: string; cancelled?: boolean }>('/api/dialog/save', { title, filename, filters }),
+  /** a theme as a zip file (theme.json and the pictures): the export opens a save dialog on the server */
+  exportThemePack: (id: number) =>
+    trackPicker(post<{ ok?: boolean; cancelled?: boolean; path?: string; name?: string; download?: string }>('/api/theme-pack/export', { id })),
+  importThemePack: (path: string) => post<{ id: number; name: string }>('/api/theme-pack/import', { path }),
   importFiles: (kind: 'songbook' | 'bible' | 'theme', paths: string[]) => post<{ job: string }>(`/api/import/${kind}`, { paths }),
   exportFile: (kind: 'songbook' | 'bible' | 'theme', body: { id?: number; ids?: number[]; name?: string; path?: string }) =>
     // the export opens a native save dialog on the server

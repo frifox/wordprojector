@@ -1,3 +1,4 @@
+import { DropSelect } from './Pickers';
 import { useEffect, useState } from 'react';
 import Modal from './Modal';
 import { t } from '../i18n';
@@ -97,13 +98,7 @@ export default function DialogHost() {
           }
         >
           <div style={{ whiteSpace: 'pre-wrap', minWidth: 320 }}>{prompt.message}</div>
-          <select autoFocus value={choice} onChange={(e) => setChoice(Number(e.target.value))}>
-            {prompt.options.map((o, i) => (
-              <option key={i} value={i}>
-                {o}
-              </option>
-            ))}
-          </select>
+          <DropSelect autoFocus value={choice} onChange={(v) => setChoice(Number(v))} options={prompt.options.map((o, i) => ({ value: i, label: o }))} />
         </Modal>
       )}
     </>

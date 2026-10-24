@@ -12,6 +12,7 @@ import (
 	"wordprojector/internal/appdata"
 	"wordprojector/internal/desktop"
 	"wordprojector/internal/modules"
+	"wordprojector/internal/slides"
 )
 
 type desktopFilter = desktop.Filter
@@ -193,6 +194,76 @@ func (s *Server) manageRoutes() {
 			resp["download"] = "/api/download?path=" + url.QueryEscape(path)
 		}
 		writeJSON(w, resp)
+	})
+
+	// a theme as a zip file (theme.json and backgrounds/): see internal/theme/pack.go
+	m.HandleFunc("POST /api/theme-pack/export", func(w http.ResponseWriter, r *http.Request) {
+		var in struct {
+			ID   int64  `json:"id"`
+			Path string `json:"path"`
+		}
+		_ = readJSON(r, &in)
+		data, name, err := s.Engine.Themes.Export(in.ID)
+		if err != nil {
+			writeErr(w, 500, err)
+			return
+		}
+		path := in.Path
+		if path == "" {
+			def := safeName(name) + ".zip"
+			if s.Desktop.Available() {
+				p, err := s.Desktop.SaveFile("Export theme as:", def, []desktop.Filter{{Name: "Theme file (*.zip)", Pattern: "*.zip"}})
+				if err != nil || p == "" {
+					writeJSON(w, map[string]any{"cancelled": true})
+					return
+				}
+				path = p
+			} else {
+				path = s.exportPath(def)
+			}
+		}
+		if !hasSuffixFold(path, ".zip") {
+			path += ".zip"
+		}
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err == nil {
+			err = os.WriteFile(path, data, 0o644)
+		} else {
+			writeErr(w, 500, err)
+			return
+		}
+		resp := map[string]any{"ok": true, "path": path, "name": name}
+		if !s.Desktop.Available() {
+			resp["download"] = "/api/download?path=" + url.QueryEscape(path)
+		}
+		writeJSON(w, resp)
+	})
+	m.HandleFunc("POST /api/theme-pack/import", func(w http.ResponseWriter, r *http.Request) {
+		var in struct {
+			Path string `json:"path"`
+		}
+		_ = readJSON(r, &in)
+		if in.Path == "" {
+			writeErr(w, 400, fmt.Errorf("no file given"))
+			return
+		}
+		data, err := os.ReadFile(in.Path)
+		if err != nil {
+			writeErr(w, 400, err)
+			return
+		}
+		id, name, err := s.Engine.Themes.Import(data, func(b []byte) ([]byte, error) {
+			img, err := slides.DecodeBytes(b)
+			if err != nil {
+				return nil, err
+			}
+			return slides.EncodeJPEG(slides.Scale(img, 1920, 1920)), nil
+		})
+		if err != nil {
+			writeErr(w, 400, err)
+			return
+		}
+		s.notify("themes")
+		writeJSON(w, map[string]any{"id": id, "name": name})
 	})
 
 	// module download

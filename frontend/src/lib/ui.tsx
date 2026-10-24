@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useRef } from 'react';
+import React, { createContext, useContext, useId, useRef } from 'react';
 import type { Announcement, Song, SlideShowFull, BibleRef } from './types';
 
 export type TabName = 'bible' | 'songs' | 'pictures' | 'media' | 'announce';
@@ -88,11 +88,18 @@ export const tabIcons: Record<TabName, string> = {
   announce: 'announce.png',
 };
 
-/** The play triangle inside the blue Go Live buttons. */
+/** The play triangle inside the blue Go Live buttons: white fading to pale blue, with a soft shadow under it. */
 export function GoLiveIcon() {
+  const id = useId();
   return (
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M7 4v16l13 -8z" />
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style={{ filter: 'drop-shadow(0 0.8px 0.6px rgba(12, 45, 99, 0.55))' }}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="1" stopColor="#cfe0f7" />
+        </linearGradient>
+      </defs>
+      <path d="M7 4v16l13 -8z" fill={`url(#${id})`} stroke={`url(#${id})`} strokeWidth="2" strokeLinejoin="round" />
     </svg>
   );
 }

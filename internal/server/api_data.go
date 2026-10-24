@@ -18,6 +18,7 @@ import (
 	"wordprojector/internal/desktop"
 	"wordprojector/internal/fonts"
 	"wordprojector/internal/media"
+	"wordprojector/internal/modules"
 	"wordprojector/internal/settings"
 	"wordprojector/internal/slides"
 	"wordprojector/internal/songs"
@@ -933,32 +934,39 @@ func slideTitles() []string   { _, _, s := songs.TitlePrefixes(); return s }
 func (s *Server) addImages(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Paths []string `json:"paths"`
+		Link  bool     `json:"link"`
 	}
 	if err := readJSON(r, &in); err != nil {
 		writeErr(w, 400, err)
 		return
 	}
-	writeJSON(w, s.prepareImages(in.Paths))
+	writeJSON(w, s.prepareImages(in.Paths, in.Link, s.progress(imagesJob)))
 }
+
+// imagesJob is the job whose progress is reported while the pictures of a folder are prepared.
+const imagesJob = "folder-images"
 
 var folderImageExt = map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".bmp": true, ".webp": true, ".tif": true, ".tiff": true}
 
-// addFolderImages prepares every image below a folder (recursively, in name order).
+// addFolderImages prepares the images of a folder in name order, those of its subfolders too when asked.
 func (s *Server) addFolderImages(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Path string `json:"path"`
-	}
+	in := struct {
+		Path      string `json:"path"`
+		Recursive *bool  `json:"recursive"`
+		Link      bool   `json:"link"` // the slides show the pictures where they lie, without a copy
+	}{}
 	if err := readJSON(r, &in); err != nil || in.Path == "" {
 		writeErr(w, 400, fmt.Errorf("no folder given"))
 		return
 	}
+	recursive := in.Recursive == nil || *in.Recursive // the way it always worked
 	var paths []string
 	err := filepath.WalkDir(in.Path, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
 		if d.IsDir() {
-			if p != in.Path && strings.HasPrefix(d.Name(), ".") {
+			if p != in.Path && (!recursive || strings.HasPrefix(d.Name(), ".")) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -972,14 +980,18 @@ func (s *Server) addFolderImages(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 400, err)
 		return
 	}
-	writeJSON(w, s.prepareImages(paths))
+	writeJSON(w, s.prepareImages(paths, in.Link, s.progress(imagesJob)))
 }
 
-func (s *Server) prepareImages(paths []string) []slides.Slide {
+// prepareImages makes slides of pictures. With link the slides will refer to the files instead of holding copies.
+func (s *Server) prepareImages(paths []string, link bool, progress modules.Progress) []slides.Slide {
 	var sets slides.Settings
 	s.Engine.Locked(func() { sets = s.Engine.Settings.Slides })
 	out := []slides.Slide{}
 	for i, p := range paths {
+		if progress != nil {
+			progress(i, len(paths), filepath.Base(p))
+		}
 		img, err := slides.Decode(p)
 		if err != nil {
 			continue
@@ -987,7 +999,14 @@ func (s *Server) prepareImages(paths []string) []slides.Slide {
 		prepared := slides.Prepare(img, sets)
 		key := fmt.Sprintf("tmp%d_%d", time.Now().UnixNano(), i)
 		s.Engine.AddTempImage(key, prepared)
-		out = append(out, slides.Slide{Name: filepath.Base(p), Path: p, Temp: key, Width: prepared.Width, Height: prepared.Height})
+		sl := slides.Slide{Name: filepath.Base(p), Path: p, Temp: key, Width: prepared.Width, Height: prepared.Height, Linked: link}
+		if link { // the size of the picture itself: it is shown as it is
+			sl.Width, sl.Height = img.Bounds().Dx(), img.Bounds().Dy()
+		}
+		out = append(out, sl)
+	}
+	if progress != nil {
+		progress(len(paths), len(paths), "")
 	}
 	return out
 }
@@ -1044,17 +1063,22 @@ func (s *Server) download(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, p)
 }
 
-// remoteInfo tells the Remote settings page where the backend listens now and how other devices reach it.
+// remoteInfo tells the Remote settings page where the backend listens now, and the address of every network interface of
+// this computer (what other devices would use, with the port the page chooses, when public access is on).
 func (s *Server) remoteInfo(w http.ResponseWriter, r *http.Request) {
 	host, port, _ := net.SplitHostPort(s.addr)
-	urls := []string{}
-	if ip := net.ParseIP(host); host == "" || (ip != nil && ip.IsUnspecified()) {
-		addrs, _ := net.InterfaceAddrs()
-		for _, a := range addrs {
-			if n, ok := a.(*net.IPNet); ok && n.IP.To4() != nil && !n.IP.IsLoopback() && !n.IP.IsLinkLocalUnicast() {
-				urls = append(urls, "http://"+net.JoinHostPort(n.IP.String(), port))
-			}
+	ips := []string{}
+	addrs, _ := net.InterfaceAddrs()
+	for _, a := range addrs {
+		if n, ok := a.(*net.IPNet); ok && n.IP.To4() != nil && !n.IP.IsLoopback() && !n.IP.IsLinkLocalUnicast() {
+			ips = append(ips, n.IP.String())
 		}
 	}
-	writeJSON(w, map[string]any{"listen": s.addr, "urls": urls})
+	urls := []string{}
+	if ip := net.ParseIP(host); host == "" || (ip != nil && ip.IsUnspecified()) {
+		for _, a := range ips {
+			urls = append(urls, "http://"+net.JoinHostPort(a, port))
+		}
+	}
+	writeJSON(w, map[string]any{"listen": s.addr, "urls": urls, "ips": ips})
 }

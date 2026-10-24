@@ -19,6 +19,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
+	"wordprojector/internal/appdata"
 	"wordprojector/internal/desktop"
 	"wordprojector/internal/live"
 	"wordprojector/internal/settings"
@@ -273,6 +274,16 @@ func (s *Shell) createMain() {
 		}
 	} else {
 		opts.InitialPosition = application.WindowCentered
+		// the very first start (no geometry was ever saved) fills the screen; the size it has when it is made smaller again
+		// is a comfortable one in the middle of the main screen, not the whole screen
+		if geo.Width == 0 && geo.Height == 0 {
+			opts.StartState = application.WindowStateMaximised
+			if sc := s.app.Screen.GetPrimary(); sc != nil {
+				w, h := min(1280, sc.Bounds.Width*8/10), min(820, sc.Bounds.Height*85/100)
+				s.normal = application.Rect{X: sc.Bounds.X + (sc.Bounds.Width-w)/2, Y: sc.Bounds.Y + (sc.Bounds.Height-h)/2, Width: w, Height: h}
+				s.haveNormal = true
+			}
+		}
 	}
 	s.main = s.app.Window.NewWithOptions(opts)
 	if opts.InitialPosition == application.WindowXY {
@@ -541,6 +552,10 @@ func (s *Shell) OpenFolder(title string) (string, error) {
 
 func (s *Shell) SaveFile(title, defaultName string, filters []desktop.Filter) (string, error) {
 	d := s.app.Dialog.SaveFile().SetMessage(title).SetFilename(defaultName)
+	// exports start in the folder of the program's own files in the user's Documents (~/Documents/WordProjector)
+	if dir, err := appdata.DocumentsDir(""); err == nil {
+		d.SetDirectory(dir)
+	}
 	for _, f := range filters {
 		d.AddFilter(f.Name, f.Pattern)
 	}

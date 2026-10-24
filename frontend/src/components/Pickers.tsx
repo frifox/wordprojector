@@ -205,14 +205,126 @@ export function AlignGroup({ axis, value, onChange, disabled, h = 0 }: { axis: '
   );
 }
 
-export function Select({ value, options, onChange, disabled, style }: { value: number; options: string[]; onChange: (v: number) => void; disabled?: boolean; style?: React.CSSProperties }) {
+/** Windows draws the drop-down of a select so that it needs a click, then another click: the one-movement way of macOS
+ *  (press, drag to an item, release) does not work there. */
+const WINDOWS = typeof navigator !== 'undefined' && (/Windows/i.test(navigator.userAgent) || safeGet('wp.dropSelect') === '1'); // the key lets any system try it
+
+function safeGet(key: string): string | null {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+
+export interface SelectOption { value: number | string; label: string }
+
+/**
+ * A drop-down list. macOS and the others get the browser's own select. On Windows it is a list of our own that opens on the
+ * press of the mouse button, follows the pointer while the button is held, and takes the item the button is released
+ * over, in one movement (a plain click still opens the list for a click on an item, and the keys work too).
+ */
+export function DropSelect({ value, options, onChange, disabled, style, className, title, autoFocus }: {
+  value: number | string; options: SelectOption[]; onChange: (v: number | string) => void; disabled?: boolean;
+  style?: React.CSSProperties; className?: string; title?: string; autoFocus?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const [cur, setCur] = useState(-1); // the highlighted item
+  const btn = useRef<HTMLButtonElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+  const selected = Math.max(0, options.findIndex((o) => String(o.value) === String(value)));
+  const typeOf = (v: number | string) => (typeof value === 'number' ? Number(v) : v);
+
+  const close = () => setOpen(false);
+  const choose = (i: number) => {
+    setOpen(false);
+    const o = options[i];
+    if (o && String(o.value) !== String(value)) onChange(typeOf(o.value));
+  };
+  const show = () => {
+    if (disabled) return;
+    setRect(btn.current?.getBoundingClientRect() ?? null);
+    setCur(selected);
+    setOpen(true);
+  };
+  useEffect(() => {
+    if (!open) return;
+    list.current?.querySelector<HTMLElement>('[data-current="true"]')?.scrollIntoView({ block: 'nearest' });
+    // a press outside closes the list
+    const away = (e: MouseEvent) => { if (!list.current?.contains(e.target as Node) && !btn.current?.contains(e.target as Node)) close(); };
+    window.addEventListener('mousedown', away, true);
+    return () => window.removeEventListener('mousedown', away, true);
+  }, [open]);
+
+  const itemAt = (x: number, y: number) => {
+    const el = document.elementFromPoint(x, y)?.closest('[data-opt]') as HTMLElement | null;
+    return el && list.current?.contains(el) ? Number(el.dataset.opt) : -1;
+  };
+  const press = (e: React.MouseEvent) => {
+    if (e.button !== 0 || disabled) return;
+    e.preventDefault();
+    btn.current?.focus();
+    if (open) { close(); return; }
+    show();
+    // held down: the item under the pointer is the highlighted one, and the one the release takes
+    const move = (ev: MouseEvent) => { const i = itemAt(ev.clientX, ev.clientY); if (i >= 0) setCur(i); };
+    const up = (ev: MouseEvent) => {
+      window.removeEventListener('mousemove', move, true);
+      window.removeEventListener('mouseup', up, true);
+      const i = itemAt(ev.clientX, ev.clientY);
+      if (i >= 0) choose(i); // released over an item: that is the choice
+      else if (!btn.current?.contains(ev.target as Node)) close(); // released away from the list and the box
+      // released over the box itself (a plain click): the list stays open for a click on an item
+    };
+    window.addEventListener('mousemove', move, true);
+    window.addEventListener('mouseup', up, true);
+  };
+  const key = (e: React.KeyboardEvent) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!open) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const n = Math.max(0, Math.min(options.length - 1, selected + (e.key === 'ArrowDown' ? 1 : -1)));
+        if (n !== selected) choose(n);
+      } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(); }
+      return;
+    }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const n = Math.max(0, Math.min(options.length - 1, cur + (e.key === 'ArrowDown' ? 1 : -1)));
+      setCur(n);
+      list.current?.querySelector<HTMLElement>(`[data-opt="${n}"]`)?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(cur); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
+    else if (e.key === 'Tab') close();
+  };
+
+  if (!WINDOWS) {
+    return (
+      <select className={className} value={value} disabled={disabled} title={title} autoFocus={autoFocus} style={style} onChange={(e) => onChange(typeOf(e.target.value))}>
+        {options.map((o) => <option key={String(o.value)} value={o.value}>{o.label}</option>)}
+      </select>
+    );
+  }
   return (
-    <select value={value} disabled={disabled} onChange={(e) => onChange(Number(e.target.value))} style={style}>
-      {options.map((o, i) => (
-        <option key={i} value={i}>{o}</option>
-      ))}
-    </select>
+    <>
+      <button ref={btn} type="button" className={`dd-select ${className ?? ''}`} style={style} title={title} disabled={disabled} autoFocus={autoFocus}
+        data-esc-own={open ? '' : undefined} onMouseDown={press} onKeyDown={key} onBlur={() => { if (open) window.setTimeout(() => { if (document.activeElement !== btn.current) close(); }, 0); }}>
+        <span className="dd-text">{options[selected]?.label ?? ''}</span>
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6" /></svg>
+      </button>
+      {open && rect && createPortal(
+        <div ref={list} role="listbox" className="dd-list"
+          style={{ left: rect.left, top: Math.min(rect.bottom + 1, window.innerHeight - 304), minWidth: rect.width, maxHeight: 300 }}>
+          {options.map((o, i) => (
+            <div key={String(o.value)} role="option" aria-selected={i === selected} data-opt={i} data-current={i === cur}
+              className={`dd-item ${i === cur ? 'cur' : ''} ${i === selected ? 'sel' : ''}`}
+              onMouseEnter={() => setCur(i)} onClick={() => choose(i)}>{o.label}</div>
+          ))}
+        </div>, document.body)}
+    </>
   );
+}
+
+export function Select({ value, options, onChange, disabled, style }: { value: number; options: string[]; onChange: (v: number) => void; disabled?: boolean; style?: React.CSSProperties }) {
+  return <DropSelect value={value} options={options.map((label, i) => ({ value: i, label }))} onChange={(v) => onChange(Number(v))} disabled={disabled} style={style} />;
 }
 
 /** Textarea with a highlighted backdrop (stanza/announcement titles). */

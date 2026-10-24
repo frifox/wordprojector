@@ -645,7 +645,7 @@ export default function BiblePanel({ active }: { active: boolean }) {
               {visible.map((i) => {
                 const v = verses[i];
                 return (
-                <div key={i} className={`item verse ${sel.includes(i) ? 'sel' : ''}`} style={{ padding: '3px 6px', borderBottom: '1px solid var(--border-light)' }} onMouseDown={(e) => onVerseDown(i, e)} onMouseEnter={() => onVerseEnter(i)} onDoubleClick={() => goLive(true)}>
+                <div key={i} className={`item verse ${sel.includes(i) ? 'sel' : ''}`} style={{ padding: '3px 6px' }} onMouseDown={(e) => onVerseDown(i, e)} onMouseEnter={() => onVerseEnter(i)} onDoubleClick={() => goLive(true)}>
                   <span className="verse-num">{v.num}.</span>
                   <span className="verse-text">{v.text}</span>
                 </div>

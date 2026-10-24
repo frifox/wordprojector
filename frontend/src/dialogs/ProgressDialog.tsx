@@ -5,7 +5,8 @@ import { t } from '../i18n';
 /** Shows running import/download jobs reported over the websocket. */
 export default function ProgressDialog() {
   const { progress, clearProgress } = useStore();
-  const jobs = Object.values(progress);
+  // the pictures of a folder being prepared have their own bar in the dialog that asked for them
+  const jobs = Object.values(progress).filter((j) => j.job !== 'folder-images');
   if (!jobs.length) return null;
   const p = jobs[0];
   const pct = p.max && p.max > 0 ? Math.min(100, Math.round(((p.cur || 0) * 100) / p.max)) : p.done ? 100 : 0;
