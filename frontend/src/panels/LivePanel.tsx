@@ -232,7 +232,7 @@ export default function LivePanel() {
         )}
         <PresentationButtons show={ui.tab === 'bible' && multi} canPreview={dirty && pending.length > 0} holdPreview={holdPreview} canUpdate={dirty} onUpdate={update} />
       </div>
-      {settings.app.livePreview && <LivePreview override={peek} overlay={isBible ? <BibleVersionButtons /> : undefined} />}
+      {settings.app.livePreview && <LivePreview override={peek} overlay={isBible || ui.tab === 'bible' ? <BibleVersionButtons /> : undefined} />}
       {live.notes && (
         <div className="muted" style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>
           {t('Notes:')}

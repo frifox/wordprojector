@@ -42,9 +42,11 @@ export default function ManageDataDialog({ onClose, initialTab }: { onClose: () 
   useEffect(load, [dataVersion.bibles, dataVersion.songbooks, dataVersion.all]);
 
   const defaultSongbook = settings.app.defaultSongbook || 0;
+  const defaultBible = settings.app.defaultBible || 0;
   const toggleDefault = async () => {
     const s2 = JSON.parse(JSON.stringify(settings));
-    s2.app.defaultSongbook = defaultSongbook === sel.songbooks ? 0 : sel.songbooks;
+    if (tab === 'bibles') s2.app.defaultBible = defaultBible === sel.bibles ? 0 : sel.bibles;
+    else s2.app.defaultSongbook = defaultSongbook === sel.songbooks ? 0 : sel.songbooks;
     await api.saveSettings(s2);
     reloadSettings();
   };
@@ -131,7 +133,7 @@ export default function ManageDataDialog({ onClose, initialTab }: { onClose: () 
   };
 
   const rows: { id: number; a: string; b?: string; abbr?: string; star?: boolean }[] =
-    tab === 'bibles' ? bibles.map((b) => ({ id: b.id, a: b.name, abbr: b.abbr })) : songbooks.map((b) => ({ id: b.id, a: b.name, star: b.id === defaultSongbook, b: b.info }));
+    tab === 'bibles' ? bibles.map((b) => ({ id: b.id, a: b.name, abbr: b.abbr, star: b.id === defaultBible })) : songbooks.map((b) => ({ id: b.id, a: b.name, star: b.id === defaultSongbook, b: b.info }));
   const count = rows.length;
 
   return (
@@ -161,7 +163,7 @@ export default function ManageDataDialog({ onClose, initialTab }: { onClose: () 
               <div className="books-bar">
                 <button className="small" onClick={doDownload}>{t('Import from Cloud')}</button>
                 <button className="small" onClick={doImport}>{t('Import from File')}</button>
-                {tab === 'songbooks' && <button className="small" disabled={!current} onClick={toggleDefault}>{current && current === defaultSongbook ? t('Unset as Default') : t('Set as Default')}</button>}
+                <button className="small" disabled={!current} onClick={toggleDefault}>{current && current === (tab === 'bibles' ? defaultBible : defaultSongbook) ? t('Unset as Default') : t('Set as Default')}</button>
                 <span className="grow" />
                 <button className="small" disabled={!current} onClick={() => setEdit({ kind: tab, mode: 'edit' })}>{t('Edit')}</button>
                 <button className="small" disabled={!current || count < 2} onClick={doDelete}>{t('Delete')}</button>

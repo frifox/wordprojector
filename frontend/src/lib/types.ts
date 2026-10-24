@@ -250,6 +250,7 @@ export interface AppSettings {
   /** the font of the operator window; empty is the system font */
   uiFont?: string;
   defaultSongbook?: number;
+  defaultBible?: number;
   slideshowOrder?: number[];
   /** the look for a newer release at start is on unless this is set */
   /** the order of the Bible version buttons (Bible ids) */

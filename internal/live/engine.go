@@ -167,9 +167,14 @@ func (e *Engine) OperatorBibleID() int64 {
 	return e.operatorBibleID()
 }
 
-// operatorBibleID: the Bible browsed in the Bible tab is always the primary Bible of display 1
-// (the old separate "Operator Bible" setting is no longer used).
+// operatorBibleID: the Bible browsed in the Bible tab is the one set as default (when it still exists), else the
+// primary Bible of display 1.
 func (e *Engine) operatorBibleID() int64 {
+	if d := int64(e.Settings.App.DefaultBible); d > 0 && e.Bibles != nil {
+		if _, err := e.Bibles.Get(d); err == nil {
+			return d
+		}
+	}
 	n, _ := strconv.ParseInt(e.Settings.Bible[0].Primary, 10, 64)
 	return n
 }

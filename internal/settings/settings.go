@@ -107,6 +107,8 @@ type App struct {
 	SlideshowOrder []int `json:"slideshowOrder"`
 	// DefaultSongbook is the songbook pre-selected in the Songs tab on start (0 = all songbooks).
 	DefaultSongbook int `json:"defaultSongbook"`
+	// DefaultBible is the Bible browsed in the Bible tab (0 = the primary Bible of the first display).
+	DefaultBible int `json:"defaultBible"`
 	// SkipUpdateCheck turns off the look for a newer release when the program starts (it is on by default).
 	SkipUpdateCheck bool `json:"skipUpdateCheck"`
 	// BibleButtonOrder is the order of the Bible version buttons (Bible ids), as the user dragged them.

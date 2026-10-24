@@ -571,8 +571,10 @@ export default function BiblePanel({ active }: { active: boolean }) {
             <input type="checkbox" checked={fullWord} onChange={(e) => setFullWord(e.target.checked)} />
             {t('Full Word')}
           </label>
-          <button disabled={searchText === '' && results === null} onClick={clearSearch} title={t('Clear the search text and the results (Esc)')}>{t('Clear')}</button>
-          <button onClick={doSearch}><img className="icon" src="/icons/search.png" alt="" />{t('Search')}</button>
+          <div className="btn-group">
+            <button disabled={searchText === '' && results === null} onClick={clearSearch} title={t('Clear the search text and the results (Esc)')}>{t('Clear')}</button>
+            <button onClick={doSearch}><img className="icon" src="/icons/search.png" alt="" />{t('Search')}</button>
+          </div>
         </div>
         {results !== null ? (
         <div className="col grow" style={{ minHeight: 0, gap: 4 }}>
