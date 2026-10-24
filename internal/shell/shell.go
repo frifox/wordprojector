@@ -248,6 +248,8 @@ func (s *Shell) createMain() {
 	var geo settings.WindowGeometry
 	var maximised bool
 	s.engine.Locked(func() { geo, maximised = s.engine.Settings.App.Window, s.engine.Settings.Main.IsWindowMaximized })
+	// maximised only after the window has its normal bounds: on Windows, bounds set to a maximised window leave it small
+	var startMax bool
 	opts := application.WebviewWindowOptions{
 		Name:             "main",
 		Title:            s.name,
@@ -269,15 +271,13 @@ func (s *Shell) createMain() {
 		opts.InitialPosition = application.WindowXY
 		s.normal = application.Rect{X: geo.X, Y: geo.Y, Width: geo.Width, Height: geo.Height}
 		s.haveNormal = true
-		if maximised {
-			opts.StartState = application.WindowStateMaximised
-		}
+		startMax = maximised
 	} else {
 		opts.InitialPosition = application.WindowCentered
 		// the very first start (no geometry was ever saved) fills the screen; the size it has when it is made smaller again
 		// is a comfortable one in the middle of the main screen, not the whole screen
 		if geo.Width == 0 && geo.Height == 0 {
-			opts.StartState = application.WindowStateMaximised
+			startMax = true
 			if sc := s.app.Screen.GetPrimary(); sc != nil {
 				w, h := min(1280, sc.Bounds.Width*8/10), min(820, sc.Bounds.Height*85/100)
 				s.normal = application.Rect{X: sc.Bounds.X + (sc.Bounds.Width-w)/2, Y: sc.Bounds.Y + (sc.Bounds.Height-h)/2, Width: w, Height: h}
@@ -290,7 +290,7 @@ func (s *Shell) createMain() {
 		s.main.SetBounds(s.normal) // the saved bounds include the title bar, the size option does not
 	}
 	s.main.Show() // a window created after the loop started is not shown by itself
-	if opts.StartState == application.WindowStateMaximised {
+	if startMax {
 		s.main.Maximise()
 	}
 	s.main.Focus()

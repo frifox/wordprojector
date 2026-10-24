@@ -15,7 +15,8 @@ export default function ScreenMap({ screens, slots, onChange }: { screens: Scree
   const bottom = Math.max(...screens.map((s) => s.y + s.height));
   const scale = Math.min(MAP_W / (right - left), MAP_H / (bottom - top));
   // a slot whose screen is no longer connected counts as unused (it is dropped on the next change)
-  const used = slots.filter((i) => i >= 0 && screens.some((sc) => sc.index === i));
+  // with a single screen the presentation can only go there, whatever the saved slots say
+  const used = screens.length === 1 ? [screens[0].index] : slots.filter((i) => i >= 0 && screens.some((sc) => sc.index === i));
 
   const toggle = (index: number) => {
     const at = used.indexOf(index);

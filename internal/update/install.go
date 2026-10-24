@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -73,7 +74,7 @@ func (u *Updater) Install(ctx context.Context, rel Release, progress func(string
 	if pl.bundle != "" {
 		return replaceBundle(root, pl.bundle)
 	}
-	return replaceExecutable(root, pl.exe, u.GOOS)
+	return replaceExecutable(root, pl.exe, u.GOOS, u.Current)
 }
 
 // replaceBundle puts the app bundle found in dir in the place of the old one.
@@ -106,7 +107,7 @@ func replaceBundle(dir, bundle string) error {
 }
 
 // replaceExecutable puts the program file found in dir in the place of the running one.
-func replaceExecutable(dir, exe, goos string) error {
+func replaceExecutable(dir, exe, goos, current string) error {
 	var fresh string
 	want := strings.ToLower(filepath.Base(exe))
 	_ = filepath.WalkDir(dir, func(p string, d os.DirEntry, err error) error {
@@ -138,7 +139,7 @@ func replaceExecutable(dir, exe, goos string) error {
 		return nil
 	}
 	// a running program cannot be overwritten on Windows, but it can be renamed
-	old := exe + ".old"
+	old := oldExecutable(exe, current)
 	_ = os.Remove(old)
 	if err := os.Rename(exe, old); err != nil {
 		return fmt.Errorf("cannot replace %s: %w", exe, err)
@@ -149,6 +150,13 @@ func replaceExecutable(dir, exe, goos string) error {
 		return err
 	}
 	return nil
+}
+
+// oldExecutable is the name the running program is renamed to on Windows: the build tag goes before the extension,
+// WordProjector.exe -> WordProjector.2026-10-22.exe.
+func oldExecutable(exe, tag string) string {
+	ext := filepath.Ext(exe)
+	return strings.TrimSuffix(exe, ext) + "." + tag + ext
 }
 
 func copyFile(from, to string, mode os.FileMode) error {
@@ -180,7 +188,12 @@ func (u *Updater) Cleanup() {
 	_ = os.Remove(pl.exe + ".old")
 	_ = os.Remove(pl.exe + ".new")
 	if entries, err := os.ReadDir(parent); err == nil {
+		ext := filepath.Ext(pl.exe)
+		keep := regexp.MustCompile(`^` + regexp.QuoteMeta(strings.TrimSuffix(filepath.Base(pl.exe), ext)) + `\.(\d{4}-\d{2}-\d{2}(\.\d+)?|dev)` + regexp.QuoteMeta(ext) + `$`)
 		for _, e := range entries {
+			if !e.IsDir() && keep.MatchString(e.Name()) { // an earlier version, left by an update
+				_ = os.Remove(filepath.Join(parent, e.Name()))
+			}
 			if e.IsDir() && strings.HasPrefix(e.Name(), stagingPrefix) {
 				_ = os.RemoveAll(filepath.Join(parent, e.Name()))
 			}

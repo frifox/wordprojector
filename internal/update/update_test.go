@@ -176,12 +176,13 @@ func TestInstallWindowsKeepsOldUntilCleanup(t *testing.T) {
 		t.Fatal(err)
 	}
 	got, _ := os.ReadFile(exe)
-	old, _ := os.ReadFile(exe + ".old")
+	oldPath := filepath.Join(dir, "WordProjector.2025-12-01.exe")
+	old, _ := os.ReadFile(oldPath)
 	if string(got) != "new" || string(old) != "old" {
 		t.Fatalf("exe %q, old %q", got, old)
 	}
 	u.Cleanup()
-	if _, err := os.Stat(exe + ".old"); err == nil {
+	if _, err := os.Stat(oldPath); err == nil {
 		t.Fatal("the old copy was not removed")
 	}
 }
