@@ -20,6 +20,7 @@ export default function LivePanel() {
   useEffect(() => {
     const check = () => {
       const a = document.activeElement as HTMLElement | null;
+      if (a?.closest?.('.modal')) return; // a dialog is open: the highlight behind it stays as it was
       const tag = a?.tagName;
       const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!a?.isContentEditable;
       const inOtherList = !!a?.closest?.('.list, .table') && !listRef.current?.contains(a);

@@ -356,11 +356,15 @@ func (u *Updater) Restart(args []string, quit func()) error {
 	case pl.bundle != "":
 		cmd = exec.Command("sh", "-c", `sleep 1.5; exec open -n "$0"`, pl.bundle)
 	case u.GOOS == "windows":
-		cmd = exec.Command("cmd", "/C", "ping -n 3 127.0.0.1 >nul & start \"\" \""+pl.exe+"\"")
+		cmd = exec.Command("cmd")
 	default:
 		cmd = exec.Command("sh", append([]string{"-c", `sleep 1.5; exec "$0" "$@"`, pl.exe}, args...)...)
 	}
 	detach(cmd)
+	if u.GOOS == "windows" && pl.bundle == "" {
+		// Go would escape the quotes with backslashes, which cmd does not understand: the line goes as it is
+		rawCommandLine(cmd, `cmd /C ping -n 3 127.0.0.1 >nul & start "" "`+pl.exe+`"`)
+	}
 	if err := cmd.Start(); err != nil {
 		return err
 	}
