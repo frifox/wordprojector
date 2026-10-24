@@ -222,7 +222,6 @@
 "Effects": "Էֆեկտներ",
 "Font...": "Տառատեսակ...",
 "Alignment:": "Հավսարեցնել դեպի:",
-"Use Background Image": "Օգտագործեք ֆոնային պատկեր",
 "If checked, when switching displayed text, fades the old text out and fades the new text in .": "Հարթ մարում երբ անցնում է մեկ խոսքից մյուսը .",
 "None": "Չի ընտրվել",
 "Show Bible Version Abbriviation": "Ցույց տալ հապավումը Աստվածաշնչի",
@@ -665,7 +664,6 @@
 "Install {tag}?": "Տեղադրե՞լ {tag}-ը",
 "Installed": "Տեղադրված է",
 "Installing…": "Տեղադրվում է…",
-"Interface Theme": "Ինտերֆեյսի թեմա",
 "It is used the next time Word Projector starts.": "Այն կօգտագործվի Word Projector-ի հաջորդ գործարկման ժամանակ։",
 "Key:": "Ստեղն՝",
 "Latest": "Վերջինը",
@@ -696,7 +694,6 @@
 "No changes": "Փոփոխություններ չկան",
 "No download for this computer": "Այս համակարգչի համար ներբեռնում չկա",
 "No images found": "Պատկերներ չեն գտնվել",
-"No images yet. Use Add... to choose some.": "Պատկերներ դեռ չկան։ Ընտրելու համար օգտագործեք «Ավելացնել...»։",
 "No media": "Մեդիա չկա",
 "No modules available.": "Մոդուլներ հասանելի չեն։",
 "No releases found.": "Թողարկումներ չեն գտնվել։",
@@ -850,5 +847,13 @@
 "Need help, found a bug or have an idea?": "Օգնության կարիք ունե՞ք, սխա՞լ եք գտել, թե՞ գաղափար ունեք։",
 "Ask on the project page on GitHub:": "Գրեք նախագծի GitHub էջում:",
 "Simple app to display Bible, songs, slide shows.": "Պարզ հավելված Աստվածաշունչը, երգերը, սլայդ շոուները ցուցադրելու համար։",
-"This program is free software released under the GNU GPL v3.": "Այս ծրագիրը ազատ ծրագրային ապահովում է, որը թողարկվել է GNU GPL v3-ով։"
+"This program is free software released under the GNU GPL v3.": "Այս ծրագիրը ազատ ծրագրային ապահովում է, որը թողարկվել է GNU GPL v3-ով։",
+"System default": "Համակարգի լռելյայն",
+"Interface": "Ինտերֆեյս",
+"No images yet. Use Add to choose some.": "Պատկերներ դեռ չկան։ Ընտրելու համար օգտագործեք «Ավելացնել»։",
+"Add": "Ավելացնել",
+"Show the highlighted image full window (Space)": "Ցույց տալ ընտրված պատկերը ամբողջ պատուհանով (բացատ)",
+"Use as background": "Օգտագործել որպես ֆոն",
+"Add Background Image": "Ավելացնել ֆոնային պատկեր",
+"Color:": "Գույն՝"
 }

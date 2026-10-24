@@ -50,7 +50,6 @@
 "Useful when using a wallpaper image. Displays a fancy shadow effect.": "Nützlich, wenn ein Hintergrundbild benutzt wird. Zeigt einen besonderen Schatten-Effekt an.",
 "Use shadow": "Schatten verwenden",
 "Use blurred shadow": "Verschwommene Schatten verwenden",
-"Use Background Image": "Hintergrundbild benutzen",
 "Browse...": "Durchsuchen...",
 "Apply this background to all active backgrounds.": "Wenden Sie diesen Hintergrund an alle aktiven Hintergründe.",
 "Color...": "Farbe...",
@@ -835,7 +834,6 @@
 "Install {tag}?": "{tag} installieren?",
 "Installed": "Installiert",
 "Installing…": "Installiere…",
-"Interface Theme": "Oberflächen-Design",
 "It is used the next time Word Projector starts.": "Es wird beim nächsten Start von Word Projector verwendet.",
 "Key:": "Tonart:",
 "Latest": "Neueste",
@@ -866,7 +864,6 @@
 "No changes": "Keine Änderungen",
 "No download for this computer": "Kein Download für diesen Computer",
 "No images found": "Keine Bilder gefunden",
-"No images yet. Use Add... to choose some.": "Noch keine Bilder. Wählen Sie mit Hinzufügen... welche aus.",
 "No media": "Keine Medien",
 "No modules available.": "Keine Module verfügbar.",
 "No releases found.": "Keine Versionen gefunden.",
@@ -1019,5 +1016,12 @@
 "Need help, found a bug or have an idea?": "Brauchen Sie Hilfe, haben einen Fehler gefunden oder eine Idee?",
 "Ask on the project page on GitHub:": "Fragen Sie auf der Projektseite bei GitHub:",
 "Simple app to display Bible, songs, slide shows.": "Einfache App zur Anzeige von Bibel, Liedern, Diashows.",
-"This program is free software released under the GNU GPL v3.": "Dieses Programm ist freie Software, veröffentlicht unter der GNU GPL v3."
+"This program is free software released under the GNU GPL v3.": "Dieses Programm ist freie Software, veröffentlicht unter der GNU GPL v3.",
+"System default": "Systemstandard",
+"Interface": "Oberfläche",
+"No images yet. Use Add to choose some.": "Noch keine Bilder. Wählen Sie mit Hinzufügen welche aus.",
+"Add": "Hinzufügen",
+"Show the highlighted image full window (Space)": "Das gewählte Bild im Vollbild zeigen (Leertaste)",
+"Use as background": "Als Hintergrund verwenden",
+"Add Background Image": "Hintergrundbild hinzufügen"
 }

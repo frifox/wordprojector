@@ -194,6 +194,8 @@ export interface SongSettings extends TextSettings {
 export interface Theme extends ThemeInfo {
   /** the color of the screen behind the text */
   backgroundColor: string;
+  /** how opaque that color is, in percent; less lets the picture of the theme show through */
+  backgroundOpacity: number;
   bible: BibleSettings;
   song: SongSettings;
   /** the picture shown when nothing is projected */
@@ -243,6 +245,8 @@ export interface AppSettings {
   hideDisplayControls?: boolean;
   livePreview: boolean;
   uiTheme: string;
+  /** the font of the operator window; empty is the system font */
+  uiFont?: string;
   defaultSongbook?: number;
   slideshowOrder?: number[];
   /** the look for a newer release at start is on unless this is set */
@@ -320,6 +324,10 @@ export interface Background {
   url?: string;
   /** how an image fills the screen: cover, contain or fill (stretch, the default) */
   fit?: 'cover' | 'contain' | 'fill';
+  /** how see-through a color is, in percent (0 or missing is solid) */
+  clear?: number;
+  /** what shows through a see-through color: the picture of the theme, else black */
+  under?: Background;
 }
 
 export interface TextStyle {

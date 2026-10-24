@@ -1,5 +1,6 @@
 import { t } from '../i18n';
 import type { Settings } from '../lib/types';
+import { FontSelect, useFonts } from '../components/Pickers';
 
 const UI_COLORS = {
   light: { bg: '#ececec', panel: '#f5f5f5', base: '#ffffff', line: '#c8c8c8', sel: '#cfe0f7', text: '#1c1c1c' },
@@ -36,9 +37,12 @@ function UiThumb({ mode }: { mode: 'system' | 'light' | 'dark' }) {
 /** Settings > General: the look of the operator window. */
 export function UserInterfaceSection({ s, setS, applyNow }: { s: Settings; setS: (f: (x: Settings) => Settings) => void; applyNow: (next: Settings) => Promise<void> }) {
   const setApp = (p: Partial<Settings['app']>) => setS((x) => ({ ...x, app: { ...x.app, ...p } }));
+  const fonts = useFonts();
+  const system = t('System default');
+  const uiFont = s.app.uiFont || '';
   return (
     <fieldset className="group">
-        <legend>{t('Interface Theme')}</legend>
+        <legend>{t('Interface')}</legend>
         <div className="row" style={{ gap: 12, alignItems: 'flex-start' }}>
           {(['system', 'light', 'dark'] as const).map((mode) => (
             <button key={mode} className={`ui-thumb ${(s.app.uiTheme || 'system') === mode ? 'on' : ''}`} onClick={() => setApp({ uiTheme: mode })} onDoubleClick={() => applyNow({ ...s, app: { ...s.app, uiTheme: mode } })} aria-pressed={(s.app.uiTheme || 'system') === mode}>
@@ -46,6 +50,10 @@ export function UserInterfaceSection({ s, setS, applyNow }: { s: Settings; setS:
               <span>{mode === 'system' ? t('System') : mode === 'light' ? t('Light') : t('Dark')}</span>
             </button>
           ))}
+        </div>
+        <div className="row" style={{ marginTop: 10, gap: 8 }}>
+          <span>{t('Font:')}</span>
+          <FontSelect value={uiFont || system} fonts={[system, ...(uiFont && !fonts.includes(uiFont) ? [uiFont] : []), ...fonts]} onChange={(f) => setApp({ uiFont: f === system ? '' : f })} />
         </div>
     </fieldset>
   );

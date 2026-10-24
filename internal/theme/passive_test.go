@@ -85,3 +85,45 @@ func TestPassivePicturesBelongToTheTheme(t *testing.T) {
 		t.Fatalf("theme A lost pictures: %v", list)
 	}
 }
+
+// How opaque the background color is belongs to the theme, is kept in range, and copies with it.
+func TestBackgroundOpacityIsKeptAndCopied(t *testing.T) {
+	d, err := db.Open(filepath.Join(t.TempDir(), "wordprojector.sqlite"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := &Repo{DB: d, Dir: t.TempDir()}
+	th := Default()
+	th.Name = "A"
+	id, err := r.Insert(th)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := r.Load(id); got.BackgroundOpacity != 100 {
+		t.Fatalf("a new theme is opaque: %d", got.BackgroundOpacity)
+	}
+	got, _ := r.Load(id)
+	got.BackgroundOpacity = 35
+	if err := r.Update(got); err != nil {
+		t.Fatal(err)
+	}
+	if again, _ := r.Load(id); again.BackgroundOpacity != 35 {
+		t.Fatalf("saved 35, loaded %d", again.BackgroundOpacity)
+	}
+	got.BackgroundOpacity = 250
+	if err := r.Update(got); err != nil {
+		t.Fatal(err)
+	}
+	if again, _ := r.Load(id); again.BackgroundOpacity != 100 {
+		t.Fatalf("a value over 100 is kept at 100: %d", again.BackgroundOpacity)
+	}
+	got.BackgroundOpacity = 40
+	r.Update(got)
+	copyID, err := r.Duplicate(id, "B")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c, _ := r.Load(copyID); c.BackgroundOpacity != 40 {
+		t.Fatalf("the copy has opacity %d, want 40", c.BackgroundOpacity)
+	}
+}

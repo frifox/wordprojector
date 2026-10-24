@@ -390,9 +390,9 @@ function PresentationButtons({ show, canPreview, holdPreview, canUpdate, onUpdat
           <rect width="4" height="2" x="10" y="12" />
         </svg>
       </button>
+      <Btn title={t('Clear')} onClick={() => api.clear()} disabled={!live.type}><path d="M19 20h-10.5l-4.21 -4.3a1 1 0 0 1 0 -1.41l10 -10a1 1 0 0 1 1.41 0l5 5a1 1 0 0 1 0 1.41l-9.2 9.3" /><path d="M18 13.3l-6.3 -6.3" /></Btn>
       {/* Pause blanks the displays until Play, a double-clicked item or Pause again brings the content back */}
       <Btn title={live.cleared ? `${t('Resume')} (F4)` : `${t('Pause')} (Shift+Esc)`} onClick={() => (live.cleared ? api.show() : api.pause())} disabled={!live.type} active={live.cleared}><path d="M6 5h4v14H6z" /><path d="M14 5h4v14h-4z" /></Btn>
-      <Btn title={t('Clear')} onClick={() => api.clear()} disabled={!live.type}><path d="M19 20h-10.5l-4.21 -4.3a1 1 0 0 1 0 -1.41l10 -10a1 1 0 0 1 1.41 0l5 5a1 1 0 0 1 0 1.41l-9.2 9.3" /><path d="M18 13.3l-6.3 -6.3" /></Btn>
       <Btn title={canUpdate ? `${t('Show the new selection')} (F5)` : `${t('Play')} (F4)`} onClick={() => (canUpdate ? onUpdate() : api.show())} disabled={!canUpdate && !playChangesDisplays}><path d="M7 4v16l13 -8z" /></Btn>
     </span>
   );

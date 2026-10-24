@@ -6,7 +6,7 @@ import { focusLive } from '../lib/focus';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import { t } from '../i18n';
-import { useRegisterPanel, useUI } from '../lib/ui';
+import { useRegisterPanel, useUI, GoLiveIcon } from '../lib/ui';
 import Splitter from '../components/Splitter';
 import { useData } from '../lib/hooks';
 import type { Song, ScheduleItem } from '../lib/types';
@@ -282,10 +282,20 @@ export default function SongsPanel({ active }: { active: boolean }) {
     focusLive();
   };
 
+  // the # column is as wide as the widest number of the songs in reach (the songbook, or all of them), however the list is
+  // filtered or searched
+  const numberWidth = useMemo(() => {
+    let digits = 1;
+    for (const sg of songs || []) if ((!songbook || allBooks || sg.songbookId === songbook)) digits = Math.max(digits, String(sg.number).length);
+    const ctx = document.createElement('canvas').getContext('2d');
+    if (ctx) ctx.font = getComputedStyle(document.body).font;
+    const text = '9'.repeat(digits);
+    return Math.ceil((ctx ? ctx.measureText(text).width : digits * 8) + 6 + 0);
+  }, [songs, songbook, allBooks]);
   const columns = [
-    { key: 'number', label: '#', width: 52 },
+    { key: 'number', label: '#', width: numberWidth },
     { key: 'title', label: t('Title'), width: 0 },
-    ...(songbook && !allBooks ? [] : [{ key: 'songbookName', label: t('Songbook'), width: 110 }]),
+    ...(songbook && !allBooks ? [] : [{ key: 'songbookName', label: t('Songbook'), width: 200 }]),
   ] as { key: string; label: string; width: number }[];
 
   const searching = searchIds !== null;
@@ -295,7 +305,7 @@ export default function SongsPanel({ active }: { active: boolean }) {
       <div className="col fill" style={{ gap: 4 }}>
         <div className="row">
           <span style={{ minWidth: 46 }}>{t('Book:')}</span>
-          <select className="grow" value={songbook} onChange={(e) => setSongbook(Number(e.target.value))} title={t('Use this menu to show only songs belonging to a particular Songbook')}>
+          <select className="grow" value={songbook} onChange={(e) => { const id = Number(e.target.value); setSongbook(id); if (!id) setNumber(''); }} title={t('Use this menu to show only songs belonging to a particular Songbook')}>
             <option value={0}>{t('All songbooks')}</option>
             {songbooks.map((sb) => (
               <option key={sb.id} value={sb.id}>{sb.name}</option>
@@ -303,7 +313,7 @@ export default function SongsPanel({ active }: { active: boolean }) {
           </select>
           <span className="input-group">
             <input ref={numberInput} className="no-spin" type="number" min={1} placeholder={t('Number')} style={{ width: 70 }} value={number} disabled={!songbook} onChange={(e) => selectByNumber(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') goLiveNumber(); }} title={t('Selects a song by the number in the selected Songbook')} />
-            <button className="primary golive" disabled={!songbook || !number} onClick={goLiveNumber} title={t('Go Live (F5)')}><img className="icon" src="/icons/go_live.png" alt="" /></button>
+            <button className="primary golive" disabled={!songbook || !number} onClick={goLiveNumber} title={t('Go Live (F5)')}><GoLiveIcon /></button>
           </span>
         </div>
         <div className="row">
@@ -344,7 +354,7 @@ export default function SongsPanel({ active }: { active: boolean }) {
           tableRef={songTable}
           // Right moves on to the stanza list
           onKeyExtra={(e) => { if (e.key === 'ArrowRight' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) { e.preventDefault(); stanzaList.current?.focus(); } }}
-          className={`grow hover-rows ${active ? 'active' : ''}`}
+          className={`grow hover-rows num-tight ${active ? 'active' : ''}`}
           rows={list}
           rowKey={(s) => s.id}
           columns={columns.map((c) => ({ ...c, sort: sort.col === c.key ? sort.dir : 0 }))}
@@ -369,7 +379,7 @@ export default function SongsPanel({ active }: { active: boolean }) {
             title={preview ? t('Drag to the Schedule') : undefined}
             style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, cursor: preview ? 'grab' : undefined }}
           >{preview ? (preview.number > 0 ? `${preview.number}. ${preview.title}` : preview.title) : null}</span>
-          <button className="primary golive" onClick={goLive} disabled={!preview} title={t('Go Live (F5)')} aria-label={t('Go Live (F5)')}><img className="icon" src="/icons/go_live.png" alt="" /></button>
+          <button className="primary golive" onClick={goLive} disabled={!preview} title={t('Go Live (F5)')} aria-label={t('Go Live (F5)')}><GoLiveIcon /></button>
         </div>
         {preview?.notes && <div className="muted" style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>{t('Notes:')}{'\n'}{preview.notes}</div>}
         <div ref={stanzaList} className="list grow hover-items" tabIndex={0} onKeyDown={(e) => {

@@ -211,12 +211,6 @@ export default function ThemeEditor({ s, setS, currentId, onUse, onClose }: {
       return (
         <div className="theme-editor-split">
           <div className="theme-editor-form">
-            <fieldset className="group"><legend>{t('Background Color')}</legend>
-              <div className="row" style={{ gap: 8 }}>
-                <ColorField bare value={th.backgroundColor || '#000000'} onChange={(c) => upd((tm) => { tm.backgroundColor = c; })} />
-                <span className="muted">{th.backgroundColor || '#000000'}</span>
-              </div>
-            </fieldset>
             <TransitionSection s={s} setS={setS} />
             <fieldset className="group"><legend>{t('Text Effects')}</legend>
               <div className="row" style={{ gap: 16 }}>
@@ -224,7 +218,16 @@ export default function ThemeEditor({ s, setS, currentId, onUse, onClose }: {
                 <label className="chk"><input type="checkbox" checked={th.bible.useBlurShadow} onChange={(e) => setEffect({ useBlurShadow: e.target.checked })} />{t('Use blurred shadow')}</label>
               </div>
             </fieldset>
-            <BackgroundSection themeId={sel} v={th.passive} onChange={(p) => upd((tm) => { tm.passive = { ...tm.passive, ...p }; })} onPool={onPool} />
+            <BackgroundSection themeId={sel} v={th.passive} onChange={(p) => upd((tm) => { tm.passive = { ...tm.passive, ...p }; })} onPool={onPool}
+              top={(
+                <div className="row" style={{ gap: 8 }}>
+                  <span>{t('Color:')}</span>
+                  <ColorField bare value={th.backgroundColor || '#000000'} onChange={(c) => upd((tm) => { tm.backgroundColor = c; })} />
+                  <span>{t('Opacity:')}</span>
+                  <input type="range" min={0} max={100} step={1} value={th.backgroundOpacity ?? 100} onChange={(e) => upd((tm) => { tm.backgroundOpacity = Number(e.target.value); })} />
+                  <span style={{ minWidth: 40 }}>{th.backgroundOpacity ?? 100} %</span>
+                </div>
+              )} />
           </div>
           <div className="theme-editor-preview"><TransitionPreview theme={th} settings={s} present={present} /></div>
         </div>

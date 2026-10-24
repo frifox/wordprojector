@@ -41,7 +41,6 @@
 "Useful when using a wallpaper image. Displays a fancy shadow effect.": "Використовується, якщо наявний малюнок тла.",
 "Use shadow": "Використовувати тіні",
 "Use blurred shadow": "Використовувати розмиту тінь",
-"Use Background Image": "Використовувати малюнок тла",
 "Browse...": "Огляд...",
 "Apply this background to all active backgrounds.": "Застосувати цей фон до всіх активних фоном.",
 "Color...": "Колір...",
@@ -769,7 +768,6 @@
 "Install {tag}?": "Встановити {tag}?",
 "Installed": "Встановлено",
 "Installing…": "Встановлення…",
-"Interface Theme": "Тема інтерфейсу",
 "It is used the next time Word Projector starts.": "Її буде використано під час наступного запуску Word Projector.",
 "Key:": "Тональність:",
 "Latest": "Остання",
@@ -800,7 +798,6 @@
 "No changes": "Без змін",
 "No download for this computer": "Немає завантаження для цього комп’ютера",
 "No images found": "Зображень не знайдено",
-"No images yet. Use Add... to choose some.": "Зображень ще немає. Скористайтеся «Додати...», щоб обрати їх.",
 "No media": "Немає медіа",
 "No modules available.": "Модулів немає.",
 "No releases found.": "Випусків не знайдено.",
@@ -954,5 +951,12 @@
 "Need help, found a bug or have an idea?": "Потрібна допомога, знайшли помилку чи маєте ідею?",
 "Ask on the project page on GitHub:": "Напишіть на сторінці проєкту на GitHub:",
 "Simple app to display Bible, songs, slide shows.": "Простий застосунок для показу Біблії, пісень, слайд-шоу.",
-"This program is free software released under the GNU GPL v3.": "Ця програма є вільним програмним забезпеченням, що поширюється за ліцензією GNU GPL v3."
+"This program is free software released under the GNU GPL v3.": "Ця програма є вільним програмним забезпеченням, що поширюється за ліцензією GNU GPL v3.",
+"System default": "Системний за замовчуванням",
+"Interface": "Інтерфейс",
+"No images yet. Use Add to choose some.": "Зображень ще немає. Скористайтеся «Додати», щоб обрати їх.",
+"Add": "Додати",
+"Show the highlighted image full window (Space)": "Показати вибраний малюнок на весь екран (Пробіл)",
+"Use as background": "Використати як тло",
+"Add Background Image": "Додати малюнок тла"
 }

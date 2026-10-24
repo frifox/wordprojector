@@ -136,6 +136,13 @@ func (d *DB) addColumns() error {
 			return fmt.Errorf("schema: %w", err)
 		}
 	}
+	if n, err := d.colCount("Themes", "bg_opacity"); err != nil {
+		return err
+	} else if n == 0 {
+		if _, err := d.Exec("ALTER TABLE Themes ADD COLUMN bg_opacity INTEGER"); err != nil {
+			return fmt.Errorf("schema: %w", err)
+		}
+	}
 	// the color behind the text: the space above and below the text, and how opaque it is (percent); and how wide the
 	// characters are (percent of normal)
 	for _, table := range []string{"ThemeBible", "ThemeSong"} {

@@ -13,6 +13,10 @@ type Background struct {
 	Color string `json:"color,omitempty"`
 	URL   string `json:"url,omitempty"`
 	Fit   string `json:"fit,omitempty"` // how an image fills the screen: "cover", "contain" or "fill" (stretch)
+	// Clear is how see-through a color is, in percent (0 is solid). Under is what shows through it: the picture of
+	// the theme, else black.
+	Clear int         `json:"clear,omitempty"`
+	Under *Background `json:"under,omitempty"`
 }
 
 // TextStyle is the resolved style for a block of text.

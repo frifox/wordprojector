@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { alertDialog } from '../components/Modal';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import { t } from '../i18n';
-import type { PassiveSettings, ThemeImage } from '../lib/types';
+import type { PassiveSettings, Slide, ThemeImage } from '../lib/types';
 import { pickFiles, imageFilter } from '../lib/files';
+import PhotoViewer from '../components/PhotoViewer';
 
 /** One image in the collection. While the picture is still being added or loaded it shows a spinner instead. */
 function BgTile({ src, name, selected, aspect, onChoose, onRemove, onRename }: { src: string | null; name: string; selected: boolean; aspect: number; onChoose?: () => void; onRemove?: () => void; onRename?: (name: string) => void }) {
@@ -89,7 +91,7 @@ function ScaleIcon({ mode }: { mode: number }) {
  * The picture of the idle screen of a theme: the pool of pictures the theme has (added, renamed and removed at once), the
  * one chosen from it (kept with the theme when it is saved), and how it fills the screen.
  */
-export default function BackgroundSection({ themeId, v, onChange, onPool }: { themeId: number; v: PassiveSettings; onChange: (p: Partial<PassiveSettings>) => void; onPool: (ids: number[]) => void }) {
+export default function BackgroundSection({ themeId, v, onChange, onPool, top }: { themeId: number; v: PassiveSettings; onChange: (p: Partial<PassiveSettings>) => void; onPool: (ids: number[]) => void; top?: React.ReactNode }) {
   const { boot } = useStore();
   // the pictures this theme keeps
   const [images, setImages] = useState<ThemeImage[]>([]);
@@ -116,6 +118,18 @@ export default function BackgroundSection({ themeId, v, onChange, onPool }: { th
     setPending(paths.map((p) => p.split(/[\\/]/).pop() || p));
     try { apply(await api.addThemeImages(themeId, 'passive', 1, paths)); } catch (e) { alertDialog(t('Error'), String((e as Error).message || e)); } finally { setPending([]); }
   };
+  // Space shows the highlighted picture full window, like the slides of a slide show
+  const [viewing, setViewing] = useState(false);
+  const viewSlides: Slide[] = images.map((img, i) => ({ id: img.id, order: i, name: img.name, path: '', width: 0, height: 0 }));
+  // the dialog closes on Esc unless the key is meant for the focused part: here it closes the viewer
+  useEffect(() => {
+    if (!viewing) return;
+    document.body.setAttribute('data-esc-own', '');
+    return () => document.body.removeAttribute('data-esc-own');
+  }, [viewing]);
+  // the picture on view moves with the arrows; the highlighted one changes only with "Use This"
+  const [viewIndex, setViewIndex] = useState(0);
+  const openViewer = () => { setViewIndex(Math.max(0, images.findIndex((img) => img.id === v.imageId))); setViewing(true); };
   const choose = (img: ThemeImage) => onChange({ imageId: img.id, useBackground: true });
   const renameImg = async (img: ThemeImage, name: string) => {
     try { apply(await api.renameThemeImage(themeId, 'passive', 1, img.id, name)); } catch (e) { alertDialog(t('Error'), String((e as Error).message || e)); }
@@ -138,45 +152,57 @@ export default function BackgroundSection({ themeId, v, onChange, onPool }: { th
   }
   return (
     <fieldset className="group">
-      <legend><label className="chk"><input type="checkbox" checked={v.useBackground} onChange={(e) => onChange({ useBackground: e.target.checked })} />{t('Use Background Image')}</label></legend>
-      {/* the collection: its own framed box with a header bar and a scrolling area of thumbnails */}
-      <div style={{ border: '1px solid var(--border)', borderRadius: 4, background: 'var(--base)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div className="row" style={{ padding: '4px 8px', background: 'var(--panel)', borderBottom: '1px solid var(--border)' }}>
-          <b style={{ fontSize: 12 }}>{t('Images')}</b>
-          <span className="muted" style={{ fontSize: 12 }}>{images.length}</span>
-          <span className="grow" />
-          <button className="small" onClick={add} title={t('Add images...')}>{t('Add...')}</button>
-        </div>
-        <div className="row" style={{ gap: 10, alignItems: 'flex-start', flexWrap: 'wrap', padding: 8, minHeight: 90, maxHeight: 260, overflow: 'auto' }}>
-          {images.map((img) => (
-            <BgTile key={img.id} src={`/api/theme-images/${img.id}`} name={img.name} selected={img.id === v.imageId} aspect={screenW / screenH} onChoose={() => choose(img)} onRemove={() => removeImg(img)} onRename={(n) => renameImg(img, n)} />
-          ))}
-          {/* files being added: placeholders with a spinner until the server has them ready */}
-          {pending.map((name, i) => <BgTile key={`pending-${i}-${name}`} src={null} name={name} selected={false} aspect={screenW / screenH} />)}
-          {images.length === 0 && pending.length === 0 && <div className="muted" style={{ alignSelf: 'center', width: '100%', textAlign: 'center' }}>{t('No images yet. Use Add... to choose some.')}</div>}
-        </div>
-      </div>
-      {(
-        <div className="col" style={{ marginTop: 6, gap: 4 }}>
-          <div className="row" style={{ gap: 10, alignItems: 'flex-start', flexWrap: 'wrap' }} role="radiogroup" aria-label={t('Image scaling:')}>
-            {([[1, t('Fill')], [2, t('Fit')], [0, t('Scale')]] as const).map(([value, label]) => (
-              <button key={value} className={`ui-thumb ${fit === value ? 'on' : ''}`} disabled={!selected} role="radio" aria-checked={fit === value}
-                onClick={() => onChange({ backgroundFit: value })}
-                title={value === 1 ? t('Fills the whole screen; the edges of the image may be cut off.') : value === 2 ? t('Shows the whole image; black bars appear when its proportions differ from the screen.') : t('Stretches the image edge to edge and ignores its proportions.')}>
-                <ScaleIcon mode={value} />
-                <span>{label}</span>
-              </button>
-            ))}
+      <legend>{t('Background')}</legend>
+      {top}
+      <label className="chk" style={{ margin: top ? '10px 0 6px' : '0 0 6px' }}><input type="checkbox" checked={v.useBackground} onChange={(e) => onChange({ useBackground: e.target.checked })} />{t('Add Background Image')}</label>
+      {/* without the picture the rest of the section fades: the pictures, how they fill the screen, their sizes */}
+      <div style={{ opacity: v.useBackground ? 1 : 0.45, transition: 'opacity 0.2s ease' }}>
+        {/* the collection: its own framed box with a header bar and a scrolling area of thumbnails */}
+        <div style={{ border: '1px solid var(--border)', borderRadius: 4, background: 'var(--base)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className="row" style={{ padding: '4px 8px', background: 'var(--panel)', borderBottom: '1px solid var(--border)' }}>
+            <b style={{ fontSize: 12 }}>{t('Images')}</b>
+            <span className="muted" style={{ fontSize: 12 }}>{images.length}</span>
+            <span className="grow" />
+            <button className="small" disabled={!selected} onClick={openViewer} title={t('Show the highlighted image full window (Space)')}>{t('Preview')}</button>
+            <button className="small" onClick={add} title={t('Add images...')}>{t('Add')}</button>
           </div>
-          {info && (
-            <div className="form-grid" style={{ gridTemplateColumns: 'auto auto', justifyContent: 'start', columnGap: 12, rowGap: 2, fontSize: 12 }}>
-              <span className="muted">{t('Image size:')}</span><span>{info.image}</span>
-              <span className="muted">{t('Screen size:')}</span><span>{info.screen}</span>
-              <span className="muted">{t('Shown at:')}</span><span style={{ fontWeight: 600 }}>{info.shown}</span>
-            </div>
-          )}
+          <div className="row" tabIndex={0} style={{ gap: 10, alignItems: 'flex-start', flexWrap: 'wrap', padding: 8, minHeight: 90, maxHeight: 260, overflow: 'auto', outline: 'none' }}
+            onKeyDown={(e) => {
+              if (e.key === ' ' && !(e.target instanceof HTMLInputElement) && selected) { e.preventDefault(); openViewer(); }
+            }}>
+            {images.map((img) => (
+              <BgTile key={img.id} src={`/api/theme-images/${img.id}`} name={img.name} selected={img.id === v.imageId} aspect={screenW / screenH} onChoose={() => choose(img)} onRemove={() => removeImg(img)} onRename={(n) => renameImg(img, n)} />
+            ))}
+            {/* files being added: placeholders with a spinner until the server has them ready */}
+            {pending.map((name, i) => <BgTile key={`pending-${i}-${name}`} src={null} name={name} selected={false} aspect={screenW / screenH} />)}
+            {images.length === 0 && pending.length === 0 && <div className="muted" style={{ alignSelf: 'center', width: '100%', textAlign: 'center' }}>{t('No images yet. Use Add to choose some.')}</div>}
+          </div>
         </div>
-      )}
+        {(
+          <div className="col" style={{ marginTop: 6, gap: 4 }}>
+            <div className="row" style={{ gap: 10, alignItems: 'flex-start', flexWrap: 'wrap' }} role="radiogroup" aria-label={t('Image scaling:')}>
+              {([[1, t('Fill')], [2, t('Fit')], [0, t('Scale')]] as const).map(([value, label]) => (
+                <button key={value} className={`ui-thumb ${fit === value ? 'on' : ''}`} disabled={!selected} role="radio" aria-checked={fit === value}
+                  onClick={() => onChange({ backgroundFit: value })}
+                  title={value === 1 ? t('Fills the whole screen; the edges of the image may be cut off.') : value === 2 ? t('Shows the whole image; black bars appear when its proportions differ from the screen.') : t('Stretches the image edge to edge and ignores its proportions.')}>
+                  <ScaleIcon mode={value} />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+            {info && (
+              <div className="form-grid" style={{ gridTemplateColumns: 'auto auto', justifyContent: 'start', columnGap: 12, rowGap: 2, fontSize: 12 }}>
+                <span className="muted">{t('Image size:')}</span><span>{info.image}</span>
+                <span className="muted">{t('Screen size:')}</span><span>{info.screen}</span>
+                <span className="muted">{t('Shown at:')}</span><span style={{ fontWeight: 600 }}>{info.shown}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {viewing && viewSlides.length > 0 && createPortal(
+        <PhotoViewer slides={viewSlides} index={viewIndex} url={(sl) => `/api/theme-images/${sl.id}`}
+          onIndex={setViewIndex} onUse={(n) => { const img = images[n]; if (img) choose(img); }} onClose={() => setViewing(false)} />, document.body)}
     </fieldset>
   );
 }

@@ -52,7 +52,6 @@
 "Useful when using a wallpaper image. Displays a fancy shadow effect.": "Užitečné, když používáte obrázek na pozadí. Zobrazuje zvláštní stínový účinek.",
 "Use shadow": "Použít stín",
 "Use blurred shadow": "Použít rozmazaný stín",
-"Use Background Image": "Použít  obrázek pozadí",
 "Browse...": "Procházet...",
 "Text Alingment": "Zarovnání textu",
 "Vertical:": "Svislé:",
@@ -845,7 +844,6 @@
 "Install {tag}?": "Nainstalovat {tag}?",
 "Installed": "Nainstalováno",
 "Installing…": "Instaluje se…",
-"Interface Theme": "Motiv rozhraní",
 "It is used the next time Word Projector starts.": "Použije se při dalším spuštění programu Word Projector.",
 "Key:": "Klávesa:",
 "Latest": "Nejnovější",
@@ -876,7 +874,6 @@
 "No changes": "Žádné změny",
 "No download for this computer": "Pro tento počítač není k dispozici ke stažení nic",
 "No images found": "Nenalezeny žádné obrázky",
-"No images yet. Use Add... to choose some.": "Zatím žádné obrázky. Vyberte je pomocí Přidat...",
 "No media": "Žádná média",
 "No modules available.": "Nejsou k dispozici žádné moduly.",
 "No releases found.": "Nenalezena žádná vydání.",
@@ -1029,5 +1026,12 @@
 "Need help, found a bug or have an idea?": "Potřebujete pomoc, našli jste chybu nebo máte nápad?",
 "Ask on the project page on GitHub:": "Zeptejte se na stránce projektu na GitHubu:",
 "Simple app to display Bible, songs, slide shows.": "Jednoduchá aplikace k zobrazení Bible, písní, prezentací.",
-"This program is free software released under the GNU GPL v3.": "Tento program je svobodný software vydaný pod licencí GNU GPL v3."
+"This program is free software released under the GNU GPL v3.": "Tento program je svobodný software vydaný pod licencí GNU GPL v3.",
+"System default": "Výchozí systémové",
+"Interface": "Rozhraní",
+"No images yet. Use Add to choose some.": "Zatím žádné obrázky. Vyberte je tlačítkem Přidat.",
+"Add": "Přidat",
+"Show the highlighted image full window (Space)": "Zobrazit vybraný obrázek na celé okno (mezerník)",
+"Use as background": "Použít jako pozadí",
+"Add Background Image": "Přidat obrázek pozadí"
 }

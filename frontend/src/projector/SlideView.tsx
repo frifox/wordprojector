@@ -14,10 +14,16 @@ export default function SlideView({ slide, width, height }: { slide: RenderSlide
     width,
     height,
     overflow: 'hidden',
-    background: bg.type === 'color' ? bg.color || '#000' : '#000',
+    background: '#000',
   };
+  // a see-through color lets the picture under it show (black when there is none)
+  const under = bg.type === 'color' ? bg.under : undefined;
   return (
     <div style={style}>
+      {under?.type === 'image' && under.url && (
+        <img src={under.url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: under.fit || 'fill' }} draggable={false} />
+      )}
+      {bg.type === 'color' && <div style={{ position: 'absolute', inset: 0, background: bg.color || '#000', opacity: 1 - (bg.clear ?? 0) / 100 }} />}
       {bg.type === 'image' && bg.url && (
         <img src={bg.url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: bg.fit || 'fill' }} draggable={false} />
       )}

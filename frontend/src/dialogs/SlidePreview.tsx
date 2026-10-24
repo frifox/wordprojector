@@ -12,7 +12,13 @@ const SAMPLE_VERSES = '(1) In the beginning God created the heaven and the earth
 const SAMPLE_STANZA = 'Amazing grace, how sweet the sound\nThat saved a wretch like me\nI once was lost but now am found\nWas blind but now I see';
 
 function background(th: Theme): RenderSlide['background'] {
-  return { type: 'color', color: th.backgroundColor || '#000000' };
+  const clear = Math.max(0, Math.min(100, 100 - (th.backgroundOpacity ?? 100)));
+  const bg: RenderSlide['background'] = { type: 'color', color: th.backgroundColor || '#000000', clear };
+  // the picture of the theme shows through a see-through color
+  if (clear > 0 && th.passive.useBackground && th.passive.imageId > 0) {
+    bg.under = { type: 'image', url: `/api/theme-images/${th.passive.imageId}`, fit: ({ 0: 'fill', 1: 'cover', 2: 'contain' } as const)[th.passive.backgroundFit as 0 | 1 | 2] ?? 'fill' };
+  }
+  return bg;
 }
 
 /** Projecting the sample on the real displays (the theme editor's Preview button). */

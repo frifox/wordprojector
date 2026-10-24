@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import { focusLive } from '../lib/focus';
 import { t } from '../i18n';
-import { useRegisterPanel, useUI } from '../lib/ui';
+import { useRegisterPanel, useUI, GoLiveIcon } from '../lib/ui';
 import Splitter from '../components/Splitter';
 import { useData } from '../lib/hooks';
 import type { Announcement, ScheduleItem } from '../lib/types';
@@ -126,7 +126,7 @@ export default function AnnouncePanel({ active }: { active: boolean }) {
       </div>
       <div className="col fill" style={{ gap: 4 }}>
         <div className="row">
-          <button className="primary golive" onClick={goLive} disabled={!preview} title={`${t('Quickly display announcement')} (F5)`} aria-label={t('Go Live (F5)')}><img className="icon" src="/icons/go_live.png" alt="" /></button>
+          <button className="primary golive" onClick={goLive} disabled={!preview} title={`${t('Quickly display announcement')} (F5)`} aria-label={t('Go Live (F5)')}><GoLiveIcon /></button>
           <span style={{ fontWeight: 600 }}>{preview ? preview.title : t('Announcement Preview:')}</span>
         </div>
         <div className="list grow" tabIndex={0} onKeyDown={(e) => {

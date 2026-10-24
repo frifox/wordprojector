@@ -97,7 +97,9 @@ type Theme struct {
 	Info
 	// BackgroundColor is the color of the screen behind the text.
 	BackgroundColor string `json:"backgroundColor"`
-	Bible           Bible  `json:"bible"`
+	// BackgroundOpacity is how opaque that color is, in percent: less lets the picture of the theme show through.
+	BackgroundOpacity int   `json:"backgroundOpacity"`
+	Bible             Bible `json:"bible"`
 	Song            Song   `json:"song"`
 	// Passive is the picture of the idle screen.
 	Passive Passive `json:"passive"`
@@ -109,7 +111,7 @@ func defaultText(size float64) Text {
 
 // Default returns the program defaults (constructors in settings.cpp).
 func Default() Theme {
-	t := Theme{Info: Info{Name: "Default"}, BackgroundColor: "#000000"}
+	t := Theme{Info: Info{Name: "Default"}, BackgroundColor: "#000000", BackgroundOpacity: 100}
 	t.Bible = Bible{Text: defaultText(16), CaptionFont: qt.DefaultFont(15), CaptionColor: "#ffffff", CaptionAlign: 2, CaptionPosition: 1, CaptionScaleH: 100,
 		ScreenUse: 100, ScreenPosition: 0, TextRecBKColor: "#000000", BkPadding: 10, BkOpacity: 100}
 	t.Bible.AlignV, t.Bible.AlignH = 0, 0
@@ -167,8 +169,15 @@ func (r *Repo) Load(id int64) (Theme, error) {
 	t.Name = n.String
 	t.Builtin = IsBuiltinName(t.Name)
 	var bg sql.NullString
-	if r.DB.QueryRow("SELECT bg_color FROM Themes WHERE id = ?", t.ID).Scan(&bg) == nil && len(bg.String) == 7 && bg.String[0] == '#' {
-		t.BackgroundColor = bg.String
+	var op sql.NullInt64
+	t.BackgroundOpacity = 100
+	if r.DB.QueryRow("SELECT bg_color, bg_opacity FROM Themes WHERE id = ?", t.ID).Scan(&bg, &op) == nil {
+		if len(bg.String) == 7 && bg.String[0] == '#' {
+			t.BackgroundColor = bg.String
+		}
+		if op.Valid {
+			t.BackgroundOpacity = percent(int(op.Int64))
+		}
 	}
 	r.loadBible(t.ID, 1, &t.Bible)
 	r.loadSong(t.ID, 1, &t.Song)
@@ -179,6 +188,17 @@ func (r *Repo) Load(id int64) (Theme, error) {
 }
 
 // colorOrBlack keeps a "#rrggbb" color and makes anything else black.
+// percent keeps a percentage between 0 and 100.
+func percent(n int) int {
+	if n < 0 {
+		return 0
+	}
+	if n > 100 {
+		return 100
+	}
+	return n
+}
+
 func colorOrBlack(c string) string {
 	if len(c) == 7 && c[0] == '#' {
 		return c
@@ -311,7 +331,7 @@ func (r *Repo) scaleOf(table, col string, id int64, d int) int {
 func (r *Repo) Insert(t Theme) (int64, error) {
 	var id int64
 	err := r.DB.Tx(func(tx *sql.Tx) error {
-		res, err := tx.Exec("INSERT INTO Themes (name, comment, bg_color) VALUES (?,?,?)", t.Name, "", colorOrBlack(t.BackgroundColor))
+		res, err := tx.Exec("INSERT INTO Themes (name, comment, bg_color, bg_opacity) VALUES (?,?,?,?)", t.Name, "", colorOrBlack(t.BackgroundColor), percent(t.BackgroundOpacity))
 		if err != nil {
 			return err
 		}
@@ -385,7 +405,7 @@ func (r *Repo) Update(t Theme) error {
 		return err
 	}
 	return r.DB.Tx(func(tx *sql.Tx) error {
-		if _, err := tx.Exec("UPDATE Themes SET name = ?, bg_color = ? WHERE id = ?", t.Name, colorOrBlack(t.BackgroundColor), t.ID); err != nil {
+		if _, err := tx.Exec("UPDATE Themes SET name = ?, bg_color = ?, bg_opacity = ? WHERE id = ?", t.Name, colorOrBlack(t.BackgroundColor), percent(t.BackgroundOpacity), t.ID); err != nil {
 			return err
 		}
 		return writeRows(tx, t.ID, t)

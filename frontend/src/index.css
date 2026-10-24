@@ -10,10 +10,13 @@
   --accent-text: #fff;
   --sel: #cfe0f7;
   --sel-inactive: #dbe6f5; /* a selection that has no focus: a quieter blue than --sel */
+  /* the highlight of the selected row of a list: a little lighter at the top: a gentle step, like the hover gradient */
+  --sel-bg: linear-gradient(#d4e3f9, #cbdcf6);
+  --sel-inactive-bg: linear-gradient(#dde8f6, #d7e2f3);
   --btn: linear-gradient(#fdfdfd, #e6e6e6);
   --btn-hover: linear-gradient(#ffffff, #f0f0f0);
   /* under the pointer in lists: a faint tint, well below the selection colour */
-  --row-hover: linear-gradient(#ffffff, #f0f0f0);
+  --row-hover: linear-gradient(#fbfbfb, #f4f4f4);
   --btn-active: #d8d8d8;
   --tab: #e4e4e4;
   --tab-active: #f8f8f8;
@@ -36,9 +39,11 @@
   --accent: #4a8ae0;
   --sel: #2d4b73;
   --sel-inactive: #27374c;
+  --sel-bg: linear-gradient(#30507b, #2b4a73);
+  --sel-inactive-bg: linear-gradient(#293a50, #243549);
   --btn: linear-gradient(#4a4a4a, #383838);
   --btn-hover: linear-gradient(#555, #444);
-  --row-hover: linear-gradient(#272727, #313131);
+  --row-hover: linear-gradient(#292929, #2e2e2e);
   --btn-active: #2e2e2e;
   --tab: #3a3a3a;
   --tab-active: #474747;
@@ -85,6 +90,11 @@ select {
   padding: 3px 5px;
   -webkit-user-select: text;
   user-select: text;
+}
+/* macOS draws a select a little shorter than the text fields beside it: it gets their height */
+select {
+  box-sizing: border-box;
+  height: 24px;
 }
 input[type='text']:focus,
 input[type='number']:focus,
@@ -213,11 +223,11 @@ label.chk {
   border-bottom: 1px solid transparent;
 }
 .list .item.sel {
-  background: var(--sel-inactive);
+  background: var(--sel-inactive-bg);
 }
 .list:focus-within .item.sel,
 .list.active .item.sel {
-  background: var(--sel);
+  background: var(--sel-bg);
 }
 /* what is projected now: a clear accent wash, much stronger than a plain selection */
 .list.live-list .item.sel {
@@ -229,7 +239,7 @@ label.chk {
 /* when the arrow keys belong to something else (another list, a text field) it is as quiet as in the lists of the tabs */
 .list.live-list.quiet .item.sel,
 :root[data-theme='dark'] .list.live-list.quiet .item.sel {
-  background: var(--sel-inactive);
+  background: var(--sel-inactive-bg);
 }
 /* the highlight under the pointer: the same gradient as the slide show list */
 .list.hover-items .item:hover:not(.sel) {
@@ -274,16 +284,24 @@ label.chk {
   border-right: 1px solid transparent;
   cursor: default;
 }
+/* the number column: no room to the right of the digits, so the space before the title is the one the digits have to the
+   edge of the list */
+.table.num-tight td:first-child,
+.table.num-tight th:first-child {
+  padding-right: 0;
+}
 /* the cell borders are transparent, and between cells the table's own background shows through them: a highlighted row
    gives them the colour of its background so the line between cells does not show */
 .table tr.sel td {
-  background: var(--sel-inactive);
-  border-right-color: var(--sel-inactive);
+  background: var(--sel-inactive-bg);
+  background-origin: border-box; /* the gradient runs under the transparent cell border too */
+  border-right-color: transparent;
 }
 .table:focus-within tr.sel td,
 .table.active tr.sel td {
-  background: var(--sel);
-  border-right-color: var(--sel);
+  background: var(--sel-bg);
+  background-origin: border-box;
+  border-right-color: transparent;
 }
 .toolbar {
   display: flex;
@@ -358,6 +376,10 @@ fieldset.group {
   flex-direction: column;
   height: 100%;
   min-height: 0;
+}
+/* the tab pages of the main window start at the height of the preview box beside them */
+.tabs.grow > .tabbar {
+  padding-top: 6px;
 }
 .tabs .tabbar {
   display: flex;
@@ -786,10 +808,10 @@ button.tbtn-s:disabled img {
   cursor: default;
 }
 .results-row.sel {
-  background: var(--sel-inactive);
+  background: var(--sel-inactive-bg);
 }
 .results-table:focus-within .results-row.sel {
-  background: var(--sel);
+  background: var(--sel-bg);
 }
 .results-row.sel .cell {
   font-weight: 600;
@@ -929,11 +951,13 @@ button.tbtn-s:disabled svg {
 .input-group > input {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
+  /* the line between the box and the button is the button's own left border, so it matches the button's other sides
+     (a border shared with the box showed through the button's faded colors when it was disabled) */
+  border-right-width: 0;
 }
 .input-group > button {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
-  margin-left: -1px;
   padding: 2px 6px;
 }
 .input-group > input:focus {
@@ -1289,10 +1313,14 @@ button.screen-tile.on {
   position: fixed;
   inset: 0;
   z-index: 250;
-  background: #000;
-  color: #ddd;
+  background: var(--bg);
+  color: var(--text);
   display: flex;
   flex-direction: column;
+}
+:root[data-theme='dark'] .photo-viewer {
+  background: #000;
+  color: #ddd;
 }
 .photo-viewer .pv-top {
   display: flex;
@@ -1301,13 +1329,30 @@ button.screen-tile.on {
   padding: 6px 10px;
 }
 .photo-viewer .pv-name {
-  flex: 1;
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.photo-viewer .pv-piece {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+/* a line between the name, the resolution and the size */
+.photo-viewer .pv-sep {
+  width: 1px;
+  height: 16px;
+  background: currentColor;
+  opacity: 0.45;
+}
+.photo-viewer .pv-info {
+  white-space: nowrap;
+}
 .photo-viewer .pv-count {
-  color: #999;
+  color: var(--muted);
 }
 .photo-viewer .pv-main {
   flex: 1;
@@ -1322,12 +1367,50 @@ button.screen-tile.on {
   max-height: 100%;
   object-fit: contain;
 }
+.photo-viewer .pv-bottom {
+  display: flex;
+  align-items: center;
+  background: var(--panel);
+}
+:root[data-theme='dark'] .photo-viewer .pv-bottom {
+  background: #111;
+}
+.photo-viewer .pv-use {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* the bar is 80px high (64px thumbnails and 8px around them): a 60px button leaves 10px above and below, and the same on the right */
+  height: 60px;
+  margin-right: 10px;
+  padding: 0 22px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  box-shadow: none;
+  color: inherit;
+  transition: background-color 0.18s ease;
+}
+.photo-viewer .pv-use svg {
+  transition: transform 0.18s ease;
+}
+/* at rest the button has a faint wash of the accent color; on hover the arrow moves on and the wash deepens */
+.photo-viewer .pv-use:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.photo-viewer .pv-use:hover:not(:disabled) svg {
+  transform: translateX(4px);
+}
+.photo-viewer .pv-use:active:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
 .photo-viewer .pv-strip {
   display: flex;
+  flex: 1;
+  min-width: 0;
   gap: 4px;
   padding: 8px 10px;
   overflow-x: auto;
-  background: #111;
 }
 .photo-viewer .pv-thumb {
   flex: none;
@@ -1337,9 +1420,12 @@ button.screen-tile.on {
   align-items: center;
   justify-content: center;
   border: 2px solid transparent;
-  background: #000;
+  background: var(--base);
   cursor: pointer;
   opacity: 0.7;
+}
+:root[data-theme='dark'] .photo-viewer .pv-thumb {
+  background: #000;
 }
 .photo-viewer .pv-thumb img {
   max-width: 100%;
@@ -1595,23 +1681,31 @@ button.screen-tile.on {
   z-index: 100000;
   width: 7px;
   border-radius: 4px;
-  background: #b8b8b8;
+  /* the colour of the dots of the panel dividers */
+  background: var(--border);
 }
 :root[data-theme='dark'] .ov-thumb {
-  background: #5a5a5a;
+  background: #474747;
 }
 .ov-thumb:hover,
 .ov-thumb.drag {
-  background: #a4a4a4;
+  background: color-mix(in srgb, var(--border) 80%, var(--text));
 }
 :root[data-theme='dark'] .ov-thumb:hover,
 :root[data-theme='dark'] .ov-thumb.drag {
-  background: #707070;
+  background: color-mix(in srgb, #474747 80%, var(--text));
 }
 
 /* no rubber band when a list is scrolled past its top or bottom (the macOS app) */
+/* (on the scrolling areas only: set on every element it stops the wheel from scrolling a table from its cells) */
 html,
 body,
-* {
+.table,
+.list,
+textarea,
+[style*='overflow: auto'],
+[style*='overflow-y: auto'],
+[style*='overflow: scroll'],
+[style*='overflow-y: scroll'] {
   overscroll-behavior: none;
 }

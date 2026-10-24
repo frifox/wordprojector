@@ -2,7 +2,7 @@ import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import { t } from '../i18n';
-import { useRegisterPanel, useUI } from '../lib/ui';
+import { useRegisterPanel, useUI, GoLiveIcon } from '../lib/ui';
 import { useData } from '../lib/hooks';
 import type { Book, ChapterVerse, SearchHit, BibleRef, ScheduleItem } from '../lib/types';
 import { Highlight } from '../components/Highlight';
@@ -581,7 +581,7 @@ export default function BiblePanel({ active }: { active: boolean }) {
             <span className="muted">{results.length ? t('{n} results', { n: results.length }) : t('No search results.')}</span>
             <span className="grow" />
             <button className="primary golive" onClick={() => goLiveHit(resultSel)} disabled={resultSel < 0} title={t('Go Live (F5)')} aria-label={t('Go Live (F5)')}>
-              <img className="icon" src="/icons/go_live.png" alt="" />
+              <GoLiveIcon />
             </button>
           </div>
           <div className="results-table list grow active" tabIndex={0} ref={resultsRef} onKeyDown={onResultsKey} onScroll={(e) => { const el = e.currentTarget; if (shown < results.length && el.scrollHeight - el.scrollTop - el.clientHeight < 600) setShown((s) => s + RESULT_PAGE); }}>
@@ -638,7 +638,7 @@ export default function BiblePanel({ active }: { active: boolean }) {
                 </button>
               )}
               <button className="primary golive hdr-ctl" tabIndex={-1} onClick={() => goLive(true)} disabled={noBible || !verses.length} title={`${t('Quickly display the selected Bible verse on the screen')} (F5)`} aria-label={t('Go Live (F5)')}>
-                <img className="icon" src="/icons/go_live.png" alt="" />
+                <GoLiveIcon />
               </button>
             </div>
             <div ref={verseList} className="list grow hover-items" tabIndex={0} onKeyDown={onVerseKey}>

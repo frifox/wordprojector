@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import { focusLive } from '../lib/focus';
 import { t } from '../i18n';
-import { useRegisterPanel } from '../lib/ui';
+import { useRegisterPanel, GoLiveIcon } from '../lib/ui';
 import Splitter from '../components/Splitter';
 import { useData } from '../lib/hooks';
 import type { MediaItem, ScheduleItem } from '../lib/types';
@@ -89,7 +89,7 @@ export default function MediaPanel({ active }: { active: boolean }) {
       </div>
       <div className="col fill" style={{ gap: 4 }}>
         <div className="row">
-          <button className="primary golive" onClick={goLive} disabled={!current} title={t('Go Live (F5)')} aria-label={t('Go Live (F5)')}><img className="icon" src="/icons/go_live.png" alt="" /></button>
+          <button className="primary golive" onClick={goLive} disabled={!current} title={t('Go Live (F5)')} aria-label={t('Go Live (F5)')}><GoLiveIcon /></button>
           <span style={{ fontWeight: 600 }}>{current?.name}</span>
         </div>
         <div className="grow" style={{ background: '#000', border: '1px solid var(--border)', position: 'relative', minHeight: 120, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

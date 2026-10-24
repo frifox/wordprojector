@@ -71,6 +71,14 @@ export default function Operator() {
     return () => mq.removeEventListener('change', apply);
   }, [settings.app.uiTheme]);
 
+  // the font of the operator window (the system font unless one is chosen)
+  useEffect(() => {
+    const f = settings.app.uiFont;
+    const root = document.documentElement.style;
+    if (f) root.setProperty('--font-ui', `"${f.replace(/"/g, '')}", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`);
+    else root.removeProperty('--font-ui');
+  }, [settings.app.uiFont]);
+
   // window title
   useEffect(() => {
     let title = 'Word Projector';
@@ -230,7 +238,7 @@ export default function Operator() {
         ...(el.d ? [mi(el.d, () => act()?.remove?.(), comboLabel(keys.removeItem), { icon: el.di })] : []),
         ...(el.n || el.e || el.c || el.d ? [sep] : []),
         mi(t('Books...'), () => openDialog({ kind: 'manage' }), undefined, { icon: 'database.png' }),
-        mi(t('Theme Editor...'), () => openDialog({ kind: 'themeEditor' }), undefined, { icon: 'typography.png' }),
+        mi(t('Themes'), () => openDialog({ kind: 'themeEditor' }), undefined, { icon: 'typography.png' }),
         mi(t('Settings...'), () => openDialog({ kind: 'settings' }), comboLabel(keys.settings), { icon: 'settings.png' }),
       ],
     },

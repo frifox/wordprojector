@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import { focusLive } from '../lib/focus';
 import { t } from '../i18n';
-import { useRegisterPanel, useUI } from '../lib/ui';
+import { useRegisterPanel, useUI, GoLiveIcon } from '../lib/ui';
 import Splitter from '../components/Splitter';
 import { useData } from '../lib/hooks';
 import type { SlideShow, SlideShowFull, Slide, ScheduleItem } from '../lib/types';
@@ -372,7 +372,7 @@ export default function PicturesPanel({ active }: { active: boolean }) {
             <button className="tbtn-s" title={t('Add Images...')} disabled={!current || picking} onClick={addImages}><PlusIcon /></button>
             <button className="tbtn-s" title={t('Remove Image')} disabled={!picked.length} onClick={() => removePhotos(picked)}><MinusIcon /></button>
             <button style={{ marginLeft: 14 }} onClick={() => setViewing(true)} disabled={!slides.length} title={t('Preview (Space)')}>{t('Preview')}</button>
-            <button className="primary golive" style={{ marginLeft: 4 }} onClick={goLive} disabled={!slides.length} title={t('Go Live (F5)')} aria-label={t('Go Live (F5)')}><img className="icon" src="/icons/go_live.png" alt="" /></button>
+            <button className="primary golive" style={{ marginLeft: 4 }} onClick={goLive} disabled={!slides.length} title={t('Go Live (F5)')} aria-label={t('Go Live (F5)')}><GoLiveIcon /></button>
           </div>
           <div
             ref={gridRef}

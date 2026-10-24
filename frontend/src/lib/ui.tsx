@@ -88,6 +88,15 @@ export const tabIcons: Record<TabName, string> = {
   announce: 'announce.png',
 };
 
+/** The play triangle inside the blue Go Live buttons. */
+export function GoLiveIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 4v16l13 -8z" />
+    </svg>
+  );
+}
+
 export function Icon({ name, size = 16, style }: { name: string; size?: number; style?: React.CSSProperties }) {
   return <img src={`/icons/${name}`} alt="" width={size} height={size} style={{ verticalAlign: 'middle', ...style }} draggable={false} />;
 }

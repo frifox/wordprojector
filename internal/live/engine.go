@@ -950,13 +950,28 @@ func (e *Engine) passiveBackground(d int) Background {
 	return Background{Type: "color", Color: "#000000"}
 }
 
-// textBackground is the color behind Bible, song and announcement text.
+// textBackground is the color behind Bible, song and announcement text, as opaque as the theme says. What shows through
+// is the picture the theme has for the idle screen, if it uses one, else black.
 func (e *Engine) textBackground() Background {
-	color := e.Theme.BackgroundColor
+	return e.themeBackground(e.Theme)
+}
+
+func (e *Engine) themeBackground(th theme.Theme) Background {
+	color := th.BackgroundColor
 	if color == "" {
 		color = "#000000"
 	}
-	return Background{Type: "color", Color: color}
+	bg := Background{Type: "color", Color: color, Clear: 100 - th.BackgroundOpacity}
+	if bg.Clear < 0 || bg.Clear > 100 {
+		bg.Clear = 0
+	}
+	if bg.Clear > 0 {
+		if p := th.Passive; p.UseBackground && p.ImageID > 0 {
+			fit := map[int]string{0: "fill", 1: "cover", 2: "contain"}[p.BackgroundFit]
+			bg.Under = &Background{Type: "image", URL: fmt.Sprintf("/api/bg/theme/passive/1?theme=%d&v=%d&i=%d", th.ID, e.bgVer, p.ImageID), Fit: fit}
+		}
+	}
+	return bg
 }
 
 // slideFor is what display d shows now, with the user's transition (Settings > Presentation) applied.
@@ -1073,7 +1088,7 @@ func (e *Engine) PreviewTheme(id int64) (Slide, error) {
 		return Slide{}, err
 	}
 	s := th.Song
-	bg := Background{Type: "color", Color: th.BackgroundColor}
+	bg := e.themeBackground(th)
 	style := TextStyle{Font: s.TextFont, Color: s.TextColor, Shadow: s.UseShadow, Blur: s.UseBlurShadow, AlignV: s.AlignV, AlignH: s.AlignH, ScaleH: s.ScaleH}
 	return Slide{Kind: "song", Background: bg, Song: &SongSlide{
 		Text: "Amazing grace, how sweet the sound\nThat saved a wretch like me", Style: style, ScreenUse: s.ScreenUse, ScreenPosition: s.ScreenPosition,

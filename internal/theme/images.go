@@ -240,7 +240,7 @@ func (r *Repo) Duplicate(id int64, name string) (int64, error) {
 func (r *Repo) duplicate(id int64, name string, kinds []string) (int64, error) {
 	var newID int64
 	err := r.DB.Tx(func(tx *sql.Tx) error {
-		res, err := tx.Exec("INSERT INTO Themes (name, comment, bg_color) SELECT ?, '', COALESCE(bg_color, '#000000') FROM Themes WHERE id = ?", name, id)
+		res, err := tx.Exec("INSERT INTO Themes (name, comment, bg_color, bg_opacity) SELECT ?, '', COALESCE(bg_color, '#000000'), bg_opacity FROM Themes WHERE id = ?", name, id)
 		if err != nil {
 			return err
 		}

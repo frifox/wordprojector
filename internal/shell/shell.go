@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unsafe"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -305,9 +306,16 @@ func (s *Shell) noteGeometry() {
 	if s.main == nil || s.other || s.quitting {
 		return
 	}
+	// the window is asked before the lock is taken: asking needs the main thread, and this runs on it (a window event)
+	// while the timer's save may hold the lock and wait for that same thread
+	normal := !s.main.IsMaximised() && !s.main.IsFullscreen()
+	var b application.Rect
+	if normal {
+		b = s.main.Bounds()
+	}
 	s.mu.Lock()
-	if !s.main.IsMaximised() && !s.main.IsFullscreen() {
-		s.normal, s.haveNormal = s.main.Bounds(), true
+	if normal {
+		s.normal, s.haveNormal = b, true
 	}
 	if s.geoTimer != nil {
 		s.geoTimer.Stop()
@@ -355,11 +363,14 @@ func (s *Shell) saveGeometry() {
 	if s.main == nil || s.other { // the other instance's settings are not ours to overwrite
 		return
 	}
+	// never ask the window while holding the lock: the main thread may be waiting for the lock (see noteGeometry)
 	maximised := s.main.IsMaximised()
+	fullscreen := s.main.IsFullscreen()
+	current := s.main.Bounds()
 	s.mu.Lock()
 	b := s.normal
-	if !s.haveNormal || (!maximised && !s.main.IsFullscreen()) {
-		b = s.main.Bounds()
+	if !s.haveNormal || (!maximised && !fullscreen) {
+		b = current
 	}
 	s.mu.Unlock()
 	s.engine.Locked(func() {
@@ -464,13 +475,42 @@ func (s *Shell) ScreenSize(i int) (int, int) {
 	return list[i].Bounds.Width, list[i].Bounds.Height
 }
 
+// extensions turns file filters ("*.png;*.jpg") into bare extensions ("png", "jpg"); none when anything is allowed.
+func extensions(filters []desktop.Filter) []string {
+	var out []string
+	for _, f := range filters {
+		for _, p := range strings.Split(f.Pattern, ";") {
+			p = strings.TrimPrefix(strings.TrimSpace(p), "*")
+			p = strings.TrimPrefix(p, ".")
+			if p == "" || p == "*" {
+				return nil
+			}
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func (s *Shell) nativeWindow() unsafe.Pointer {
+	if s.main == nil {
+		return nil
+	}
+	return s.main.NativeWindow()
+}
+
 func (s *Shell) OpenFiles(title string, filters []desktop.Filter, multiple bool) ([]string, error) {
+	if haveNativeOpen {
+		paths, _ := nativeOpen(s.nativeWindow(), title, extensions(filters), multiple, false)
+		return paths, nil
+	}
 	d := s.app.Dialog.OpenFile().SetTitle(title).CanChooseFiles(true)
 	for _, f := range filters {
 		d.AddFilter(f.Name, f.Pattern)
 	}
 	if s.main != nil {
 		d.AttachToWindow(s.main)
+	} else {
+		bringToFront()
 	}
 	if multiple {
 		return d.PromptForMultipleSelection()
@@ -483,9 +523,18 @@ func (s *Shell) OpenFiles(title string, filters []desktop.Filter, multiple bool)
 }
 
 func (s *Shell) OpenFolder(title string) (string, error) {
+	if haveNativeOpen {
+		paths, _ := nativeOpen(s.nativeWindow(), title, nil, false, true)
+		if len(paths) == 0 {
+			return "", nil
+		}
+		return paths[0], nil
+	}
 	d := s.app.Dialog.OpenFile().SetTitle(title).CanChooseFiles(false).CanChooseDirectories(true).CanCreateDirectories(true)
 	if s.main != nil {
 		d.AttachToWindow(s.main)
+	} else {
+		bringToFront()
 	}
 	return d.PromptForSingleSelection()
 }
@@ -497,6 +546,8 @@ func (s *Shell) SaveFile(title, defaultName string, filters []desktop.Filter) (s
 	}
 	if s.main != nil {
 		d.AttachToWindow(s.main)
+	} else {
+		bringToFront()
 	}
 	return d.PromptForSingleSelection()
 }

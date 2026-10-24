@@ -41,7 +41,7 @@ export function FontStyleButtons({ value, onChange, disabled }: { value: Font; o
  * A font list that shows every family in its own face. While it is open, the font under the pointer (or the arrow keys)
  * is reported through onPreview, and null when it closes, so a preview can show it before it is chosen.
  */
-function FontSelect({ value, fonts, disabled, onChange, onPreview }: { value: string; fonts: string[]; disabled?: boolean; onChange: (family: string) => void; onPreview?: (family: string | null) => void }) {
+export function FontSelect({ value, fonts, disabled, onChange, onPreview }: { value: string; fonts: string[]; disabled?: boolean; onChange: (family: string) => void; onPreview?: (family: string | null) => void }) {
   const [open, setOpen] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [cur, setCur] = useState(value); // the highlighted family

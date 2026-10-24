@@ -101,6 +101,8 @@ type App struct {
 	HideDisplayControls bool `json:"hideDisplayControls"`
 	LivePreview bool              `json:"livePreview"`
 	UITheme    string             `json:"uiTheme"` // "light" | "dark" | "system"
+	// UIFont is the family of the font of the operator window; empty is the system font.
+	UIFont string `json:"uiFont"`
 	// SlideshowOrder is the order of the slide shows in the Photos tab (slide shows have no order of their own).
 	SlideshowOrder []int `json:"slideshowOrder"`
 	// DefaultSongbook is the songbook pre-selected in the Songs tab on start (0 = all songbooks).
