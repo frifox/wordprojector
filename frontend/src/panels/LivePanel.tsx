@@ -35,6 +35,16 @@ export default function LivePanel() {
       document.removeEventListener('focusout', later);
     };
   }, []);
+  // landing on the Bible tab shows the version buttons over the preview for 0.5 s and then fades them out: a hint that they are
+  // there when the pointer is over the box. 0 = not shown, 1 = shown, 2 = fading out
+  const [hint, setHint] = useState(0);
+  useEffect(() => {
+    if (ui.tab !== 'bible') return;
+    setHint(1);
+    const fade = window.setTimeout(() => setHint(2), 500);
+    const done = window.setTimeout(() => setHint(0), 1600);
+    return () => { window.clearTimeout(fade); window.clearTimeout(done); };
+  }, [ui.tab]);
   const anchor = useRef<number>(-1);
   const [multi, setMulti] = useState(false);
   const [pending, setPending] = useState<number[]>(live.selection);
@@ -239,7 +249,7 @@ export default function LivePanel() {
         )}
         <PresentationButtons show={ui.tab === 'bible' && multi} canPreview={dirty && pending.length > 0} holdPreview={holdPreview} canUpdate={dirty} onUpdate={update} />
       </div>
-      {settings.app.livePreview && <LivePreview override={peek} overlay={isBible || ui.tab === 'bible' ? <BibleVersionButtons /> : undefined} />}
+      {settings.app.livePreview && <LivePreview override={peek} hint={hint} overlay={isBible || ui.tab === 'bible' ? <BibleVersionButtons /> : undefined} />}
       {live.notes && (
         <div className="muted" style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>
           {t('Notes:')}
@@ -268,7 +278,7 @@ export default function LivePanel() {
 }
 
 /** `overlay` is shown at the bottom, in the middle, while the pointer is over the box (or something in it has the focus). */
-export function LivePreview({ override, overlay }: { override?: RenderSlide | null; overlay?: React.ReactNode }) {
+export function LivePreview({ override, overlay, hint = 0 }: { override?: RenderSlide | null; overlay?: React.ReactNode; hint?: number }) {
   const { live } = useStore();
   const ref = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(300);
@@ -286,7 +296,7 @@ export function LivePreview({ override, overlay }: { override?: RenderSlide | nu
   const aspect = d?.width && d?.height ? Math.max(1, Math.min(4, d.width / d.height)) : 16 / 9;
   const slide = useMemo(() => override ?? d?.preview ?? d?.slide, [d, override]);
   return (
-    <div ref={ref} className="live-preview" style={{ width: '100%', aspectRatio: String(aspect), position: 'relative', overflow: 'hidden', background: '#000', border: '1px solid var(--border)', flex: 'none', boxSizing: 'border-box' }}>
+    <div ref={ref} className={`live-preview ${hint === 1 ? 'hint' : hint === 2 ? 'hint-fade' : ''}`} style={{ width: '100%', aspectRatio: String(aspect), position: 'relative', overflow: 'hidden', background: '#000', border: '1px solid var(--border)', flex: 'none', boxSizing: 'border-box' }}>
       {slide && (
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
           {slide.kind === 'video' ? (

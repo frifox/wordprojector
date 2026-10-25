@@ -5,11 +5,11 @@ import { useData } from '../lib/hooks';
 import { t } from '../i18n';
 import type { Settings, UpdateRelease } from '../lib/types';
 
-/** Releases are tagged with a day, "2026.10.22", and ".2" for a second one that day. A suffix like -3-gabc is ignored. */
+/** Releases are tagged with a day, "2026-10-22", and ".2" for a second one that day. A suffix like -3-gabc is ignored. */
 function sameVersion(a: string, b: string): boolean {
   const key = (v: string) => {
-    const m = /^(\d{4})\.(\d{2})\.(\d{2})(?:\.(\d+))?/.exec(v.trim());
-    return m ? `${m[1]}.${m[2]}.${m[3]}.${Number(m[4] || 0)}` : null;
+    const m = /^(\d{4})-(\d{2})-(\d{2})(?:\.(\d+))?/.exec(v.trim());
+    return m ? `${m[1]}-${m[2]}-${m[3]}.${Number(m[4] || 0)}` : null;
   };
   const x = key(a);
   const y = key(b);

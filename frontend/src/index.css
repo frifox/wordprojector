@@ -1815,6 +1815,13 @@ a.url-link:hover {
   opacity: 1;
   pointer-events: auto;
 }
+/* the hint when the Bible tab opens: the buttons show for a while and then fade out slowly */
+.live-preview.hint .lp-overlay {
+  opacity: 1;
+}
+.live-preview.hint-fade .lp-overlay {
+  transition-duration: 1s;
+}
 .live-preview .lp-overlay-in {
   max-width: 100%;
   padding: 3px;

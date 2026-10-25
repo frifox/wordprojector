@@ -1,7 +1,7 @@
 # Word Projector
 
 Church projection software: Bible, Songs, Slide shows on one or more screens. A vibecode rewrite of [SoftProjector](http://softprojector.org) (Go, React,
-SQLite) for macOS, Windows and Linux. It can read SoftProjector
+SQLite) for macOS, Windows and Linux (including the Raspberry Pi). It can read SoftProjector
 file formats: Songbooks (`.sps`), Bibles (`.spb`), etc.
 
 ## Install
@@ -9,11 +9,14 @@ file formats: Songbooks (`.sps`), Bibles (`.spb`), etc.
 Download the latest release from [Releases](../../releases) and unpack it.
 Nothing else needs installing.
 
-| System  | File                                | Start it |
-|---------|-------------------------------------|----------|
-| macOS   | `WordProjector-<version>-macos-arm64.zip` (Apple Silicon), `-macos-x64.zip` (Intel) | Move the app to Applications. It is not notarized: right-click → Open the first time. |
-| Windows | `WordProjector-<version>-windows-x64.zip` (Intel/AMD), `-windows-arm64.zip` (ARM) | Run `WordProjector.exe`. |
-| Linux   | `WordProjector-<version>-linux-x64.tar.gz` | Run `./WordProjector` (needs `libwebkit2gtk-4.1-0`). |
+| System                        | File                                         | Start it |
+|-------------------------------|----------------------------------------------|----------|
+| macOS (arm64)                 | `WordProjector-<version>-macos-arm64.zip`    | Move the app to Applications. It is not notarized: right-click → Open the first time. |
+| macOS (x64)                   | `WordProjector-<version>-macos-x64.zip`      | Move the app to Applications. It is not notarized: right-click → Open the first time. |
+| Windows (x64)                 | `WordProjector-<version>-windows-x64.zip`    | Run `WordProjector.exe`. |
+| Windows (arm64)               | `WordProjector-<version>-windows-arm64.zip`  | Run `WordProjector.exe`. |
+| Linux (x64)                   | `WordProjector-<version>-linux-x64.tar.gz`   | Run `./WordProjector` (needs `libwebkit2gtk-4.1-0`). |
+| Linux (arm64)                 | `WordProjector-<version>-linux-arm64.tar.gz` | Run `./WordProjector` (needs `libwebkit2gtk-4.1-0`). Also for a Raspberry Pi 3, 4 or 5 running a 64-bit system (`uname -m` says `aarch64`). The 32-bit Raspberry Pi OS is not supported. |
 
 After that you can update/downgrade or configure auto-upate in **Settings → Updates**.
 

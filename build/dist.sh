@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Usage: build/dist.sh <version> [macos] [windows] [linux]      (no system named: all of them)
-# Builds the programs into dist/, one folder per build: macos-arm64, macos-x64, windows-x64, windows-arm64, linux-x64.
+# Usage: build/dist.sh <version> [macos] [windows] [linux] [linux-x64] [linux-arm64]   (nothing named: all of them)
+# Builds the programs into dist/, one folder per build: macos-arm64, macos-x64, windows-x64, windows-arm64, linux-x64, linux-arm64.
 # macOS and Windows are built here; Linux in a Docker container (it has to be running).
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -33,24 +33,35 @@ windows() {
   done
 }
 
+# one Linux build: name, Docker platform, and the name of the Go download for that architecture
+linux_build() {
+  local name=$1 platform=$2 gotar=$3
+  echo "== $name (Docker, $platform)"
+  rm -rf "dist/$name"
+  # the build image is made once per Go version and architecture (the download of the packages is most of the time); the
+  # Go build cache lives in a volume, so the next builds only compile what changed
+  gover="$(go env GOVERSION)"
+  image="wordprojector-$name-build:$gover"
+  docker image inspect "$image" >/dev/null 2>&1 || docker build --platform "$platform" --build-arg GOVER="$gover" --build-arg GOTAR="$gotar" -t "$image" -f build/linux.Dockerfile build
+  docker run --rm --platform "$platform" -v "$PWD":/src -w /src -v "wordprojector-$name-gocache:/root/.cache" -e NAME="$name" -e VERSION="$VERSION" "$image" bash build/linux-dist.sh
+}
+
+# Linux: x64 and arm64 (also a Raspberry Pi with a 64-bit system), each in a container of its own architecture. "linux" builds
+# both; linux-x64 or linux-arm64 only that one. (There is no 32-bit ARM build: Wails does not compile for it.)
 linux() {
   if ! docker info >/dev/null 2>&1; then
-    echo "== linux-x64 skipped: Docker is not running (Linux needs GTK and WebKitGTK, so it is built in a container)"
+    echo "== linux skipped: Docker is not running (Linux needs GTK and WebKitGTK, so it is built in a container)"
     return 1
   fi
-  echo "== linux-x64 (Docker)"
-  rm -rf dist/linux-x64
-  # the build image is made once per Go version (the download of the packages is most of the time); the Go build cache
-  # lives in a volume, so the next builds only compile what changed
-  gover="$(go env GOVERSION)"
-  image="wordprojector-linux-build:$gover"
-  docker image inspect "$image" >/dev/null 2>&1 || docker build --platform linux/amd64 --build-arg GOVER="$gover" -t "$image" -f build/linux.Dockerfile build
-  docker run --rm --platform linux/amd64 -v "$PWD":/src -w /src -v wordprojector-linux-gocache:/root/.cache -e VERSION="$VERSION" "$image" bash build/linux-dist.sh
+  local all=0
+  case "$WANT" in *" linux "*) all=1;; esac
+  if [ $all = 1 ] || [[ "$WANT" == *" linux-x64 "* ]]; then linux_build linux-x64 linux/amd64 linux-amd64; fi
+  if [ $all = 1 ] || [[ "$WANT" == *" linux-arm64 "* ]]; then linux_build linux-arm64 linux/arm64 linux-arm64; fi
 }
 
 status=0
 for os in macos windows linux; do
-  case "$WANT" in *" $os "*) $os || status=1;; esac
+  case "$WANT" in *" $os "*|*" $os-"*) $os || status=1;; esac
 done
 echo
 ls -1d dist/*-*/ 2>/dev/null

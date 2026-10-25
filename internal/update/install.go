@@ -153,7 +153,7 @@ func replaceExecutable(dir, exe, goos, current string) error {
 }
 
 // oldExecutable is the name the running program is renamed to on Windows: the build tag goes before the extension,
-// WordProjector.exe -> WordProjector.2026.10.22.exe.
+// WordProjector.exe -> WordProjector.2026-10-22.exe.
 func oldExecutable(exe, tag string) string {
 	ext := filepath.Ext(exe)
 	return strings.TrimSuffix(exe, ext) + "." + tag + ext
@@ -189,7 +189,7 @@ func (u *Updater) Cleanup() {
 	_ = os.Remove(pl.exe + ".new")
 	if entries, err := os.ReadDir(parent); err == nil {
 		ext := filepath.Ext(pl.exe)
-		keep := regexp.MustCompile(`^` + regexp.QuoteMeta(strings.TrimSuffix(filepath.Base(pl.exe), ext)) + `\.(\d{4}\.\d{2}\.\d{2}(\.\d+)?|dev)` + regexp.QuoteMeta(ext) + `$`)
+		keep := regexp.MustCompile(`^` + regexp.QuoteMeta(strings.TrimSuffix(filepath.Base(pl.exe), ext)) + `\.(\d{4}-\d{2}-\d{2}(\.\d+)?|dev)` + regexp.QuoteMeta(ext) + `$`)
 		for _, e := range entries {
 			if !e.IsDir() && keep.MatchString(e.Name()) { // an earlier version, left by an update
 				_ = os.Remove(filepath.Join(parent, e.Name()))

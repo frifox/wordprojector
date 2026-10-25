@@ -25,9 +25,9 @@ func TestCompare(t *testing.T) {
 		c    int
 		ok   bool
 	}{
-		{"2026.10.22", "2026.10.22", 0, true}, {"2026.10.23", "2026.10.22", 1, true}, {"2026.10.22.2", "2026.10.22", 1, true},
-		{"2026.10.22.10", "2026.10.22.9", 1, true}, {"2025.12.31", "2026.01.01", -1, true},
-		{"2026.10.22-3-gabc-dirty", "2026.10.22", 0, true}, {"dev", "2026.10.22", 0, false}, {"abc1234", "2026.10.22", 0, false},
+		{"2026-10-22", "2026-10-22", 0, true}, {"2026-10-23", "2026-10-22", 1, true}, {"2026-10-22.2", "2026-10-22", 1, true},
+		{"2026-10-22.10", "2026-10-22.9", 1, true}, {"2025-12-31", "2026-01-01", -1, true},
+		{"2026-10-22-3-gabc-dirty", "2026-10-22", 0, true}, {"dev", "2026-10-22", 0, false}, {"abc1234", "2026-10-22", 0, false},
 	}
 	for _, c := range cases {
 		got, ok := Compare(c.a, c.b)
@@ -76,13 +76,13 @@ func fakeGitHub(t *testing.T, assetName string, data []byte, goodSum bool) *http
 		switch r.URL.Path {
 		case "/releases":
 			json.NewEncoder(w).Encode([]map[string]any{
-				{"tag_name": "2026.02.01.2", "prerelease": true, "published_at": "2026-02-01T10:00:00Z"},
-				{"tag_name": "2026.01.02", "name": "One point one", "body": "notes", "published_at": "2026-01-02T10:00:00Z", "html_url": "http://x/y",
+				{"tag_name": "2026-02-01.2", "prerelease": true, "published_at": "2026-02-01T10:00:00Z"},
+				{"tag_name": "2026-01-02", "name": "One point one", "body": "notes", "published_at": "2026-01-02T10:00:00Z", "html_url": "http://x/y",
 					"assets": []map[string]any{
 						{"name": assetName, "browser_download_url": srv.URL + "/dl/" + assetName, "size": len(data)},
 						{"name": "checksums.txt", "browser_download_url": srv.URL + "/dl/checksums.txt", "size": 10},
 					}},
-				{"tag_name": "2025.12.01", "published_at": "2025-12-01T10:00:00Z"},
+				{"tag_name": "2025-12-01", "published_at": "2025-12-01T10:00:00Z"},
 			})
 		case "/dl/" + assetName:
 			w.Write(data)
@@ -97,7 +97,7 @@ func fakeGitHub(t *testing.T, assetName string, data []byte, goodSum bool) *http
 }
 
 func newUpdater(srv *httptest.Server, goos, goarch, exe string) *Updater {
-	return &Updater{Repo: "x/y", API: srv.URL, Current: "2025.12.01", Client: srv.Client(), GOOS: goos, GOARCH: goarch, Exe: exe, AllowTemp: true}
+	return &Updater{Repo: "x/y", API: srv.URL, Current: "2025-12-01", Client: srv.Client(), GOOS: goos, GOARCH: goarch, Exe: exe, AllowTemp: true}
 }
 
 func listed(t *testing.T, u *Updater) (Release, []Release) {
@@ -107,11 +107,11 @@ func listed(t *testing.T, u *Updater) (Release, []Release) {
 		t.Fatal(err)
 	}
 	l := Latest(list)
-	if l == nil || l.Tag != "2026.01.02" {
+	if l == nil || l.Tag != "2026-01-02" {
 		t.Fatalf("latest = %+v", l)
 	}
 	if !u.Newer(l) {
-		t.Fatal("2026.01.02 should be newer than 2025.12.01")
+		t.Fatal("2026-01-02 should be newer than 2025-12-01")
 	}
 	if list[0].Installable || list[2].Installable {
 		t.Fatal("releases without a build must not be installable")
@@ -125,7 +125,7 @@ func TestInstallMacBundle(t *testing.T) {
 	os.MkdirAll(filepath.Dir(exe), 0o755)
 	os.WriteFile(exe, []byte("old"), 0o755)
 	data := zipOf(map[string]string{"WordProjector.app/Contents/MacOS/WordProjector": "new", "WordProjector.app/Contents/Info.plist": "plist"})
-	srv := fakeGitHub(t, "WordProjector-2026.01.02-macos-arm64.zip", data, true)
+	srv := fakeGitHub(t, "WordProjector-2026-01-02-macos-arm64.zip", data, true)
 	u := newUpdater(srv, "darwin", "arm64", exe)
 	rel, _ := listed(t, u)
 	if err := u.Install(context.Background(), rel, nil); err != nil {
@@ -148,7 +148,7 @@ func TestInstallLinux(t *testing.T) {
 	exe := filepath.Join(dir, "WordProjector")
 	os.WriteFile(exe, []byte("old"), 0o755)
 	data := tgzOf(map[string]string{"WordProjector/WordProjector": "new", "WordProjector/LICENSE": "x"})
-	srv := fakeGitHub(t, "WordProjector-2026.01.02-linux-x64.tar.gz", data, true)
+	srv := fakeGitHub(t, "WordProjector-2026-01-02-linux-x64.tar.gz", data, true)
 	u := newUpdater(srv, "linux", "amd64", exe)
 	rel, _ := listed(t, u)
 	if err := u.Install(context.Background(), rel, nil); err != nil {
@@ -169,14 +169,14 @@ func TestInstallWindowsKeepsOldUntilCleanup(t *testing.T) {
 	exe := filepath.Join(dir, "WordProjector.exe")
 	os.WriteFile(exe, []byte("old"), 0o755)
 	data := zipOf(map[string]string{"WordProjector.exe": "new", "LICENSE.txt": "x"})
-	srv := fakeGitHub(t, "WordProjector-2026.01.02-windows-x64.zip", data, true)
+	srv := fakeGitHub(t, "WordProjector-2026-01-02-windows-x64.zip", data, true)
 	u := newUpdater(srv, "windows", "amd64", exe)
 	rel, _ := listed(t, u)
 	if err := u.Install(context.Background(), rel, nil); err != nil {
 		t.Fatal(err)
 	}
 	got, _ := os.ReadFile(exe)
-	oldPath := filepath.Join(dir, "WordProjector.2025.12.01.exe")
+	oldPath := filepath.Join(dir, "WordProjector.2025-12-01.exe")
 	old, _ := os.ReadFile(oldPath)
 	if string(got) != "new" || string(old) != "old" {
 		t.Fatalf("exe %q, old %q", got, old)
@@ -187,13 +187,32 @@ func TestInstallWindowsKeepsOldUntilCleanup(t *testing.T) {
 	}
 }
 
+// Linux on ARM (a Raspberry Pi with a 64-bit system, for one) gets the build of its own architecture.
+func TestLinuxArmGetsItsOwnBuild(t *testing.T) {
+	for _, c := range []struct{ arch, file string }{{"arm64", "linux-arm64"}} {
+		dir := t.TempDir()
+		exe := filepath.Join(dir, "WordProjector")
+		os.WriteFile(exe, []byte("old"), 0o755)
+		data := tgzOf(map[string]string{"WordProjector/WordProjector": "new-" + c.arch, "WordProjector/LICENSE": "x"})
+		srv := fakeGitHub(t, "WordProjector-2026-01-02-"+c.file+".tar.gz", data, true)
+		u := newUpdater(srv, "linux", c.arch, exe)
+		rel, _ := listed(t, u)
+		if err := u.Install(context.Background(), rel, nil); err != nil {
+			t.Fatalf("%s: %v", c.arch, err)
+		}
+		if got, _ := os.ReadFile(exe); string(got) != "new-"+c.arch {
+			t.Fatalf("%s: executable = %q", c.arch, got)
+		}
+	}
+}
+
 // Windows on ARM gets its own build, not the x64 one.
 func TestWindowsArmGetsItsOwnBuild(t *testing.T) {
 	dir := t.TempDir()
 	exe := filepath.Join(dir, "WordProjector.exe")
 	os.WriteFile(exe, []byte("old"), 0o755)
 	data := zipOf(map[string]string{"WordProjector.exe": "new-arm", "LICENSE.txt": "x"})
-	srv := fakeGitHub(t, "WordProjector-2026.01.02-windows-arm64.zip", data, true)
+	srv := fakeGitHub(t, "WordProjector-2026-01-02-windows-arm64.zip", data, true)
 	u := newUpdater(srv, "windows", "arm64", exe)
 	rel, _ := listed(t, u)
 	if err := u.Install(context.Background(), rel, nil); err != nil {
@@ -209,7 +228,7 @@ func TestBadChecksumLeavesProgramAlone(t *testing.T) {
 	exe := filepath.Join(dir, "WordProjector")
 	os.WriteFile(exe, []byte("old"), 0o755)
 	data := tgzOf(map[string]string{"WordProjector/WordProjector": "new"})
-	srv := fakeGitHub(t, "WordProjector-2026.01.02-linux-x64.tar.gz", data, false)
+	srv := fakeGitHub(t, "WordProjector-2026-01-02-linux-x64.tar.gz", data, false)
 	u := newUpdater(srv, "linux", "amd64", exe)
 	rel, _ := listed(t, u)
 	if err := u.Install(context.Background(), rel, nil); err == nil || !strings.Contains(err.Error(), "damaged") {
@@ -238,7 +257,7 @@ func TestSupported(t *testing.T) {
 	if ok, _ := u.Supported(); ok {
 		t.Fatal("a dev build must not update itself")
 	}
-	u.Current = "2025.12.01"
+	u.Current = "2025-12-01"
 	if ok, why := u.Supported(); !ok {
 		t.Fatal(why)
 	}
@@ -256,7 +275,7 @@ func TestRateLimitedUsesFeed(t *testing.T) {
 	os.WriteFile(exe, []byte("old"), 0o755)
 	data := tgzOf(map[string]string{"WordProjector/WordProjector": "new"})
 	sum := sha256.Sum256(data)
-	name := "WordProjector-2026.01.02-linux-x64.tar.gz"
+	name := "WordProjector-2026-01-02-linux-x64.tar.gz"
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/api/releases":
@@ -264,23 +283,23 @@ func TestRateLimitedUsesFeed(t *testing.T) {
 			http.Error(w, "rate limit", http.StatusForbidden)
 		case "/web/releases.atom":
 			w.Write([]byte(`<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">
-<entry><title>2026.01.02</title><updated>2026-01-02T10:00:00Z</updated><link href="https://github.com/x/y/releases/tag/2026.01.02"/><content type="html">&lt;p&gt;Faster &amp;amp; better&lt;/p&gt;</content></entry>
-<entry><title>2025.12.01</title><updated>2025-12-01T10:00:00Z</updated><link href="https://github.com/x/y/releases/tag/2025.12.01"/><content type="html"></content></entry></feed>`))
-		case "/web/releases/download/2026.01.02/" + name:
+<entry><title>2026-01-02</title><updated>2026-01-02T10:00:00Z</updated><link href="https://github.com/x/y/releases/tag/2026-01-02"/><content type="html">&lt;p&gt;Faster &amp;amp; better&lt;/p&gt;</content></entry>
+<entry><title>2025-12-01</title><updated>2025-12-01T10:00:00Z</updated><link href="https://github.com/x/y/releases/tag/2025-12-01"/><content type="html"></content></entry></feed>`))
+		case "/web/releases/download/2026-01-02/" + name:
 			w.Write(data)
-		case "/web/releases/download/2026.01.02/checksums.txt":
+		case "/web/releases/download/2026-01-02/checksums.txt":
 			w.Write([]byte(hex.EncodeToString(sum[:]) + "  " + name + "\n"))
 		default:
 			http.NotFound(w, r)
 		}
 	}))
 	defer srv.Close()
-	u := &Updater{Repo: "x/y", API: srv.URL + "/api", Web: srv.URL + "/web", Current: "2025.12.01", Client: srv.Client(), GOOS: "linux", GOARCH: "amd64", Exe: exe, AllowTemp: true}
+	u := &Updater{Repo: "x/y", API: srv.URL + "/api", Web: srv.URL + "/web", Current: "2025-12-01", Client: srv.Client(), GOOS: "linux", GOARCH: "amd64", Exe: exe, AllowTemp: true}
 	list, err := u.List(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(list) != 2 || list[0].Tag != "2026.01.02" || list[0].Published != "2026-01-02" || !strings.Contains(list[0].Notes, "Faster & better") {
+	if len(list) != 2 || list[0].Tag != "2026-01-02" || list[0].Published != "2026-01-02" || !strings.Contains(list[0].Notes, "Faster & better") {
 		t.Fatalf("list = %+v", list)
 	}
 	if !u.Newer(Latest(list)) {
@@ -304,7 +323,7 @@ func TestRateLimitedAndNoFeedSaysWhen(t *testing.T) {
 		http.NotFound(w, r)
 	}))
 	defer srv.Close()
-	u := &Updater{Repo: "x/y", API: srv.URL + "/api", Web: srv.URL + "/web", Current: "2025.12.01", Client: srv.Client(), GOOS: "linux", GOARCH: "amd64"}
+	u := &Updater{Repo: "x/y", API: srv.URL + "/api", Web: srv.URL + "/web", Current: "2025-12-01", Client: srv.Client(), GOOS: "linux", GOARCH: "amd64"}
 	_, err := u.List(context.Background())
 	if err == nil || !strings.Contains(err.Error(), "limit") || !strings.Contains(err.Error(), "minutes") {
 		t.Fatalf("err = %v", err)
