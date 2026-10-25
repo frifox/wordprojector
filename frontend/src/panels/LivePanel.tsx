@@ -231,7 +231,7 @@ export default function LivePanel() {
 
   return (
     <div className="col fill" style={{ gap: 4, minHeight: 0 }}>
-      <div className="row" style={{ minHeight: 24, flexWrap: 'wrap', rowGap: 2 }}>
+      <div className="row" style={{ minHeight: 28, flexWrap: 'wrap', rowGap: 2 }}>
         {isBible ? (
           <>
             <label className="chk" style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
