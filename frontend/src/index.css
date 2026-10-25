@@ -1808,19 +1808,20 @@ a.url-link:hover {
   padding: 0 6px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s ease;
+  /* they fade out slowly when the pointer leaves the box ... */
+  transition: opacity 1s ease;
 }
+/* ... and come in quickly when it is over the box */
 .live-preview:hover .lp-overlay,
 .live-preview:focus-within .lp-overlay {
   opacity: 1;
   pointer-events: auto;
+  transition-duration: 0.15s;
 }
 /* the hint when the Bible tab opens: the buttons show for a while and then fade out slowly */
 .live-preview.hint .lp-overlay {
   opacity: 1;
-}
-.live-preview.hint-fade .lp-overlay {
-  transition-duration: 1s;
+  transition-duration: 0.15s;
 }
 .live-preview .lp-overlay-in {
   max-width: 100%;
