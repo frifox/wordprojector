@@ -126,7 +126,7 @@ export default function AnnouncePanel({ active }: { active: boolean }) {
       </div>
       <div className="col fill" style={{ gap: 4 }}>
         <div className="row">
-          <button className="primary golive" onClick={goLive} disabled={!preview} title={`${t('Quickly display announcement')} (F5)`} aria-label={t('Go Live (F5)')}><GoLiveIcon /></button>
+          <button className="primary golive" onClick={goLive} disabled={!preview} title={t('Quickly display announcement')} aria-label={t('Go Live')}><GoLiveIcon /></button>
           <span style={{ fontWeight: 600 }}>{preview ? preview.title : t('Announcement Preview:')}</span>
         </div>
         <div className="list grow" tabIndex={0} onKeyDown={(e) => {

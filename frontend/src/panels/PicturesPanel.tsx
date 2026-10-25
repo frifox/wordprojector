@@ -373,8 +373,8 @@ export default function PicturesPanel({ active }: { active: boolean }) {
             <button className="tbtn-s" title={t('Add Images from Folder...')} disabled={!current || picking} onClick={() => setFolderDialog('add')}><FolderPlusIcon /></button>
             <button className="tbtn-s" title={t('Add Images...')} disabled={!current || picking} onClick={addImages}><PlusIcon /></button>
             <button className="tbtn-s" title={t('Remove Image')} disabled={!picked.length} onClick={() => removePhotos(picked)}><MinusIcon /></button>
-            <button style={{ marginLeft: 14 }} onClick={() => setViewing(true)} disabled={!slides.length} title={t('Preview (Space)')}>{t('Preview')}</button>
-            <button className="primary golive" style={{ marginLeft: 4 }} onClick={goLive} disabled={!slides.length} title={t('Go Live (F5)')} aria-label={t('Go Live (F5)')}><GoLiveIcon /></button>
+            <button style={{ marginLeft: 14 }} onClick={() => setViewing(true)} disabled={!slides.length} title={t('Preview')}>{t('Preview')}</button>
+            <button className="primary golive" style={{ marginLeft: 4 }} onClick={goLive} disabled={!slides.length} title={t('Go Live')} aria-label={t('Go Live')}><GoLiveIcon /></button>
           </div>
           <div
             ref={gridRef}

@@ -302,7 +302,7 @@ export default function SongsPanel({ active }: { active: boolean }) {
   const searching = searchIds !== null;
 
   return (
-    <Splitter id="songs-main" initial={0.5} saved={settings.app.splitters} className="fill">
+    <Splitter id="songs-main" initial={0.5} saved={settings.app.splitters} className="fill" minFirst={300}>
       <div className="col fill" style={{ gap: 4 }}>
         <div className="row">
           <span style={{ minWidth: 46 }}>{t('Book:')}</span>
@@ -310,7 +310,7 @@ export default function SongsPanel({ active }: { active: boolean }) {
             options={[{ value: 0, label: t('All songbooks') }, ...songbooks.map((sb) => ({ value: sb.id, label: sb.name }))]} />
           <span className="input-group">
             <input ref={numberInput} className="no-spin" type="number" min={1} placeholder={t('Number')} style={{ width: 70 }} value={number} disabled={!songbook} onChange={(e) => selectByNumber(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') goLiveNumber(); }} title={t('Selects a song by the number in the selected Songbook')} />
-            <button className="primary golive" disabled={!songbook || !number} onClick={goLiveNumber} title={t('Go Live (F5)')}><GoLiveIcon /></button>
+            <button className="primary golive" disabled={!songbook || !number} onClick={goLiveNumber} title={t('Go Live')}><GoLiveIcon size={13} /></button>
           </span>
         </div>
         <div className="row">
@@ -371,7 +371,7 @@ export default function SongsPanel({ active }: { active: boolean }) {
             title={preview ? t('Drag to the Schedule') : undefined}
             style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, cursor: preview ? 'grab' : undefined }}
           >{preview ? (preview.number > 0 ? `${preview.number}. ${preview.title}` : preview.title) : null}</span>
-          <button className="primary golive" onClick={goLive} disabled={!preview} title={t('Go Live (F5)')} aria-label={t('Go Live (F5)')}><GoLiveIcon /></button>
+          <button className="primary golive" onClick={goLive} disabled={!preview} title={t('Go Live')} aria-label={t('Go Live')}><GoLiveIcon /></button>
         </div>
         {preview?.notes && <div className="muted" style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>{t('Notes:')}{'\n'}{preview.notes}</div>}
         <div ref={stanzaList} className="list grow hover-items" tabIndex={0} onKeyDown={(e) => {

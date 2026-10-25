@@ -89,6 +89,8 @@ export function confirmDialog(opts: {
   message: string;
   info?: string;
   buttons: { label: string; value: string; primary?: boolean }[];
+  /** radio buttons under the text; the primary button then answers with the value of the chosen one (the first is chosen at first) */
+  choices?: { label: string; value: string }[];
 }): Promise<string> {
   return new Promise((resolve) => {
     const ev = new CustomEvent('wp-confirm', { detail: { ...opts, resolve } });

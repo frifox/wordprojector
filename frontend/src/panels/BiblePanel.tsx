@@ -6,7 +6,7 @@ import { useRegisterPanel, useUI, GoLiveIcon } from '../lib/ui';
 import { useData } from '../lib/hooks';
 import type { Book, ChapterVerse, SearchHit, BibleRef, ScheduleItem } from '../lib/types';
 import { Highlight } from '../components/Highlight';
-import { focusLive } from '../lib/focus';
+import { focusLive, bibleShown } from '../lib/focus';
 import { phoneticContains, phoneticStartsWith } from '../lib/translit';
 
 const VerseID = (b: number, c: number, v: number) => `B${String(b).padStart(3, '0')}C${String(c).padStart(3, '0')}V${String(v).padStart(3, '0')}`;
@@ -66,10 +66,11 @@ export default function BiblePanel({ active }: { active: boolean }) {
   const verseList = useRef<HTMLDivElement>(null);
   const anchor = useRef(0);
   const bookList = useRef<HTMLDivElement>(null);
-  // opening the Bible tab puts the cursor on the book list: typing starts filtering the books right away
+  // opening the Bible tab puts the cursor in the book box: typing starts filtering the books right away, and Up / Down
+  // still step through them
   useEffect(() => {
     if (!active) return;
-    const id = window.setTimeout(() => bookList.current?.focus({ preventScroll: true }), 0); // the tab is shown first
+    const id = window.setTimeout(() => bookInput.current?.focus({ preventScroll: true }), 0); // the tab is shown first
     return () => window.clearTimeout(id);
   }, [active]);
   const chapterInput = useRef<HTMLInputElement>(null);
@@ -214,6 +215,7 @@ export default function BiblePanel({ active }: { active: boolean }) {
   const goLive = (addHistory = true) => {
     if (!book || !verses.length || !sel.length) return;
     api.showBible(book.id, chapter, sel);
+    bibleShown(sel.length);
     focusLive();
     if (addHistory) {
       const h = captionFor(sel);
@@ -248,8 +250,8 @@ export default function BiblePanel({ active }: { active: boolean }) {
   const onSearchKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') doSearch();
     else if (e.key === 'Tab' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      // skip Any Order / Full Word / Search and land on the book list (or the results)
-      const target = results !== null ? resultsRef.current : bookList.current;
+      // skip Any Order / Full Word / Search and land on the results, or in the book box
+      const target = results !== null || searching ? resultsRef.current : bookInput.current;
       if (target) {
         e.preventDefault();
         target.focus();
@@ -272,8 +274,10 @@ export default function BiblePanel({ active }: { active: boolean }) {
   };
 
   const doSearch = async () => {
+    const seq = ++searchSeq.current; // an answer to an earlier key must not replace this one
     // submitting an emptied search box after a search means "Clear Search"
     if (!searchText.trim()) {
+      setSearching(false);
       if (results !== null) {
         setResults(null);
         setResultSel(-1);
@@ -281,15 +285,50 @@ export default function BiblePanel({ active }: { active: boolean }) {
       return;
     }
     if (!operatorBible) return;
+    setSearching(true);
     try {
       const r = await api.searchBible(operatorBible, searchText, !anyOrder, fullWord, 0, 0, 0);
+      if (seq !== searchSeq.current) return;
       setResults(r.hits);
       setHighlight(r.highlight);
       setResultSel(-1);
     } catch (e) {
       console.error(e);
     }
+    if (seq === searchSeq.current) setSearching(false);
   };
+
+  // the results follow the typing: after each key once there are 3 characters (Enter or Search finds shorter words). The
+  // answers can come back in another order than the questions were asked: only the newest counts.
+  const [searching, setSearching] = useState(false); // an answer is on its way
+  const searchSeq = useRef(0);
+  const lastSearchText = useRef(searchText);
+  useEffect(() => {
+    const typed = lastSearchText.current !== searchText;
+    lastSearchText.current = searchText;
+    const seq = ++searchSeq.current;
+    if (searchText.trim().length < 3) {
+      setSearching(false);
+      if (typed && results !== null) {
+        setResults(null);
+        setResultSel(-1);
+      }
+      return;
+    }
+    if (!operatorBible) return;
+    setSearching(true);
+    api.searchBible(operatorBible, searchText, !anyOrder, fullWord, 0, 0, 0).then((r) => {
+      if (seq !== searchSeq.current) return;
+      setResults(r.hits);
+      setHighlight(r.highlight);
+      setResultSel(-1);
+      setSearching(false);
+    }).catch((e) => {
+      console.error(e);
+      if (seq === searchSeq.current) setSearching(false);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchText, anyOrder, fullWord, operatorBible]);
 
   const selectResult = (i: number) => {
     const h = results?.[i];
@@ -305,6 +344,7 @@ export default function BiblePanel({ active }: { active: boolean }) {
     }, 50);
   };
 
+  const shownResults = results ?? []; // while the first answer is on its way there is a header and no rows
   const resultsRef = useRef<HTMLDivElement>(null);
   // only the first rows of a long result list are rendered; more are added while scrolling
   const [shown, setShown] = useState(RESULT_PAGE);
@@ -318,6 +358,7 @@ export default function BiblePanel({ active }: { active: boolean }) {
     selectResult(i);
     const id = VerseID(h.bookId, h.chapter, h.verse);
     api.showBibleRef(id);
+    bibleShown(1);
     focusLive();
     ui.addBibleHistory({ verseIds: id, caption: `${h.book} ${h.chapter}:${h.verse}`, captionLong: `${h.book} ${h.chapter}:${h.verse}. ${h.text}` });
   };
@@ -464,8 +505,12 @@ export default function BiblePanel({ active }: { active: boolean }) {
     if (e.key !== 'Tab' || e.ctrlKey || e.metaKey || e.altKey) return;
     const inputs = [bookInput, chapterInput, verseInput];
     const next = idx + (e.shiftKey ? -1 : 1);
-    if (next < 0) return; // Shift+Tab from the book box goes back to the search controls
     e.preventDefault();
+    if (next < 0) { // Shift+Tab from the book box goes back to the search box
+      searchInput.current?.focus();
+      searchInput.current?.select();
+      return;
+    }
     const el = inputs[next >= inputs.length ? 0 : next].current;
     el?.focus();
     el?.select();
@@ -572,27 +617,27 @@ export default function BiblePanel({ active }: { active: boolean }) {
             {t('Full Word')}
           </label>
           <div className="btn-group">
-            <button disabled={searchText === '' && results === null} onClick={clearSearch} title={t('Clear the search text and the results (Esc)')}>{t('Clear')}</button>
+            <button disabled={searchText === '' && results === null} onClick={clearSearch} title={t('Clear the search text and the results')}>{t('Clear')}</button>
             <button onClick={doSearch}><img className="icon" src="/icons/search.png" alt="" />{t('Search')}</button>
           </div>
         </div>
-        {results !== null ? (
+        {results !== null || searching ? (
         <div className="col grow" style={{ minHeight: 0, gap: 4 }}>
           <div className="row">
             <b>{t('Results:')}</b>
-            <span className="muted">{results.length ? t('{n} results', { n: results.length }) : t('No search results.')}</span>
+            {searching ? <span className="bg-spinner" style={{ width: 14, height: 14, borderWidth: 2 }} role="status" aria-label={t('Searching…')} /> : <span className="muted">{shownResults.length ? t('{n} results', { n: shownResults.length }) : t('No search results.')}</span>}
             <span className="grow" />
-            <button className="primary golive" onClick={() => goLiveHit(resultSel)} disabled={resultSel < 0} title={t('Go Live (F5)')} aria-label={t('Go Live (F5)')}>
+            <button className="primary golive" onClick={() => goLiveHit(resultSel)} disabled={resultSel < 0} title={t('Go Live')} aria-label={t('Go Live')}>
               <GoLiveIcon />
             </button>
           </div>
-          <div className="results-table list grow active" tabIndex={0} ref={resultsRef} onKeyDown={onResultsKey} onScroll={(e) => { const el = e.currentTarget; if (shown < results.length && el.scrollHeight - el.scrollTop - el.clientHeight < 600) setShown((s) => s + RESULT_PAGE); }}>
+          <div className="results-table list grow active" tabIndex={0} ref={resultsRef} onKeyDown={onResultsKey} onScroll={(e) => { const el = e.currentTarget; if (shown < shownResults.length && el.scrollHeight - el.scrollTop - el.clientHeight < 600) setShown((s) => s + RESULT_PAGE); }}>
             <div className="results-head">
               <span>{t('Book:').replace(':', '')}</span>
               <span title={t('Chapter:').replace(':', '')}>{t('Ch.')}</span>
               <span>{t('Verse:').replace(':', '')}</span>
             </div>
-            <ResultRows results={results} highlight={highlight} selected={resultSel} limit={shown} onSelect={onRowSelect} onGo={onRowGo} />
+            <ResultRows results={shownResults} highlight={highlight} selected={resultSel} limit={shown} onSelect={onRowSelect} onGo={onRowGo} />
           </div>
         </div>
         ) : (
@@ -635,11 +680,11 @@ export default function BiblePanel({ active }: { active: boolean }) {
             </div>
             <div style={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: 6 }}>
               {filtering && (
-                <button className="hdr-ctl" tabIndex={-1} onClick={clearFilters} title={t('Clear the book, chapter and verse filters (Esc)')}>
+                <button className="hdr-ctl" tabIndex={-1} onClick={clearFilters} title={t('Clear the book, chapter and verse filters')}>
                   {t('Clear Filter')}
                 </button>
               )}
-              <button className="primary golive hdr-ctl" tabIndex={-1} onClick={() => goLive(true)} disabled={noBible || !verses.length} title={`${t('Quickly display the selected Bible verse on the screen')} (F5)`} aria-label={t('Go Live (F5)')}>
+              <button className="primary golive hdr-ctl" tabIndex={-1} onClick={() => goLive(true)} disabled={noBible || !verses.length} title={t('Quickly display the selected Bible verse on the screen')} aria-label={t('Go Live')}>
                 <GoLiveIcon />
               </button>
             </div>

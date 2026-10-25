@@ -77,7 +77,7 @@ export default function SchedulePanel({ selected, setSelected, onAdd }: { select
       <div className="row" style={{ gap: 2 }}>
         <span style={{ fontWeight: 600 }}>{t('Schedule')}</span>
         <span className="grow" />
-        <button className="tbtn-s" title={t('Add to Schedule') + ' (F2)'} onClick={onAdd}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg></button>
+        <button className="tbtn-s" title={t('Add to Schedule')} onClick={onAdd}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg></button>
         <button className="tbtn-s" title={t('Remove from Schedule')} disabled={selected < 0} onClick={() => api.scheduleRemove(selected)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l14 0" /></svg></button>
         <button className="tbtn-s" title={t('Clear Schedule')} disabled={schedule.items.length === 0} onClick={() => api.scheduleClear()}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 20h-10.5l-4.21 -4.3a1 1 0 0 1 0 -1.41l10 -10a1 1 0 0 1 1.41 0l5 5a1 1 0 0 1 0 1.41l-9.2 9.3" /><path d="M18 13.3l-6.3 -6.3" /></svg></button>
       </div>

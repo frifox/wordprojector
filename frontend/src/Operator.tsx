@@ -268,14 +268,14 @@ export default function Operator() {
         <div className="topbar">
         <Menubar menus={menus} />
         <div className="toolbar">
-          <button className={`tbtn ${displaysOn ? 'checked' : ''}`} title={displaysOn ? `${t('Turn displays off')} (Esc)` : t('Turn displays on')} aria-label={displaysOn ? t('Turn displays off') : t('Turn displays on')} aria-pressed={displaysOn}
+          <button className={`tbtn ${displaysOn ? 'checked' : ''}`} title={displaysOn ? t('Turn displays off') : t('Turn displays on')} aria-label={displaysOn ? t('Turn displays off') : t('Turn displays on')} aria-pressed={displaysOn}
             onClick={toggleDisplays} disabled={live.singleScreen && !displaysOn && !live.type}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 6a7.75 7.75 0 1 0 10 0" /><path d="M12 4l0 8" /></svg>
           </button>
         </div>
         </div>
         <div className="grow" style={{ display: 'flex', minHeight: 0, padding: 4 }}>
-          <Splitter id="center" initial={0.72} saved={settings.app.splitters} className="fill" fixedSecond min={280}>
+          <Splitter id="center" initial={0.72} saved={settings.app.splitters} className="fill" min={280} maxSecond={400}>
             <div className="col fill" style={{ gap: 0 }}>
               <div className="grow" style={{ display: 'flex', minHeight: 0 }}>
                 <Sidebar saved={settings.app.splitters}>

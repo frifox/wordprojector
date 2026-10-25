@@ -8,6 +8,7 @@ interface Confirm {
   message: string;
   info?: string;
   buttons: { label: string; value: string; primary?: boolean }[];
+  choices?: { label: string; value: string }[];
   resolve: (v: string) => void;
 }
 interface Prompt {
@@ -23,8 +24,12 @@ export default function DialogHost() {
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [choice, setChoice] = useState(0);
+  const [picked, setPicked] = useState(0); // the radio button chosen in a confirm dialog
   useEffect(() => {
-    const c = (e: Event) => setConfirm((e as CustomEvent).detail as Confirm);
+    const c = (e: Event) => {
+      setPicked(0);
+      setConfirm((e as CustomEvent).detail as Confirm);
+    };
     const p = (e: Event) => {
       const d = (e as CustomEvent).detail as Prompt;
       setChoice(d.initial || 0);
@@ -55,7 +60,7 @@ export default function DialogHost() {
               className={b.primary ? 'primary' : ''}
               autoFocus={b.primary}
               onClick={() => {
-                confirm.resolve(b.value);
+                confirm.resolve(b.primary && confirm.choices?.length ? confirm.choices[picked].value : b.value);
                 setConfirm(null);
               }}
             >
@@ -64,7 +69,14 @@ export default function DialogHost() {
           ))}
         >
           <div style={{ whiteSpace: 'pre-wrap', minWidth: 300 }}>{confirm.message}</div>
-          {confirm.info && <div className="muted" style={{ whiteSpace: 'pre-wrap' }}>{confirm.info}</div>}
+          {confirm.choices && (
+            <div className="col" style={{ gap: 4, marginTop: 8 }}>
+              {confirm.choices.map((c, i) => (
+                <label key={c.value} className="chk"><input type="radio" name="confirm-choice" checked={picked === i} onChange={() => setPicked(i)} />{c.label}</label>
+              ))}
+            </div>
+          )}
+          {confirm.info && <div className="muted" style={{ whiteSpace: 'pre-wrap', marginTop: 8 }}>{confirm.info}</div>}
         </Modal>
       )}
       {prompt && (

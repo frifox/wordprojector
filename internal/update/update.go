@@ -53,7 +53,7 @@ type Updater struct {
 	// Web is the address of the repository's web pages (the release feed is read from there when the API will not
 	// answer).
 	Web string
-	// Current is the version of the running program (a date like "2026-10-22", or "dev" for an unnumbered build).
+	// Current is the version of the running program (a date like "2026.10.22", or "dev" for an unnumbered build).
 	Current string
 	Client  *http.Client
 	// Exe is the running executable; GOOS and GOARCH say which build of a release is wanted. They are the real ones
@@ -175,10 +175,10 @@ func (u *Updater) List(ctx context.Context) ([]Release, error) {
 
 // ---- versions ---------------------------------------------------------------------------------------------------
 
-// Releases are tagged with the day they were made, YYYY-MM-DD, and ".n" for the n-th one made the same day
-// ("2026-10-22", "2026-10-22.2"). A build made from files after a tag has more after it ("2026-10-22-3-gabc"); that is
+// Releases are tagged with the day they were made, YYYY.MM.DD, and ".n" for the n-th one made the same day
+// ("2026.10.22", "2026.10.22.2"). A build made from files after a tag has more after it ("2026.10.22-3-gabc"); that is
 // ignored here.
-var verRe = regexp.MustCompile(`^(\d{4})-(\d{2})-(\d{2})(?:\.(\d+))?`)
+var verRe = regexp.MustCompile(`^(\d{4})\.(\d{2})\.(\d{2})(?:\.(\d+))?`)
 
 func parse(v string) (n [4]int, ok bool) {
 	m := verRe.FindStringSubmatch(strings.TrimSpace(v))

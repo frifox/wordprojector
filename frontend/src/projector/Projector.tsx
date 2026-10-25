@@ -59,21 +59,32 @@ export default function Projector({ disp }: { disp: number }) {
     };
   }, [disp]);
 
-  // Tell the program when this page has drawn its first state (the window is shown only then) and when it has drawn
-  // (and finished fading to) each later one (a window is hidden only then, so it never keeps an old picture that
-  // would flash the next time it is shown).
+  // Tell the program when this page has its first state (a new window is shown only then) and, for each later one, when it
+  // is in the document: that happens also while the window is hidden, when nothing is drawn and the animation frames
+  // below do not run.
   const readySent = useRef(false);
+  const version = state?.version;
   useEffect(() => {
-    if (!state || readySent.current) return;
-    readySent.current = true;
-    window.setTimeout(() => socketRef.current?.send({ type: 'ready', disp }), 50);
-  }, [state, disp]);
+    if (version === undefined) return;
+    if (!readySent.current) {
+      readySent.current = true;
+      socketRef.current?.send({ type: 'ready', disp });
+    }
+    socketRef.current?.send({ type: 'applied', disp, version });
+  }, [version, disp]);
   // Tell the program when this page has drawn each state (the window is hidden only then, so it never keeps an old
   // picture that would flash the next time it is shown). Turning off is a cut, so this takes a couple of frames.
-  const version = state?.version;
+  // whether the window is meant to be on screen with this state, and was with the one before: a state that turns the window
+  // on is drawn at once (nothing fades in from what the window showed when it went away)
+  const onScreen = !!state && (state.test || (state.singleScreen ? state.showing : state.displayOn));
+  const wasOnScreen = useRef(false);
+  const instant = !wasOnScreen.current;
+  useEffect(() => {
+    wasOnScreen.current = onScreen;
+  }, [state, onScreen]);
   const fadeMs = (() => {
     const sl = (state?.displays.find((d) => d.disp === disp) || state?.displays[0])?.slide;
-    return sl?.fade ? sl.fadeMillis || 500 : 0;
+    return sl?.fade && !instant ? sl.fadeMillis || 500 : 0;
   })();
   useEffect(() => {
     if (version === undefined) return;
@@ -81,7 +92,8 @@ export default function Projector({ disp }: { disp: number }) {
     let timer = 0;
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => {
-        timer = window.setTimeout(() => socketRef.current?.send({ type: 'settled', disp, version }), fadeMs + 10);
+        if (fadeMs > 0) timer = window.setTimeout(() => socketRef.current?.send({ type: 'settled', disp, version }), fadeMs + 10);
+        else socketRef.current?.send({ type: 'settled', disp, version });
       });
     });
     return () => {
@@ -96,7 +108,7 @@ export default function Projector({ disp }: { disp: number }) {
   const slide = display?.slide;
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#000', overflow: 'hidden', cursor: 'none' }}>
-      {slide && <Stage slide={slide} width={size.w} height={size.h} videoRef={videoRef} socket={socketRef} disp={disp} state={state} />}
+      {slide && <Stage slide={slide} width={size.w} height={size.h} videoRef={videoRef} socket={socketRef} disp={disp} state={state} instant={instant} />}
       {state?.controls.visible && disp === 1 && <Controls state={state} socket={socketRef} w={size.w} h={size.h} />}
     </div>
   );
@@ -109,9 +121,9 @@ export default function Projector({ disp }: { disp: number }) {
  * empty one at opacity 0), so a new slide is faded in from 0 instead of appearing at once on a layer that was only just
  * added, and a quick second change does not reuse a layer that is still fading out.
  */
-function Stage({ slide, width, height, videoRef, socket, disp, state }: {
+function Stage({ slide, width, height, videoRef, socket, disp, state, instant }: {
   slide: RenderSlide; width: number; height: number; videoRef: React.RefObject<HTMLVideoElement | null>;
-  socket: React.RefObject<Socket | null>; disp: number; state: LiveState | null;
+  socket: React.RefObject<Socket | null>; disp: number; state: LiveState | null; instant: boolean;
 }) {
   // every slide is a layer of its own, stacked in order: a new one fades in over whatever is showing (however many
   // are still fading) and the layers under it are dropped once it is fully opaque
@@ -124,8 +136,9 @@ function Stage({ slide, width, height, videoRef, socket, disp, state }: {
     const key = JSON.stringify(slide);
     if (key === lastKey.current) return;
     lastKey.current = key;
-    // a hidden window can't run its fade: change instantly so nothing stale is left when it is shown again
-    const layer: Layer = { id: nextId.current++, slide, fade: slide.fade && !document.hidden, ms: slide.fadeMillis || 500 };
+    // a hidden window can't run its fade, and one that is only now being turned on does not fade either: change instantly
+    // so nothing stale is left when it is shown
+    const layer: Layer = { id: nextId.current++, slide, fade: slide.fade && !document.hidden && !instant, ms: slide.fadeMillis || 500 };
     setLayers((l) => [...l, layer]);
     const id = window.setTimeout(() => setLayers((l) => l.filter((x) => x.id >= layer.id)), layer.fade ? layer.ms + 30 : 0);
     timers.current.push(id);

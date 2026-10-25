@@ -15,7 +15,7 @@ export CGO_CFLAGS  += -mmacosx-version-min=11.0
 export CGO_LDFLAGS += -mmacosx-version-min=11.0
 endif
 
-.PHONY: all frontend build headless run dev test clean mac-app install
+.PHONY: all frontend build headless run dev test clean mac-app install dist macos windows linux
 
 all: build
 
@@ -55,3 +55,12 @@ install: mac-app
 	cp -R "dist/$(APP).app" "/Applications/$(APP).app"
 	rm -rf "dist/$(APP).app"
 	@echo "installed /Applications/$(APP).app"
+
+# The program of every system in dist/, a folder for each: macos-arm64, macos-x64, windows-x64, windows-arm64, linux-x64
+# (Linux is built in Docker, which has to be running). The version is the git tag, or VERSION=... to set it.
+dist: frontend
+	./build/dist.sh $(VERSION)
+
+# One system at a time (the same folders in dist/)
+macos windows linux: frontend
+	./build/dist.sh $(VERSION) $@

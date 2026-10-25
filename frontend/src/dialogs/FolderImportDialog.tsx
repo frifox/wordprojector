@@ -60,17 +60,17 @@ export default function FolderImportDialog({ mode, onImport, onClose }: {
             <input type="text" value={name} disabled={busy} onChange={(e) => { setName(e.target.value); setTouched(true); }} onKeyDown={(e) => e.key === 'Enter' && ok()} />
           </>
         )}
+        <div className="col" style={{ gap: 4, gridColumn: '1 / -1' }}>
+          <label className="chk"><input type="checkbox" checked={options.recursive} disabled={busy} onChange={(e) => setOpt({ recursive: e.target.checked })} />{t('Include images in subfolders')}</label>
+          <label className="chk" title={canLink ? undefined : t('Pictures from a browser are always copied.')}>
+            <input type="checkbox" checked={options.copy || !canLink} disabled={busy || !canLink} onChange={(e) => setOpt({ copy: e.target.checked })} />{t('Copy images to local folder before import')}
+          </label>
+        </div>
         <span>{t('Folder:')}</span>
         <div className="row" style={{ gap: 6 }}>
           <input type="text" className="grow" readOnly value={folder ? folder.dir ?? folder.name : ''} placeholder={t('(none selected)')} title={folder?.dir} />
           <button onClick={browse} disabled={picking || busy} autoFocus>{t('Browse...')}</button>
         </div>
-      </div>
-      <div className="col" style={{ gap: 4, marginTop: 10 }}>
-        <label className="chk"><input type="checkbox" checked={options.recursive} disabled={busy} onChange={(e) => setOpt({ recursive: e.target.checked })} />{t('Include images in subfolders')}</label>
-        <label className="chk" title={canLink ? undefined : t('Pictures from a browser are always copied.')}>
-          <input type="checkbox" checked={options.copy || !canLink} disabled={busy || !canLink} onChange={(e) => setOpt({ copy: e.target.checked })} />{t('Copy images to local folder before import')}
-        </label>
       </div>
       {busy && (
         <div className="col" style={{ gap: 4, marginTop: 12 }}>

@@ -89,10 +89,10 @@ export const tabIcons: Record<TabName, string> = {
 };
 
 /** The play triangle inside the blue Go Live buttons: white fading to pale blue, with a soft shadow under it. */
-export function GoLiveIcon() {
+export function GoLiveIcon({ size = 16 }: { size?: number }) {
   const id = useId();
   return (
-    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style={{ filter: 'drop-shadow(0 0.8px 0.6px rgba(12, 45, 99, 0.55))' }}>
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" style={{ filter: 'drop-shadow(0 0.8px 0.6px rgba(12, 45, 99, 0.55))' }}>
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#ffffff" />

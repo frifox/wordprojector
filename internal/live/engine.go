@@ -65,9 +65,7 @@ type Engine struct {
 
 	// what the display pages (the windows' web pages) have reported, so a window is shown only when its page is
 	// ready and hidden only after its page has drawn the final state (no old picture left behind for the next show)
-	pagesMu     sync.Mutex
-	pageReady   map[int]bool
-	pageSettled map[int]int64
+	pages pageStates
 
 	// current sources
 	verseIDs  []string
@@ -698,7 +696,8 @@ func (e *Engine) TestDisplays(slots []int, d time.Duration) {
 }
 
 // Escape is the Esc key, the same wherever it is pressed (operator window or a display window): the first press
-// pauses what is displayed, the second turns the presentation off (the Off button): the list of live items stays.
+// pauses what is displayed, the second turns the presentation off (the Off button) and ends the pause, so the preview
+// shows what was displayed before the first press: the list of live items stays.
 func (e *Engine) Escape() {
 	e.mu.Lock()
 	single := e.state.SingleScreen
@@ -707,12 +706,21 @@ func (e *Engine) Escape() {
 		on = e.state.Showing
 	}
 	visible := on && e.state.Type != "" && !e.state.Cleared
+	paused := e.state.Cleared
 	e.mu.Unlock()
 	if visible {
 		e.Pause()
 		return
 	}
+	// off first, then the pause ends: the other way round the displays would show the content for a moment
 	e.TurnOff()
+	if paused {
+		e.mu.Lock()
+		e.state.Cleared = false
+		e.recompute()
+		e.mu.Unlock()
+		e.publish()
+	}
 }
 
 // Stop turns the presentation off and clears the list of live items (Del).
@@ -1229,43 +1237,4 @@ func (e *Engine) dropPreviewLocked() {
 		e.previewTimer.Stop()
 		e.previewTimer = nil
 	}
-}
-
-// PageReady records that the page of display disp has drawn its first state; false forgets it (the page is gone).
-func (e *Engine) PageReady(disp int, ready bool) {
-	e.pagesMu.Lock()
-	defer e.pagesMu.Unlock()
-	if e.pageReady == nil {
-		e.pageReady, e.pageSettled = map[int]bool{}, map[int]int64{}
-	}
-	e.pageReady[disp] = ready
-	if !ready {
-		delete(e.pageSettled, disp)
-	}
-}
-
-// IsPageReady reports whether the page of display disp has drawn its first state.
-func (e *Engine) IsPageReady(disp int) bool {
-	e.pagesMu.Lock()
-	defer e.pagesMu.Unlock()
-	return e.pageReady[disp]
-}
-
-// PageSettled records the newest state version the page of display disp has finished drawing.
-func (e *Engine) PageSettled(disp int, version int64) {
-	e.pagesMu.Lock()
-	defer e.pagesMu.Unlock()
-	if e.pageSettled == nil {
-		e.pageReady, e.pageSettled = map[int]bool{}, map[int]int64{}
-	}
-	if version > e.pageSettled[disp] {
-		e.pageSettled[disp] = version
-	}
-}
-
-// SettledVersion is the newest state version the page of display disp has finished drawing.
-func (e *Engine) SettledVersion(disp int) int64 {
-	e.pagesMu.Lock()
-	defer e.pagesMu.Unlock()
-	return e.pageSettled[disp]
 }

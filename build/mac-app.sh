@@ -4,9 +4,9 @@ set -euo pipefail
 BIN="$1"; APP="$2"; VERSION="${3:-dev}"
 NAME="WordProjector"        # executable inside the bundle
 TITLE="Word Projector"      # name shown in Finder, the Dock and the menu bar
-# CFBundle versions are numbers separated by dots: a release tag, the day "2026-10-22" (or "2026-10-22.2"), becomes
+# CFBundle versions are numbers separated by dots: a release tag, the day "2026.10.22" (or "2026.10.22.2"), becomes
 # 2026.10.22; anything else (a development build, "dev") gets 1.0
-if [[ "$VERSION" =~ ^([0-9]{4})-([0-9]{2})-([0-9]{2}) ]]; then
+if [[ "$VERSION" =~ ^([0-9]{4})\.([0-9]{2})\.([0-9]{2}) ]]; then
   NUM="${BASH_REMATCH[1]}.$((10#${BASH_REMATCH[2]})).$((10#${BASH_REMATCH[3]}))"
 else
   NUM="1.0"

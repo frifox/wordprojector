@@ -5,11 +5,11 @@ import { useData } from '../lib/hooks';
 import { t } from '../i18n';
 import type { Settings, UpdateRelease } from '../lib/types';
 
-/** Releases are tagged with a day, "2026-10-22", and ".2" for a second one that day. A suffix like -3-gabc is ignored. */
+/** Releases are tagged with a day, "2026.10.22", and ".2" for a second one that day. A suffix like -3-gabc is ignored. */
 function sameVersion(a: string, b: string): boolean {
   const key = (v: string) => {
-    const m = /^(\d{4})-(\d{2})-(\d{2})(?:\.(\d+))?/.exec(v.trim());
-    return m ? `${m[1]}-${m[2]}-${m[3]}.${Number(m[4] || 0)}` : null;
+    const m = /^(\d{4})\.(\d{2})\.(\d{2})(?:\.(\d+))?/.exec(v.trim());
+    return m ? `${m[1]}.${m[2]}.${m[3]}.${Number(m[4] || 0)}` : null;
   };
   const x = key(a);
   const y = key(b);
@@ -59,13 +59,14 @@ export default function UpdatesPage({ s, setS }: { s: Settings; setS: (f: (x: Se
     const go = await confirmDialog({
       title: downgrade ? t('Install an older version?') : t('Install {tag}?', { tag: rel.tag }),
       message: downgrade ? t('Install {tag}, which is older than the version in use?', { tag: rel.tag }) : t('Install version {tag}?', { tag: rel.tag }),
-      info: restart ? t('Word Projector will close and open again. Anything being shown stops.') : t('It is used the next time Word Projector starts.'),
-      buttons: [{ label: restart ? t('Install and Restart') : t('Install'), value: 'yes', primary: true }, { label: t('Cancel'), value: 'no' }],
+      info: restart ? undefined : t('It is used the next time Word Projector starts.'),
+      choices: restart ? [{ label: t('Install now (app will restart)'), value: 'restart' }, { label: t('Install next launch'), value: 'later' }] : undefined,
+      buttons: [{ label: t('Install'), value: 'later', primary: true }, { label: t('Cancel'), value: 'no' }],
     });
-    if (go !== 'yes') return;
+    if (go !== 'restart' && go !== 'later') return;
     setBusy(true);
     try {
-      await api.installUpdate(rel.tag, restart);
+      await api.installUpdate(rel.tag, go === 'restart');
       reload();
     } catch (e) {
       alertDialog(t('The update did not work'), String((e as Error).message || e));
@@ -94,7 +95,7 @@ export default function UpdatesPage({ s, setS }: { s: Settings; setS: (f: (x: Se
         </label>
         <label className="chk" style={{ opacity: app.skipUpdateCheck ? 0.5 : 1 }} title={t('The newest release is installed by itself; it is used the next time Word Projector starts.')}>
           <input type="checkbox" checked={!!app.autoInstallUpdates} disabled={!!app.skipUpdateCheck} onChange={(e) => setApp({ autoInstallUpdates: e.target.checked })} />
-          {t('Automatically Install Latest')}
+          {t('Install updates automatically')}
         </label>
         </div>
       </fieldset>
@@ -117,11 +118,13 @@ export default function UpdatesPage({ s, setS }: { s: Settings; setS: (f: (x: Se
         <div className="list update-list" tabIndex={0} style={{ height: 170 }}>
           {st.releases.map((r) => (
             <div key={r.tag} className={`item spaced ${picked === r.tag ? 'sel' : ''}`} onClick={() => setPicked(r.tag)} style={{ opacity: r.installable ? 1 : 0.55 }}>
-              <span className="update-tag">{r.tag}</span>
+              <span className="update-tagcell">
+                <span className="update-tag">{r.tag}</span>
+                {sameVersion(r.tag, st.current) && <span className="update-chip on">{t('Installed')}</span>}
+              </span>
               <span className="update-name">{r.name && r.name !== r.tag ? r.name : ''}</span>
               <span className="update-marks">
                 {r.tag === st.latest && <span className="update-chip">{t('Latest')}</span>}
-                {sameVersion(r.tag, st.current) && <span className="update-chip on">{t('Installed')}</span>}
                 {r.prerelease && <span className="update-chip">{t('Pre-release')}</span>}
                 {!r.installable && <span className="update-chip">{t('No download for this computer')}</span>}
               </span>

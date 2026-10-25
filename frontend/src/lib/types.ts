@@ -466,6 +466,8 @@ export interface LiveState {
   showing: boolean;
   cleared: boolean;
   displayOn: boolean;
+  /** the test pattern is on the displays */
+  test: boolean;
   singleScreen: boolean;
   type: '' | 'bible' | 'song' | 'announce' | 'picture' | 'video';
   title: string;

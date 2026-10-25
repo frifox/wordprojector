@@ -226,6 +226,10 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			if c.role == "projector" {
 				s.Engine.PageReady(c.disp, true)
 			}
+		case "applied": // ... has put this state version into its document (also while its window is hidden)
+			if c.role == "projector" {
+				s.Engine.PageApplied(c.disp, msg.Version)
+			}
 		case "settled": // ... and has finished drawing this state version
 			if c.role == "projector" {
 				s.Engine.PageSettled(c.disp, msg.Version)

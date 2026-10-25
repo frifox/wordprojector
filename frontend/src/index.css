@@ -166,19 +166,6 @@ button.ver-btn.on:active:not(:disabled),
   background: color-mix(in srgb, var(--accent) 82%, black);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
 }
-/* Go Live in the light interface: a lighter blue than the other blue buttons */
-:root:not([data-theme='dark']) button.primary.golive {
-  background: linear-gradient(#a7c8f5, #6fa3ea);
-  border-color: #5a8fd6;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
-}
-:root:not([data-theme='dark']) button.primary.golive:hover:not(:disabled) {
-  background: linear-gradient(#98bdf2, #5f97e6);
-}
-:root:not([data-theme='dark']) button.primary.golive:active:not(:disabled) {
-  background: #5f97e6;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
-}
 button.small {
   padding: 1px 6px;
   font-size: 12px;
@@ -1032,6 +1019,10 @@ input.no-spin::-webkit-outer-spin-button {
   grid-template-columns: 1fr 78px;
   column-gap: 8px;
   white-space: nowrap;
+  /* as high as a row of the song list (22px, line included) */
+  box-sizing: border-box;
+  min-height: 22px;
+  align-items: center;
 }
 .show-list .item .show-name {
   overflow: hidden;
@@ -1656,10 +1647,15 @@ button.screen-tile.on {
 /* Settings > Updates */
 .update-list .item {
   display: grid;
-  grid-template-columns: 84px 1fr auto 86px;
+  grid-template-columns: 160px 1fr auto 86px;
   column-gap: 8px;
   align-items: center;
   white-space: nowrap;
+}
+.update-list .update-tagcell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .update-list .update-tag {
   font-weight: 600;
@@ -1685,8 +1681,10 @@ button.screen-tile.on {
   color: var(--muted);
 }
 .update-chip.on {
-  border-color: var(--accent);
+  border-color: transparent;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: var(--accent);
+  padding: 0 7px;
 }
 .update-notes {
   margin-top: 6px;

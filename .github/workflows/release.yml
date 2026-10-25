@@ -1,7 +1,7 @@
 name: Release
 on:
   push:
-    tags: ['[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*'] # the day of the release, 2026-10-22, or 2026-10-22.2 for a second one
+    tags: ['[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]*'] # the day of the release, 2026.10.22, or 2026.10.22.2 for a second one
   workflow_dispatch:
 
 permissions:

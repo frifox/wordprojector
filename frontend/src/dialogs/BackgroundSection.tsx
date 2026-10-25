@@ -163,7 +163,7 @@ export default function BackgroundSection({ themeId, v, onChange, onPool, top }:
             <b style={{ fontSize: 12 }}>{t('Images')}</b>
             <span className="muted" style={{ fontSize: 12 }}>{images.length}</span>
             <span className="grow" />
-            <button className="small" disabled={!selected} onClick={openViewer} title={t('Show the highlighted image full window (Space)')}>{t('Preview')}</button>
+            <button className="small" disabled={!selected} onClick={openViewer} title={t('Show the highlighted image full window')}>{t('Preview')}</button>
             <button className="small" onClick={add} title={t('Add images...')}>{t('Add')}</button>
           </div>
           <div className="row" tabIndex={0} style={{ gap: 10, alignItems: 'flex-start', flexWrap: 'wrap', padding: 8, minHeight: 90, maxHeight: 260, overflow: 'auto', outline: 'none' }}

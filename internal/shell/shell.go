@@ -41,8 +41,10 @@ type Shell struct {
 	quitting   bool
 	watching   sync.Once
 	want       map[int]bool        // display windows that should be visible
-	shown      map[int]bool        // display windows that are visible
-	timers     map[int]*time.Timer // windows about to be shown
+	shown      map[int]bool // display windows that are visible
+	pending    map[int]bool // display windows on their way to being shown
+	visible    map[int]bool // display windows the native side has reported visible (macOS)
+	revealAt   map[int]time.Time // when each window started to be shown (for the log)
 	normal     application.Rect // the window's bounds when not maximised
 	haveNormal bool
 	answered   bool // the disconnect question was answered: the program is ending
@@ -54,7 +56,8 @@ type Shell struct {
 
 // New creates the Wails application (the event loop starts in Run).
 func New(name string, noUI bool) *Shell {
-	s := &Shell{name: name, noUI: noUI, projectors: map[int]*application.WebviewWindow{}, want: map[int]bool{}, shown: map[int]bool{}, timers: map[int]*time.Timer{}}
+	s := &Shell{name: name, noUI: noUI, projectors: map[int]*application.WebviewWindow{}, want: map[int]bool{}, shown: map[int]bool{}, pending: map[int]bool{}, visible: map[int]bool{}, revealAt: map[int]time.Time{}}
+	projectorEvents = s.projectorEvent
 	policy := application.ActivationPolicyRegular
 	if noUI {
 		policy = application.ActivationPolicyAccessory // a background app: no Dock icon, never steals focus
@@ -597,6 +600,15 @@ func (s *Shell) onDisplays(st live.State) {
 	active := map[int]bool{}
 	for _, d := range st.Displays {
 		active[d.Disp] = true
+		if haveWarmWindows && d.Screen >= 0 {
+			// the window exists (invisible) before it is first needed, so showing it later is only making it visible
+			s.mu.Lock()
+			have, busy := s.projectors[d.Disp] != nil, s.pending[d.Disp]
+			s.mu.Unlock()
+			if !have && !busy {
+				go s.prepareProjector(d.Disp, d.Screen, onTop)
+			}
+		}
 		// a display whose screen is gone stays hidden until the screen comes back
 		s.applyProjector(d.Disp, d.Screen, show && d.Screen >= 0, onTop, st.Version)
 	}
@@ -613,17 +625,13 @@ func (s *Shell) onDisplays(st live.State) {
 	}
 }
 
-// applyProjector shows or hides a display window. A window that was hidden is shown only a moment after the
-// state reached it: its page keeps what it last drew while hidden, and showing it at once would flash that
-// old picture before the new one (blank, cleared, or the next slide) is drawn.
+// applyProjector shows or hides a display window. Both wait for the page of the window, not for a time: a window is shown
+// when its page has the state that asked for it (before that it would flash what it showed last) and hidden when its page
+// has drawn the state that asked for that (hiding earlier would leave the last picture in the window for the next show).
 func (s *Shell) applyProjector(disp, screen int, want, onTop bool, version int64) {
 	s.mu.Lock()
 	s.want[disp] = want
 	if !want {
-		if t := s.timers[disp]; t != nil {
-			t.Stop()
-			delete(s.timers, disp)
-		}
 		s.shown[disp] = false
 		s.mu.Unlock()
 		s.hideWhenSettled(disp, screen, onTop, version)
@@ -634,41 +642,58 @@ func (s *Shell) applyProjector(disp, screen int, want, onTop bool, version int64
 		s.ShowProjector(disp, screen, true, onTop)
 		return
 	}
-	if s.timers[disp] != nil {
+	if s.pending[disp] {
 		s.mu.Unlock()
 		return // already on its way
 	}
-	s.timers[disp] = time.AfterFunc(250*time.Millisecond, func() {
-		s.mu.Lock()
-		delete(s.timers, disp)
-		ok := s.want[disp]
-		s.shown[disp] = ok
-		s.mu.Unlock()
-		if ok {
-			s.ShowProjector(disp, screen, true, onTop)
-		}
-	})
+	s.pending[disp] = true
 	s.mu.Unlock()
+	go s.revealWhenReady(disp, screen, onTop, version)
 }
 
-// waitPageReady waits until the page of display disp has drawn its first state (or the time is up).
-func (s *Shell) waitPageReady(disp int, max time.Duration) {
-	for end := time.Now().Add(max); time.Now().Before(end); time.Sleep(25 * time.Millisecond) {
-		if s.engine.IsPageReady(disp) {
-			return
-		}
+// revealWhenReady shows the window of display disp as soon as its page has the state of that version. The waits end at the
+// page's report; their limits are only for a page that never answers.
+func (s *Shell) revealWhenReady(disp, screen int, onTop bool, version int64) {
+	defer func() {
+		s.mu.Lock()
+		delete(s.pending, disp)
+		s.mu.Unlock()
+	}()
+	start := time.Now()
+	s.mu.Lock()
+	s.revealAt[disp] = start
+	s.mu.Unlock()
+	s.prepareProjector(disp, screen, onTop)
+	if !s.engine.WaitPageReady(disp, 3*time.Second) {
+		log.Printf("display %d: its page did not report in 3 s, showing it anyway", disp)
+	}
+	// a window that is on screen (even if invisible) has painted the state when the page says so; one that is hidden only
+	// has it in its document
+	wait := s.engine.WaitPageApplied
+	if haveWarmWindows {
+		wait = s.engine.WaitPageSettled
+	}
+	if !wait(disp, version, time.Second) {
+		log.Printf("display %d: its page did not report state %d in 1 s, showing it anyway", disp, version)
+	}
+	s.mu.Lock()
+	ok := s.want[disp]
+	s.shown[disp] = ok
+	s.mu.Unlock()
+	if ok {
+		log.Printf("display %d: page had state %d after %d ms", disp, version, time.Since(start).Milliseconds())
+		s.ShowProjector(disp, screen, true, onTop)
 	}
 }
 
 // hideWhenSettled hides a display window as soon as its page has drawn the state that asked for it. Turning the
-// presentation off is a cut (no fade), so that takes a couple of frames. Hiding before that leaves the last picture
-// it showed in the window, and that picture flashes the next time the window is shown.
+// presentation off is a cut (no fade), so that takes a couple of frames.
 func (s *Shell) hideWhenSettled(disp, screen int, onTop bool, version int64) {
 	s.mu.Lock()
 	w := s.projectors[disp]
+	visible := s.visible[disp]
 	s.mu.Unlock()
-	visible := false
-	if w != nil {
+	if w != nil && !haveWarmWindows {
 		application.InvokeSync(func() { visible = w.IsVisible() })
 	}
 	if !visible {
@@ -676,8 +701,7 @@ func (s *Shell) hideWhenSettled(disp, screen int, onTop bool, version int64) {
 		return
 	}
 	go func() {
-		for end := time.Now().Add(500 * time.Millisecond); time.Now().Before(end) && s.engine.SettledVersion(disp) < version; time.Sleep(10 * time.Millisecond) {
-		}
+		s.engine.WaitPageSettled(disp, version, 500*time.Millisecond)
 		s.mu.Lock()
 		still := !s.want[disp]
 		s.mu.Unlock()
@@ -687,7 +711,79 @@ func (s *Shell) hideWhenSettled(disp, screen int, onTop bool, version int64) {
 	}()
 }
 
-// ShowProjector creates (if needed) and shows or hides a display window.
+// projectorEvent is what the native side reports about a display window (see presentation_darwin.go).
+func (s *Shell) projectorEvent(disp, kind int) {
+	s.mu.Lock()
+	s.visible[disp] = kind == 2
+	start := s.revealAt[disp]
+	if kind == 2 {
+		delete(s.revealAt, disp)
+	}
+	s.mu.Unlock()
+	if kind == 2 && !start.IsZero() {
+		log.Printf("display %d: visible %d ms after the state reached it", disp, time.Since(start).Milliseconds())
+	}
+}
+
+// prepareProjector makes sure the window of display disp exists. Where windows stay on screen it is also ordered in,
+// invisible, so its page runs from the start.
+func (s *Shell) prepareProjector(disp, screen int, onTop bool) {
+	screens := s.wailsScreens()
+	if screen < 0 || screen >= len(screens) {
+		return
+	}
+	sc := screens[screen]
+	application.InvokeSync(func() { s.projectorWindow(disp, sc, onTop) })
+}
+
+// projectorWindow returns the window of display disp, made (hidden, or invisible and ordered in) when it does not exist.
+// It runs on the main thread.
+func (s *Shell) projectorWindow(disp int, sc *application.Screen, onTop bool) *application.WebviewWindow {
+	s.mu.Lock()
+	w := s.projectors[disp]
+	s.mu.Unlock()
+	if w != nil {
+		return w
+	}
+	level := application.MacWindowLevelNormal
+	if onTop {
+		level = application.MacWindowLevelStatus
+	}
+	w = s.app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Name:             fmt.Sprintf("projector-%d", disp),
+		Title:            fmt.Sprintf("%s Display %d", s.name, disp),
+		URL:              fmt.Sprintf("%s/projector/%d", s.url, disp),
+		Frameless:        true,
+		DisableResize:    true,
+		Hidden:           true,
+		X:                sc.Bounds.X,
+		Y:                sc.Bounds.Y,
+		Width:            sc.Bounds.Width,
+		Height:           sc.Bounds.Height,
+		InitialPosition:  application.WindowXY,
+		AlwaysOnTop:      onTop,
+		BackgroundColour: application.NewRGB(0, 0, 0),
+		// a true borderless window: square corners, edge to edge on the screen
+		Mac:     application.MacWindow{DisableShadow: true, WindowLevel: level, DisableEscapeExitsFullscreen: true, CornerType: application.MacWindowCornerTypeSquare},
+		Windows: application.WindowsWindow{DisableMenu: true},
+	})
+	s.mu.Lock()
+	s.projectors[disp] = w
+	s.mu.Unlock()
+	w.OnWindowEvent(events.Common.WindowClosing, func(*application.WindowEvent) {
+		s.mu.Lock()
+		delete(s.projectors, disp)
+		delete(s.visible, disp)
+		s.mu.Unlock()
+	})
+	if haveWarmWindows {
+		w.SetBounds(application.Rect{X: sc.Bounds.X, Y: sc.Bounds.Y, Width: sc.Bounds.Width, Height: sc.Bounds.Height})
+		setProjectorVisible(w.NativeWindow(), disp, false, true)
+	}
+	return w
+}
+
+// ShowProjector shows or hides a display window (making it first when it is not there yet).
 func (s *Shell) ShowProjector(disp int, screen int, show bool, onTop bool) {
 	screens := s.wailsScreens()
 	if len(screens) == 0 {
@@ -708,55 +804,18 @@ func (s *Shell) ShowProjector(disp int, screen int, show bool, onTop bool) {
 			if !show {
 				return
 			}
-			level := application.MacWindowLevelNormal
-			if onTop {
-				level = application.MacWindowLevelStatus
-			}
-			w = s.app.Window.NewWithOptions(application.WebviewWindowOptions{
-				Name:             fmt.Sprintf("projector-%d", disp),
-				Title:            fmt.Sprintf("%s Display %d", s.name, disp),
-				URL:              fmt.Sprintf("%s/projector/%d", s.url, disp),
-				Frameless:        true,
-				DisableResize:    true,
-				Hidden:           true,
-				X:                sc.Bounds.X,
-				Y:                sc.Bounds.Y,
-				Width:            sc.Bounds.Width,
-				Height:           sc.Bounds.Height,
-				InitialPosition:  application.WindowXY,
-				AlwaysOnTop:      onTop,
-				BackgroundColour: application.NewRGB(0, 0, 0),
-				// a true borderless window: square corners, edge to edge on the screen
-				Mac:              application.MacWindow{DisableShadow: true, WindowLevel: level, DisableEscapeExitsFullscreen: true, CornerType: application.MacWindowCornerTypeSquare},
-				Windows:          application.WindowsWindow{DisableMenu: true},
-			})
-			s.mu.Lock()
-			s.projectors[disp] = w
-			s.mu.Unlock()
-			w.OnWindowEvent(events.Common.WindowClosing, func(*application.WindowEvent) {
-				s.mu.Lock()
-				delete(s.projectors, disp)
-				s.mu.Unlock()
-			})
-			// a new window is shown only once its page has drawn a first state: showing it earlier flashes the
-			// blank web view (white) before the page appears
-			go func() {
-				s.waitPageReady(disp, 3*time.Second)
-				s.mu.Lock()
-				still := s.want[disp]
-				s.mu.Unlock()
-				if still {
-					s.ShowProjector(disp, screen, true, onTop)
-				}
-			}()
-			return
+			w = s.projectorWindow(disp, sc, onTop)
 		}
 		if show {
 			w.SetAlwaysOnTop(onTop)
 			w.SetBounds(application.Rect{X: sc.Bounds.X, Y: sc.Bounds.Y, Width: sc.Bounds.Width, Height: sc.Bounds.Height})
-			w.Show()
-			if runtime.GOOS != "darwin" {
-				w.SetBounds(application.Rect{X: sc.Bounds.X, Y: sc.Bounds.Y, Width: sc.Bounds.Width, Height: sc.Bounds.Height})
+			if haveWarmWindows {
+				setProjectorVisible(w.NativeWindow(), disp, true, false)
+			} else {
+				w.Show()
+				if runtime.GOOS != "darwin" {
+					w.SetBounds(application.Rect{X: sc.Bounds.X, Y: sc.Bounds.Y, Width: sc.Bounds.Width, Height: sc.Bounds.Height})
+				}
 			}
 			// one screen: the projection covers the operator's screen, so the Dock and menu bar must not show on it
 			if len(screens) == 1 {
@@ -765,6 +824,9 @@ func (s *Shell) ShowProjector(disp int, screen int, show bool, onTop bool) {
 			if s.main != nil {
 				s.main.Focus()
 			}
+		} else if haveWarmWindows {
+			setProjectorVisible(w.NativeWindow(), disp, false, false)
+			hideDockAndMenuBar(false)
 		} else if w.IsVisible() {
 			w.Hide()
 			hideDockAndMenuBar(false)

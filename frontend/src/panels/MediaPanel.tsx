@@ -89,7 +89,7 @@ export default function MediaPanel({ active }: { active: boolean }) {
       </div>
       <div className="col fill" style={{ gap: 4 }}>
         <div className="row">
-          <button className="primary golive" onClick={goLive} disabled={!current} title={t('Go Live (F5)')} aria-label={t('Go Live (F5)')}><GoLiveIcon /></button>
+          <button className="primary golive" onClick={goLive} disabled={!current} title={t('Go Live')} aria-label={t('Go Live')}><GoLiveIcon /></button>
           <span style={{ fontWeight: 600 }}>{current?.name}</span>
         </div>
         <div className="grow" style={{ background: '#000', border: '1px solid var(--border)', position: 'relative', minHeight: 120, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

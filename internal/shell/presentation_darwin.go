@@ -4,10 +4,14 @@ package shell
 
 /*
 #cgo CFLAGS: -x objective-c
-#cgo LDFLAGS: -framework Cocoa -framework UniformTypeIdentifiers
+#cgo LDFLAGS: -framework Cocoa -framework QuartzCore -framework UniformTypeIdentifiers
 #import <Cocoa/Cocoa.h>
+#import <QuartzCore/QuartzCore.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #include <stdlib.h>
+
+// told to Go (see wpProjectorEvent in presentation_darwin.go) when the native side has done what it was asked
+extern void wpProjectorEvent(int, int);
 
 static void wpHideDockAndMenuBar(int hide) {
 	dispatch_async(dispatch_get_main_queue(), ^{
@@ -21,6 +25,27 @@ static void wpHideDockAndMenuBar(int hide) {
 static void wpActivate() {
 	dispatch_async(dispatch_get_main_queue(), ^{
 		[NSApp activateIgnoringOtherApps:YES];
+	});
+}
+
+// A display window is never hidden: it stays ordered in, fully transparent and deaf to the mouse, so its page keeps
+// running (a hidden web view gets no animation frames and cannot say that it has drawn). Showing it is changing its
+// alpha, one frame. Kinds told to Go: 1 = ordered in, invisible; 2 = visible, committed to the screen; 3 = invisible,
+// committed.
+static void wpProjectorSetVisible(void *win, int disp, int visible, int first) {
+	dispatch_async(dispatch_get_main_queue(), ^{
+		NSWindow *w = (__bridge NSWindow *)win;
+		w.ignoresMouseEvents = visible ? NO : YES;
+		if (first) {
+			w.collectionBehavior |= NSWindowCollectionBehaviorIgnoresCycle;
+		}
+		[CATransaction begin];
+		[CATransaction setCompletionBlock:^{
+			wpProjectorEvent(disp, first ? 1 : (visible ? 2 : 3));
+		}];
+		w.alphaValue = visible ? 1.0 : 0.0;
+		[w orderFrontRegardless];
+		[CATransaction commit];
 	});
 }
 
@@ -73,6 +98,32 @@ import (
 	"strings"
 	"unsafe"
 )
+
+// projectorEvents receives what the native side tells about a display window: disp and kind (see wpProjectorSetVisible).
+var projectorEvents func(disp, kind int)
+
+//export wpProjectorEvent
+func wpProjectorEvent(disp, kind C.int) {
+	if f := projectorEvents; f != nil {
+		f(int(disp), int(kind))
+	}
+}
+
+// haveWarmWindows: a display window stays ordered in and is only made visible or invisible (see setProjectorVisible).
+const haveWarmWindows = true
+
+// setProjectorVisible makes the display window visible or invisible (first: the window is being set up, invisible).
+// It answers through projectorEvents once the change is on the screen.
+func setProjectorVisible(win unsafe.Pointer, disp int, visible, first bool) {
+	v, f := 0, 0
+	if visible {
+		v = 1
+	}
+	if first {
+		f = 1
+	}
+	C.wpProjectorSetVisible(win, C.int(disp), C.int(v), C.int(f))
+}
 
 // nativeOpen asks for files (or a folder) with a panel of our own. cancelled is true when the user closed it.
 func nativeOpen(win unsafe.Pointer, title string, exts []string, multiple, dirs bool) (paths []string, cancelled bool) {
