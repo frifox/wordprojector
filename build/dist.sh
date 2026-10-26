@@ -18,12 +18,7 @@ macos() {
     CGO_ENABLED=1 GOOS=darwin GOARCH=$arch CGO_CFLAGS="-mmacosx-version-min=11.0" CGO_LDFLAGS="-mmacosx-version-min=11.0" \
       go build -ldflags "$LD" -o dist/$name/wordprojector ./cmd/wordprojector
     ./build/mac-app.sh dist/$name/wordprojector "dist/$name/Word Projector.app" "$VERSION"
-    if [ -n "${MACOS_CERT_P12_BASE64:-}" ]; then
-      # the certificate and the notarization key are in the environment (docs/macos-signing.md): signed and notarized
-      ./build/mac-sign.sh "dist/$name/Word Projector.app" "dist/$name/WordProjector-$VERSION-$name.zip"
-    else
-      codesign --force --deep --sign - "dist/$name/Word Projector.app" || true
-    fi
+    ./build/mac-sign.sh "dist/$name/Word Projector.app" --notarize   # signed and notarized with the certificate of this Mac; NO_NOTARIZE=1 skips Apple's scan
     rm dist/$name/wordprojector
   done
 }

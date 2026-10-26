@@ -43,7 +43,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </dict>
 </plist>
 PLIST
-# an ad-hoc signature keeps Gatekeeper/Apple silicon from rejecting the copied binary
+# a signature keeps Gatekeeper/Apple silicon from rejecting the copied binary: the Developer ID one when this Mac has the
+# certificate (see mac-sign.sh), else an ad-hoc one
 xattr -cr "$APP" 2>/dev/null || true
-codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || echo "warning: could not sign $APP"
+"$(dirname "$0")/mac-sign.sh" "$APP"
 echo "built $APP"

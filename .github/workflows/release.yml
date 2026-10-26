@@ -84,17 +84,58 @@ jobs:
       - name: Package macOS
         if: matrix.goos == 'darwin'
         shell: bash
-        # signed with the Developer ID certificate and notarized by Apple when the secrets are set (docs/macos-signing.md);
-        # without them the app is only signed ad hoc and users have to allow it in the system settings
+        # signed with the Developer ID certificate and notarized by Apple when the secrets are set; without them the app is only
+        # signed ad hoc and users have to allow it in the system settings
         env:
-          MACOS_CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          MACOS_CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12_BASE64 }}  # the "Developer ID Application" certificate with its key (.p12), base64
           MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
-          NOTARY_KEY_P8_BASE64: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
+          NOTARY_KEY_P8_BASE64: ${{ secrets.NOTARY_KEY_P8_BASE64 }}    # the App Store Connect API key (.p8), base64
           NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
           NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          ZIP: dist/WordProjector-${{ steps.ver.outputs.version }}-${{ matrix.name }}.zip
         run: |
-          ./build/mac-app.sh dist/wordprojector dist/WordProjector.app ${{ steps.ver.outputs.version }}
-          ./build/mac-sign.sh dist/WordProjector.app dist/WordProjector-${{ steps.ver.outputs.version }}-${{ matrix.name }}.zip
+          set -euo pipefail
+          APP=dist/WordProjector.app
+          ./build/mac-app.sh dist/wordprojector "$APP" ${{ steps.ver.outputs.version }}
+          if [ -z "${MACOS_CERT_P12_BASE64:-}" ]; then
+            echo "no certificate set: signing ad hoc (not notarized)"
+            codesign --force --deep --sign - "$APP" || true
+            ditto -c -k --keepParent "$APP" "$ZIP"
+            exit 0
+          fi
+          # a keychain of its own, holding the certificate only while this runs
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KCPASS="$(uuidgen)"
+          security create-keychain -p "$KCPASS" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$KCPASS" "$KEYCHAIN"
+          echo "$MACOS_CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security > /dev/null
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KCPASS" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN" | grep "Developer ID Application" | head -1 | sed -E 's/^[^"]*"(.*)".*$/\1/' || true)"
+          [ -n "$IDENTITY" ] || { echo 'no "Developer ID Application" certificate in the .p12'; exit 1; }
+          echo "signing as $IDENTITY"
+          # hardened runtime and a secure timestamp: Apple's notarization wants both
+          codesign --force --deep --options runtime --timestamp --sign "$IDENTITY" "$APP"
+          codesign --verify --strict --verbose=2 "$APP"
+          # Apple scans the app (a few minutes) and answers Accepted or Invalid
+          echo "$NOTARY_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/key.p8"
+          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/notarize.zip"
+          RESULT="$(xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" --key "$RUNNER_TEMP/key.p8" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" --wait --output-format json)"
+          echo "$RESULT"
+          STATUS="$(echo "$RESULT" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("status",""))')"
+          if [ "$STATUS" != "Accepted" ]; then
+            ID="$(echo "$RESULT" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("id",""))')"
+            [ -n "$ID" ] && xcrun notarytool log "$ID" --key "$RUNNER_TEMP/key.p8" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" || true
+            echo "notarization status is \"$STATUS\""
+            exit 1
+          fi
+          # the ticket goes into the app, so it is accepted without a network too
+          xcrun stapler staple "$APP"
+          spctl --assess --type execute --verbose=2 "$APP"
+          ditto -c -k --keepParent "$APP" "$ZIP"
+          security delete-keychain "$KEYCHAIN" || true
       - name: Package Windows
         if: matrix.goos == 'windows'
         shell: pwsh
