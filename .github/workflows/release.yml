@@ -180,7 +180,7 @@ jobs:
           cat >> notes.md <<'EOF'
           Standalone builds. No installation or extra dependencies are required:
 
-          * **macOS**: unzip and move `Word Projector.app` to Applications. The app is not notarized; on first start right-click → Open (or run `xattr -cr "Word Projector.app"`).
+          * **macOS**: unzip and move `Word Projector.app` to Applications. The app is signed and notarized by Apple: just open it.
           * **Windows**: unzip and run `WordProjector.exe`, from the x64 or the arm64 archive to match your PC (Windows 10/11 ship the required WebView2 runtime).
           * **Linux**: untar and run `./WordProjector` (needs the system WebKitGTK 4.1 library, present on most desktops: `libwebkit2gtk-4.1-0`). Pick x64 (Intel/AMD) or arm64 (64-bit ARM: also a Raspberry Pi 3, 4 or 5 with a 64-bit system).
 
