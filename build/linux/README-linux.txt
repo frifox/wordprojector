@@ -5,3 +5,9 @@ distributions already have (Debian/Ubuntu: libwebkit2gtk-4.1-0, Fedora: webkit2g
 
 Headless mode (control from a browser): ./WordProjector --headless --listen 0.0.0.0:8777
 Data directory: ~/.local/share/WordProjector (override with --data <dir>).
+
+To get it in the application menu and the dock with its icon, run this in this folder:
+
+  mkdir -p ~/.local/share/applications
+  sed -e "s|^Exec=.*|Exec=$PWD/WordProjector|" -e "s|^Icon=.*|Icon=$PWD/icon.png|" \
+    wordprojector.desktop > ~/.local/share/applications/wordprojector.desktop
