@@ -1,8 +1,6 @@
 # Word Projector
 
-Church projection software: Bible, Songs, Slide shows on one or more screens. A vibecode rewrite of [SoftProjector](http://softprojector.org) (Go, React,
-SQLite) for macOS, Windows and Linux (including the Raspberry Pi). It can read SoftProjector
-file formats: Songbooks (`.sps`), Bibles (`.spb`), etc.
+Church projection software to display Bible, Songs, or Slide shows on one or more screens. A vibecode rewrite of [SoftProjector](http://softprojector.org) using Go/React for macOS, Windows and Linux.
 
 <p align="center">
   <img src="docs/screenshot.jpg" alt="Word Projector screenshot" width="800">
@@ -20,7 +18,7 @@ Nothing else needs installing.
 | Windows (x64)                 | `WordProjector-<version>-windows-x64.zip`    | Run `WordProjector.exe`. |
 | Windows (arm64)               | `WordProjector-<version>-windows-arm64.zip`  | Run `WordProjector.exe`. |
 | Linux (x64)                   | `WordProjector-<version>-linux-x64.tar.gz`   | Run `./WordProjector` (needs `libwebkit2gtk-4.1-0`). |
-| Linux (arm64)                 | `WordProjector-<version>-linux-arm64.tar.gz` | Run `./WordProjector` (needs `libwebkit2gtk-4.1-0`). Also for a Raspberry Pi 3, 4 or 5 running a 64-bit system (`uname -m` says `aarch64`). The 32-bit Raspberry Pi OS is not supported. |
+| Linux (arm64)                 | `WordProjector-<version>-linux-arm64.tar.gz` | Run `./WordProjector` (needs `libwebkit2gtk-4.1-0`). Also for a Raspberry Pi running a 64-bit system (`uname -m` says `aarch64`). The 32-bit Raspberry Pi OS is not supported. |
 
 After that you can update/downgrade or configure auto-upate in **Settings → Updates**.
 
