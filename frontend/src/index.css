@@ -218,6 +218,9 @@ label.chk {
   -webkit-user-select: none;
 }
 .list .item {
+  /* a background under the text (the one of the list): without it WebKitGTK draws the text with grayscale smoothing, which looks
+     bolder than the sub-pixel smoothing of the rest of the window; the selected row, which has a background, looked right */
+  background: inherit;
   /* the same line height on every system: "normal" is taller in Segoe UI (Windows) than in San Francisco (macOS), which
      made the rows of the lists a couple of pixels higher there */
   line-height: 1.15;
@@ -292,6 +295,9 @@ label.chk {
   cursor: default;
 }
 .table td {
+  /* an opaque background under the text: without it WebKitGTK draws the text of the rows with grayscale smoothing, which looks
+     bolder than the sub-pixel smoothing of the rest of the window (the selected row, which has a background, looked right) */
+  background: var(--base);
   line-height: 1.15;
   padding: 1px 6px;
   white-space: nowrap;
@@ -818,6 +824,7 @@ button.tbtn-s:disabled img {
 .results-row {
   border-bottom: 1px solid var(--border-light);
   cursor: default;
+  background: inherit; /* see .list .item */
 }
 .results-row.sel {
   background: var(--sel-inactive-bg);

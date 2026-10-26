@@ -34,3 +34,23 @@ func TestEscapeTwiceEndsThePause(t *testing.T) {
 		t.Fatal("third Esc should do nothing")
 	}
 }
+
+// The On button works with nothing prepared: the displays show a blank slide, and Esc turns them off again.
+func TestDisplaysOnWithNothingPrepared(t *testing.T) {
+	for _, screens := range []int{1, 2} {
+		e := engineWith(screens, settings.General{DisplayScreen: 0, DisplayScreen2: 1, DisplayScreen3: -1, DisplayScreen4: -1})
+		e.SetDisplayOn(true)
+		if !e.state.Showing || e.state.DisplayOn != (screens > 1) {
+			t.Fatalf("%d screens: on with nothing prepared: showing %v, display on %v", screens, e.state.Showing, e.state.DisplayOn)
+		}
+		for _, d := range e.state.Displays {
+			if d.Slide.Kind != "passive" {
+				t.Fatalf("%d screens: the blank slide should be the passive one, got %q", screens, d.Slide.Kind)
+			}
+		}
+		e.Escape()
+		if e.state.Showing || e.state.DisplayOn {
+			t.Fatalf("%d screens: Esc should turn the blank displays off", screens)
+		}
+	}
+}

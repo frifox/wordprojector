@@ -28,6 +28,11 @@ import (
 //go:embed icon.png
 var iconPNG []byte
 
+// displayIconPNG is the icon of the display windows: the app icon with a play badge (made by build/make-display-icon.go).
+//
+//go:embed icon-display.png
+var displayIconPNG []byte
+
 // Shell implements desktop.Desktop with Wails windows.
 type Shell struct {
 	app        *application.App
@@ -123,6 +128,9 @@ func (s *Shell) AskPortBusy(port int, existing string, canConnect bool) int {
 // returns the URL the windows load, and whether that is another running instance (then this one only shows a window
 // onto it). An error ends the program.
 func (s *Shell) Run(start func() (url string, other bool, err error)) error {
+	if !s.noUI {
+		installLauncher(iconPNG) // Linux: the icon of the dock and the application menu
+	}
 	if !s.noUI && runtime.GOOS == "darwin" {
 		menu := s.app.Menu.New()
 		menu.AddRole(application.AppMenu)
@@ -266,6 +274,8 @@ func (s *Shell) createMain() {
 			TitleBar: application.MacTitleBarDefault,
 		},
 		Windows: application.WindowsWindow{DisableMenu: true},
+		// the icon of the window: on Linux it is what the dock shows unless an installed launcher matches the window
+		Linux: application.LinuxWindow{Icon: iconPNG},
 	}
 	// open where it was last used: same monitor, position and size (the size from before it was maximised)
 	if geo.Width >= 600 && geo.Height >= 400 && s.visibleOnAScreen(geo) {
@@ -766,7 +776,9 @@ func (s *Shell) projectorWindow(disp int, sc *application.Screen, onTop bool) *a
 		// a true borderless window: square corners, edge to edge on the screen
 		Mac:     application.MacWindow{DisableShadow: true, WindowLevel: level, DisableEscapeExitsFullscreen: true, CornerType: application.MacWindowCornerTypeSquare},
 		Windows: application.WindowsWindow{DisableMenu: true},
+		Linux:   application.LinuxWindow{Icon: iconPNG},
 	})
+	setDisplayWindowIcon(w)
 	s.mu.Lock()
 	s.projectors[disp] = w
 	s.mu.Unlock()
@@ -821,7 +833,12 @@ func (s *Shell) ShowProjector(disp int, screen int, show bool, onTop bool) {
 			if len(screens) == 1 {
 				hideDockAndMenuBar(true)
 			}
-			if s.main != nil {
+			if runtime.GOOS == "linux" && len(screens) == 1 {
+				// one screen: the projection covers the operator window. Raising the operator window (to keep the keys with
+				// it) would put it above the projection, which on Linux is no different from any other window; the keys and the
+				// arrow buttons of the projection are what runs the presentation then
+				w.Focus()
+			} else if s.main != nil {
 				s.main.Focus()
 			}
 		} else if haveWarmWindows {
@@ -830,6 +847,9 @@ func (s *Shell) ShowProjector(disp int, screen int, show bool, onTop bool) {
 		} else if w.IsVisible() {
 			w.Hide()
 			hideDockAndMenuBar(false)
+			if runtime.GOOS == "linux" && len(screens) == 1 && s.main != nil {
+				s.main.Focus() // the operator window is uncovered: it takes the keys back
+			}
 		}
 	})
 }

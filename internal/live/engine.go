@@ -799,9 +799,9 @@ func (e *Engine) SetDisplayOn(on bool) {
 	if !on {
 		e.dropPreviewLocked()
 	}
-	e.state.DisplayOn = on
-	if on && e.state.Type != "" {
-		// turning the displays on shows what the preview box shows
+	e.state.DisplayOn = on && e.screenCount() != 1 // with one screen only Showing says whether the presentation is on
+	if on {
+		// turning the displays on shows what the preview box shows; with nothing prepared it is a blank slide
 		e.state.Showing = true
 	}
 	if !on {

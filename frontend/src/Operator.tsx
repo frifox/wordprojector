@@ -146,8 +146,8 @@ export default function Operator() {
   const turnDisplaysOff = () => (live.singleScreen ? api.hide() : api.display(false));
   const toggleDisplays = () => {
     if (displaysOn) turnDisplaysOff();
-    else if (live.singleScreen) api.show();
-    else api.display(true);
+    else if (live.singleScreen && live.type) api.show();
+    else api.display(true); // also with nothing prepared: the displays show a blank slide
   };
 
   // ---- shortcuts ----
@@ -269,7 +269,7 @@ export default function Operator() {
         <Menubar menus={menus} />
         <div className="toolbar">
           <button className={`tbtn ${displaysOn ? 'checked' : ''}`} title={displaysOn ? t('Turn displays off') : t('Turn displays on')} aria-label={displaysOn ? t('Turn displays off') : t('Turn displays on')} aria-pressed={displaysOn}
-            onClick={toggleDisplays} disabled={live.singleScreen && !displaysOn && !live.type}>
+            onClick={toggleDisplays}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 6a7.75 7.75 0 1 0 10 0" /><path d="M12 4l0 8" /></svg>
           </button>
         </div>
