@@ -84,10 +84,17 @@ jobs:
       - name: Package macOS
         if: matrix.goos == 'darwin'
         shell: bash
+        # signed with the Developer ID certificate and notarized by Apple when the secrets are set (docs/macos-signing.md);
+        # without them the app is only signed ad hoc and users have to allow it in the system settings
+        env:
+          MACOS_CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          NOTARY_KEY_P8_BASE64: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
         run: |
           ./build/mac-app.sh dist/wordprojector dist/WordProjector.app ${{ steps.ver.outputs.version }}
-          codesign --force --deep --sign - dist/WordProjector.app || true
-          cd dist && ditto -c -k --keepParent WordProjector.app WordProjector-${{ steps.ver.outputs.version }}-${{ matrix.name }}.zip
+          ./build/mac-sign.sh dist/WordProjector.app dist/WordProjector-${{ steps.ver.outputs.version }}-${{ matrix.name }}.zip
       - name: Package Windows
         if: matrix.goos == 'windows'
         shell: pwsh
