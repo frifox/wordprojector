@@ -9,6 +9,9 @@ import ScaledSlide from '../projector/ScaledSlide';
 import type { RenderSlide } from '../lib/types';
 
 
+// set once the hint of the Bible version buttons has played (it plays the first time the tab is opened after a start)
+let bibleHintDone = false;
+
 /** The right hand "live" area: what is projected now. */
 export default function LivePanel() {
   const { live, settings } = useStore();
@@ -35,15 +38,15 @@ export default function LivePanel() {
       document.removeEventListener('focusout', later);
     };
   }, []);
-  // landing on the Bible tab shows the version buttons over the preview for 0.5 s and then fades them out: a hint that they are
-  // there when the pointer is over the box. 0 = not shown, 1 = shown, 2 = fading out
+  // the first time the Bible tab is opened after the program starts, the version buttons show over the preview for 0.5 s and
+  // then fade out: a hint that they are there when the pointer is over the box. 0 = not shown, 1 = shown, 2 = fading out
   const [hint, setHint] = useState(0);
   useEffect(() => {
-    if (ui.tab !== 'bible') return;
+    if (ui.tab !== 'bible' || bibleHintDone) return;
     setHint(1);
-    const fade = window.setTimeout(() => setHint(2), 500);
+    const fade = window.setTimeout(() => { bibleHintDone = true; setHint(2); }, 500);
     const done = window.setTimeout(() => setHint(0), 1600);
-    return () => { window.clearTimeout(fade); window.clearTimeout(done); };
+    return () => { window.clearTimeout(fade); window.clearTimeout(done); setHint(0); };
   }, [ui.tab]);
   const anchor = useRef<number>(-1);
   const [multi, setMulti] = useState(false);

@@ -4,6 +4,8 @@ Church projection software: Bible, Songs, Slide shows on one or more screens. A 
 SQLite) for macOS, Windows and Linux (including the Raspberry Pi). It can read SoftProjector
 file formats: Songbooks (`.sps`), Bibles (`.spb`), etc.
 
+![Word Projector screenshot](docs/screenshot.jpg)
+
 ## Install
 
 Download the latest release from [Releases](../../releases) and unpack it.
