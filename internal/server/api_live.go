@@ -192,6 +192,45 @@ func (s *Server) liveRoutes() {
 		_ = readJSON(r, &in)
 		writeJSON(w, e.PreviewSelection(in.Selection))
 	})
+	m.HandleFunc("POST /api/live/preview-bible", func(w http.ResponseWriter, r *http.Request) {
+		var in struct {
+			Book      int   `json:"book"`
+			Chapter   int   `json:"chapter"`
+			Selection []int `json:"selection"`
+		}
+		if err := readJSON(r, &in); err != nil {
+			writeErr(w, 400, err)
+			return
+		}
+		slide, err := e.PreviewBible(in.Book, in.Chapter, in.Selection)
+		if err != nil {
+			writeErr(w, 400, err)
+			return
+		}
+		writeJSON(w, slide)
+	})
+	m.HandleFunc("POST /api/live/preview-song", func(w http.ResponseWriter, r *http.Request) {
+		var in struct {
+			ID   int64       `json:"id"`
+			Song *songs.Song `json:"song"`
+			Row  int         `json:"row"`
+		}
+		if err := readJSON(r, &in); err != nil {
+			writeErr(w, 400, err)
+			return
+		}
+		var sg songs.Song
+		if in.Song != nil {
+			sg = *in.Song
+		} else {
+			var err error
+			if sg, err = e.Songs.Song(in.ID); err != nil {
+				writeErr(w, 404, err)
+				return
+			}
+		}
+		writeJSON(w, e.PreviewSong(sg, in.Row))
+	})
 	m.HandleFunc("POST /api/live/test-displays", func(w http.ResponseWriter, r *http.Request) {
 		var in struct {
 			Slots []int `json:"slots"`

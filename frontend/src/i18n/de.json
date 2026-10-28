@@ -1036,5 +1036,12 @@
 "Go Live": "Zeigen",
 "Clear the search text and the results": "Suchtext und Ergebnisse löschen",
 "Clear the book, chapter and verse filters": "Buch-, Kapitel- und Vers-Filter zurücksetzen",
-"Show the highlighted image full window": "Das gewählte Bild im Vollbild zeigen"
+"Show the highlighted image full window": "Das gewählte Bild im Vollbild zeigen",
+"Go Live with the selection": "Auswahl live schalten",
+"Pause the running presentation": "Laufende Präsentation pausieren",
+"Stop the paused presentation": "Pausierte Präsentation beenden",
+"Stop and clear the running presentation": "Laufende Präsentation beenden und leeren",
+"Some of these keys can be changed in Settings > Hotkeys.": "Einige dieser Tasten lassen sich unter Einstellungen > Tastenkürzel ändern.",
+"App": "Programm",
+"Preview the selection (hold)": "Auswahl in der Vorschau zeigen (halten)"
 }

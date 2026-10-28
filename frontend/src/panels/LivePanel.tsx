@@ -21,8 +21,12 @@ export default function LivePanel() {
   // Operator): only then does the highlight of what is playing go quiet
   const [quiet, setQuiet] = useState(false);
   useEffect(() => {
+    // while the button is held on something outside this panel (the menu, a tab, a list that is about to take the focus) the
+    // highlight stays quiet: the focus is nowhere yet, which must not look like the cursor being on the playing list
+    let pressedAway = false;
     const check = () => {
       const a = document.activeElement as HTMLElement | null;
+      if (pressedAway) { setQuiet(true); return; }
       if (a?.closest?.('.modal')) return; // a dialog is open: the highlight behind it stays as it was
       const tag = a?.tagName;
       const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!a?.isContentEditable;
@@ -31,9 +35,21 @@ export default function LivePanel() {
     };
     check();
     const later = () => { window.setTimeout(check, 0); };
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (e.button !== 0 || !t?.closest || t.closest('.live-panel, .modal, .modal-backdrop')) return;
+      pressedAway = true;
+      setQuiet(true);
+    };
+    // after the click has put the focus where it belongs (see Operator)
+    const onUp = () => { if (pressedAway) window.setTimeout(() => { pressedAway = false; check(); }, 30); };
+    document.addEventListener('mousedown', onDown, true);
+    window.addEventListener('mouseup', onUp, true);
     document.addEventListener('focusin', check);
     document.addEventListener('focusout', later);
     return () => {
+      document.removeEventListener('mousedown', onDown, true);
+      window.removeEventListener('mouseup', onUp, true);
       document.removeEventListener('focusin', check);
       document.removeEventListener('focusout', later);
     };
@@ -89,6 +105,12 @@ export default function LivePanel() {
     if (!on) { setPeek(null); return; }
     api.previewSelection(pendingRef.current).then((s) => { if (holding.current) setPeek(s); }).catch(() => {});
   };
+  // the Bible tab's verse list shows the selected verses in the preview box while its Space key is held (see BiblePanel)
+  useEffect(() => {
+    const h = (e: Event) => setPeek(((e as CustomEvent).detail as RenderSlide | null) ?? null);
+    window.addEventListener('wp-peek', h);
+    return () => window.removeEventListener('wp-peek', h);
+  }, []);
   const update = () => {
     api.liveSelection(pendingRef.current, true);
   };

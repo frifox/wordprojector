@@ -1046,5 +1046,12 @@
 "Go Live": "Ukázat",
 "Clear the search text and the results": "Vymazat hledaný text a výsledky",
 "Clear the book, chapter and verse filters": "Vymazat filtry knihy, kapitoly a verše",
-"Show the highlighted image full window": "Zobrazit vybraný obrázek na celé okno (mezerník)"
+"Show the highlighted image full window": "Zobrazit vybraný obrázek na celé okno (mezerník)",
+"Go Live with the selection": "Promítnout výběr",
+"Pause the running presentation": "Pozastavit běžící prezentaci",
+"Stop the paused presentation": "Zastavit pozastavenou prezentaci",
+"Stop and clear the running presentation": "Zastavit běžící prezentaci a vymazat",
+"Some of these keys can be changed in Settings > Hotkeys.": "Některé z těchto kláves lze změnit v Nastavení > Klávesové zkratky.",
+"App": "Aplikace",
+"Preview the selection (hold)": "Náhled výběru (podržet)"
 }

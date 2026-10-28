@@ -39,6 +39,15 @@ static void wpProjectorSetVisible(void *win, int disp, int visible, int first) {
 		if (first) {
 			w.collectionBehavior |= NSWindowCollectionBehaviorIgnoresCycle;
 		}
+		// Edge to edge, nothing to see through: no shadow (it draws a thin outline and bleeds over a neighbouring screen), an opaque
+		// black window, and the web view exactly as big as the content area (the library makes it a point larger)
+		w.hasShadow = NO;
+		w.opaque = YES;
+		w.backgroundColor = [NSColor blackColor];
+		NSView *cv = w.contentView;
+		if (cv != nil) {
+			for (NSView *v in cv.subviews) v.frame = cv.bounds;
+		}
 		[CATransaction begin];
 		[CATransaction setCompletionBlock:^{
 			wpProjectorEvent(disp, first ? 1 : (visible ? 2 : 3));

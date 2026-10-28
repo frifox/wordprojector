@@ -866,5 +866,12 @@
 "Go Live": "На экран",
 "Clear the search text and the results": "Очистить текст поиска и результаты",
 "Clear the book, chapter and verse filters": "Очистить фильтры книги, главы и стиха",
-"Show the highlighted image full window": "Показать выбранный рисунок на весь экран"
+"Show the highlighted image full window": "Показать выбранный рисунок на весь экран",
+"Go Live with the selection": "Показать выбранное",
+"Pause the running presentation": "Приостановить показ",
+"Stop the paused presentation": "Остановить приостановленный показ",
+"Stop and clear the running presentation": "Остановить показ и очистить список",
+"Some of these keys can be changed in Settings > Hotkeys.": "Некоторые из этих клавиш можно изменить в Настройки > Горячие клавиши.",
+"App": "Программа",
+"Preview the selection (hold)": "Предпросмотр выбранного (удерживать)"
 }

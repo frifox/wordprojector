@@ -36,10 +36,12 @@ export const HOTKEYS: HotkeyAction[] = HOTKEY_GROUPS.flatMap((g) => g.items);
 /** The keys that cannot be changed. */
 const FIXED: Record<string, string> = {
   pause: 'Escape', // pressed again it turns the presentation off, like the Off button
+  preview: 'Space', // held in a list of verses (or the live list in multi-verse mode): the preview box shows the selection
   pauseOnly: 'Shift+Escape',
   stop: 'Delete', // turn off and clear the live list
   removeItem: 'Mod+Delete',
   settings: 'Mod+,',
+  help: 'Mod+Shift+?', // Cmd/Ctrl + ? (the question mark needs Shift); Mod+/ works too
   exit: 'Mod+Q',
 };
 

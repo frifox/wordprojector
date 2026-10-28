@@ -672,6 +672,68 @@ func (e *Engine) PreviewSelection(sel []int) Slide {
 	return slide
 }
 
+// PreviewBible renders what display 1 would show if the selected verses of a chapter of the operator bible went live,
+// without changing the live state (the Space key in the Bible tab's verse list).
+func (e *Engine) PreviewBible(book, chapter int, selection []int) (Slide, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	id := e.operatorBibleID()
+	if id == 0 {
+		return Slide{}, fmt.Errorf("no bible available")
+	}
+	verses, err := e.Bibles.Chapter(id, book, chapter)
+	if err != nil {
+		return Slide{}, err
+	}
+	books, _ := e.Bibles.Books(id)
+	bookName := ""
+	for _, b := range books {
+		if b.ID == book {
+			bookName = b.Name
+		}
+	}
+	items := make([]Item, len(verses))
+	ids := make([]string, len(verses))
+	for i, v := range verses {
+		items[i] = Item{Text: fmt.Sprintf("%d. %s", v.Num, v.Text)}
+		ids[i] = v.IDs
+	}
+	sel := cleanSelection(selection, len(items))
+	if len(sel) == 0 {
+		return Slide{}, fmt.Errorf("nothing selected")
+	}
+	savedState, savedIDs := e.state, e.verseIDs
+	e.verseIDs = ids
+	e.state.Type, e.state.Title, e.state.Notes = "bible", fmt.Sprintf("%s %d", bookName, chapter), ""
+	e.state.Items, e.state.Index, e.state.Selection = items, sel[0], sel
+	e.state.MultiVerse = len(sel) > 1
+	e.state.Showing, e.state.Cleared = true, false
+	slide := e.slideFor(1)
+	e.state, e.verseIDs = savedState, savedIDs
+	return slide, nil
+}
+
+// PreviewSong renders what display 1 would show if the stanza went live, without changing the live state (the Space key
+// in the Songs tab's stanza list).
+func (e *Engine) PreviewSong(s songs.Song, row int) Slide {
+	list := songs.StanzaList(s.Text)
+	items := make([]Item, len(list))
+	for i, t := range list {
+		items[i] = Item{Text: t}
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	savedState, savedSong, savedBlob := e.state, e.curSong, e.songBlob
+	e.curSong, e.songBlob = s, ""
+	e.state.Type, e.state.Title, e.state.Notes = "song", s.Title, s.Notes
+	e.state.Items, e.state.Index, e.state.Selection = items, row, []int{row}
+	e.state.MultiVerse = false
+	e.state.Showing, e.state.Cleared = true, false
+	slide := e.slideFor(1)
+	e.state, e.curSong, e.songBlob = savedState, savedSong, savedBlob
+	return slide
+}
+
 // TestDisplays shows a test pattern on the given screens (the screen index of display 1, 2, ...) for a
 // short time, so the operator can see that every display screen works. Nothing else changes.
 func (e *Engine) TestDisplays(slots []int, d time.Duration) {

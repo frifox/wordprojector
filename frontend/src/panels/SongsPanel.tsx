@@ -100,9 +100,10 @@ export default function SongsPanel({ active }: { active: boolean }) {
     return l;
   }, [songs, songbook, allBooks, filter, searchIds, sort]);
 
-  // auto sort: numeric filter sorts by number, text sorts by title
+  // auto sort: by number, except a text filter sorts by title
   useEffect(() => {
-    if (filter && !searchIds) setSort({ col: /^\d+$/.test(filter.trim()) ? 'number' : 'title', dir: 1 });
+    if (searchIds) return;
+    setSort({ col: !filter || /^\d+$/.test(filter.trim()) ? 'number' : 'title', dir: 1 });
   }, [filter, searchIds]);
 
   const loadPreview = async (s: Song | null) => {
@@ -158,6 +159,28 @@ export default function SongsPanel({ active }: { active: boolean }) {
 
   const recordHistory = (sg: Song | null) => {
     if (sg && sg.id > 0) ui.addSongHistory({ id: sg.id, label: `${sg.number}. ${sg.title}`, songbook: sg.songbookName });
+  };
+  // A press on a stanza selects it. Holding the button and moving over the others keeps selecting the one under the pointer: the press
+  // was on the wrong one. It ends when the button is let go.
+  const pressingStanza = useRef(false);
+  const pressStanza = (e: React.MouseEvent, i: number) => {
+    if (e.button !== 0) return;
+    setStanzaIdx(i);
+    pressingStanza.current = true;
+    const up = () => {
+      pressingStanza.current = false;
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mouseup', up);
+  };
+  // Space held in the stanza list: the preview box shows the selected stanza; releasing it brings back what was there
+  const peeking = useRef(false);
+  const peek = (on: boolean) => {
+    peeking.current = on;
+    const send = (slide: unknown) => window.dispatchEvent(new CustomEvent('wp-peek', { detail: slide }));
+    if (!on) { send(null); return; }
+    if (!preview) return;
+    api.previewSong(preview.id > 0 && !fromSchedule.current ? preview.id : preview, stanzaIdx).then((slide) => { if (peeking.current) send(slide); }).catch(() => {});
   };
   const goLive = () => {
     if (!preview) return;
@@ -374,14 +397,15 @@ export default function SongsPanel({ active }: { active: boolean }) {
           <button className="primary golive" onClick={goLive} disabled={!preview} title={t('Go Live')} aria-label={t('Go Live')}><GoLiveIcon /></button>
         </div>
         {preview?.notes && <div className="muted" style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>{t('Notes:')}{'\n'}{preview.notes}</div>}
-        <div ref={stanzaList} className="list grow hover-items" tabIndex={0} onKeyDown={(e) => {
+        <div ref={stanzaList} className="list grow hover-items" tabIndex={0} onKeyUp={(e) => { if (e.key === ' ') peek(false); }} onBlur={() => { if (peeking.current) peek(false); }} onKeyDown={(e) => {
+          if (e.key === ' ' && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); if (!e.repeat) peek(true); return; }
           if (e.key === 'ArrowLeft' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) { e.preventDefault(); songTable.current?.focus(); return; }
           if (e.key === 'ArrowDown') { setStanzaIdx((i) => Math.min(stanzas.length - 1, i + 1)); e.preventDefault(); }
           else if (e.key === 'ArrowUp') { setStanzaIdx((i) => Math.max(0, i - 1)); e.preventDefault(); }
           else if (e.key === 'Enter') goLive();
         }}>
           {stanzas.map((st, i) => (
-            <div key={i} className={`item spaced nowrap ${i === stanzaIdx ? 'sel' : ''}`} onClick={() => setStanzaIdx(i)} onDoubleClick={() => { setStanzaIdx(i); recordHistory(preview); api.showSong(preview && preview.id > 0 && !fromSchedule.current ? preview.id : preview!, i); focusLive(); }}>
+            <div key={i} className={`item spaced nowrap ${i === stanzaIdx ? 'sel' : ''}`} onMouseDown={(e) => pressStanza(e, i)} onMouseEnter={() => { if (pressingStanza.current) setStanzaIdx(i); }} onDoubleClick={() => { setStanzaIdx(i); recordHistory(preview); api.showSong(preview && preview.id > 0 && !fromSchedule.current ? preview.id : preview!, i); focusLive(); }}>
               <StanzaText text={st} pattern={highlight || undefined} />
             </div>
           ))}

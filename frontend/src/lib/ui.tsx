@@ -31,6 +31,7 @@ export type DialogSpec =
   | { kind: 'slideshow'; slideshow?: SlideShowFull }
   | { kind: 'counter' }
   | { kind: 'about' }
+  | { kind: 'hotkeys' }
   | { kind: 'print'; title: string; text: string; fontSize?: number };
 
 export interface UIContextValue {

@@ -548,7 +548,21 @@ export default function BiblePanel({ active }: { active: boolean }) {
     return false;
   };
 
+  // Space held in the verse list: the preview box shows the selected verses; releasing it brings back what was there
+  const peeking = useRef(false);
+  const peek = (on: boolean) => {
+    peeking.current = on;
+    const send = (slide: unknown) => window.dispatchEvent(new CustomEvent('wp-peek', { detail: slide }));
+    if (!on) { send(null); return; }
+    if (!book || !sel.length) return;
+    api.previewBible(book.id, chapter, sel).then((slide) => { if (peeking.current) send(slide); }).catch(() => {});
+  };
   const onVerseKey = (e: React.KeyboardEvent) => {
+    if (e.key === ' ' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      if (!e.repeat) peek(true);
+      return;
+    }
     if (paneNav(2, e)) return;
     if (typeVerse(e)) {
       e.preventDefault();
@@ -758,7 +772,7 @@ export default function BiblePanel({ active }: { active: boolean }) {
                 <GoLiveIcon />
               </button>
             </div>
-            <div ref={verseList} className="list grow hover-items" tabIndex={0} onKeyDown={onVerseKey}>
+            <div ref={verseList} className="list grow hover-items" tabIndex={0} onKeyDown={onVerseKey} onKeyUp={(e) => { if (e.key === ' ') peek(false); }} onBlur={() => { if (peeking.current) peek(false); }}>
               {visible.map((i) => {
                 const v = verses[i];
                 return (

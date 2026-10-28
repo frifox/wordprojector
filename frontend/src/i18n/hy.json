@@ -868,5 +868,12 @@
 "Go Live": "Էկրանի վրա",
 "Clear the search text and the results": "Մաքրել որոնման տեքստը և արդյունքները",
 "Clear the book, chapter and verse filters": "Մաքրել գրքի, գլխի և համարի զտիչները",
-"Show the highlighted image full window": "Ցույց տալ ընտրված պատկերը ամբողջ պատուհանով (բացատ)"
+"Show the highlighted image full window": "Ցույց տալ ընտրված պատկերը ամբողջ պատուհանով (բացատ)",
+"Go Live with the selection": "Ցուցադրել ընտրվածը",
+"Pause the running presentation": "Դադարեցնել ընթացող ցուցադրությունը",
+"Stop the paused presentation": "Կանգնեցնել դադարեցված ցուցադրությունը",
+"Stop and clear the running presentation": "Կանգնեցնել ցուցադրությունը և մաքրել ցանկը",
+"Some of these keys can be changed in Settings > Hotkeys.": "Այս ստեղներից մի քանիսը կարելի է փոխել Կարգավորումներ > Արագ ստեղներ բաժնում։",
+"App": "Ծրագիր",
+"Preview the selection (hold)": "Ընտրվածի նախադիտում (պահել)"
 }

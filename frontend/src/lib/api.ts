@@ -125,6 +125,8 @@ export const api = {
   showBibleRef: (verseIds: string) => post('/api/live/show-bible-ref', { verseIds }),
   showSong: (idOrSong: number | Song, row: number) =>
     post('/api/live/show-song', typeof idOrSong === 'number' ? { id: idOrSong, row } : { song: idOrSong, row }),
+  previewSong: (idOrSong: number | Song, row: number) =>
+    post<RenderSlide>('/api/live/preview-song', typeof idOrSong === 'number' ? { id: idOrSong, row } : { song: idOrSong, row }),
   showAnnouncement: (idOrA: number | Announcement, row: number) =>
     post('/api/live/show-announcement', typeof idOrA === 'number' ? { id: idOrA, row } : { announcement: idOrA, row }),
   showSlideshow: (ss: number | SlideShowFull, row: number) =>
@@ -132,6 +134,7 @@ export const api = {
   showMedia: (m: MediaItem) => post('/api/live/show-media', m),
   showSchedule: (index: number) => post('/api/live/show-schedule', { index }),
   liveIndex: (index: number, force = false) => post('/api/live/index', { index, force }),
+  previewBible: (book: number, chapter: number, selection: number[]) => post<RenderSlide>('/api/live/preview-bible', { book, chapter, selection }),
   previewSelection: (selection: number[]) => post<RenderSlide>('/api/live/preview-selection', { selection }),
   testDisplays: (slots: number[]) => post('/api/live/test-displays', { slots }),
   liveSelection: (selection: number[], project: boolean) => post('/api/live/selection', { selection, project }),

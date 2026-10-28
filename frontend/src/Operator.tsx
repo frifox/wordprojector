@@ -27,6 +27,7 @@ import EditAnnouncementDialog from './dialogs/EditAnnouncementDialog';
 import SlideShowEditor from './dialogs/SlideShowEditor';
 import SongCounterDialog from './dialogs/SongCounterDialog';
 import AboutDialog from './dialogs/AboutDialog';
+import HotkeysDialog from './dialogs/HotkeysDialog';
 import PrintDialog from './dialogs/PrintDialog';
 import ProgressDialog from './dialogs/ProgressDialog';
 
@@ -254,6 +255,7 @@ export default function Operator() {
     if (is('next')) { api.next(); return true; }
     if (is('prev')) { api.prev(); return true; }
     if (is('removeItem') || (keys.removeItem === 'Mod+Delete' && combo === 'Mod+Backspace')) { act()?.remove?.(); return true; }
+    if (is('help') || (keys.help === 'Mod+Shift+?' && combo === 'Mod+/')) { openDialog({ kind: 'hotkeys' }); return true; }
     if (is('settings')) { openDialog({ kind: 'settings' }); return true; }
     if (is('print')) { if (canPrint) act()?.print?.(); return true; }
     if (is('exit')) { quit(); return true; }
@@ -310,6 +312,7 @@ export default function Operator() {
       badge: newRelease ? t('New Release Available') : undefined,
       items: [
         ...(newRelease ? [mi(t('New Release Available'), () => openDialog({ kind: 'settings', page: 'updates' })), sep] : []),
+        mi(t('Hotkeys'), () => openDialog({ kind: 'hotkeys' }), comboLabel(keys.help), { icon: 'hotkeys.png' }),
         mi(t('About'), () => openDialog({ kind: 'about' }), undefined, { icon: 'help.png' }),
       ],
     },
@@ -377,6 +380,7 @@ export default function Operator() {
       {dialog?.kind === 'editAnnouncement' && <EditAnnouncementDialog mode={dialog.mode} announcement={dialog.announcement} onClose={() => setDialog(null)} />}
       {dialog?.kind === 'slideshow' && <SlideShowEditor slideshow={dialog.slideshow} onClose={() => setDialog(null)} />}
       {dialog?.kind === 'counter' && <SongCounterDialog onClose={() => setDialog(null)} />}
+      {dialog?.kind === 'hotkeys' && <HotkeysDialog onClose={() => setDialog(null)} />}
       {dialog?.kind === 'about' && <AboutDialog onClose={() => setDialog(null)} version={boot.version} />}
       {dialog?.kind === 'print' && <PrintDialog title={dialog.title} text={dialog.text} fontSize={dialog.fontSize} onClose={() => setDialog(null)} />}
       <ProgressDialog />

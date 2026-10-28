@@ -971,5 +971,12 @@
 "Go Live": "Показати",
 "Clear the search text and the results": "Очистити текст пошуку та результати",
 "Clear the book, chapter and verse filters": "Очистити фільтри книги, розділу та вірша",
-"Show the highlighted image full window": "Показати вибраний малюнок на весь екран (Пробіл)"
+"Show the highlighted image full window": "Показати вибраний малюнок на весь екран (Пробіл)",
+"Go Live with the selection": "Показати вибране",
+"Pause the running presentation": "Призупинити показ",
+"Stop the paused presentation": "Зупинити призупинений показ",
+"Stop and clear the running presentation": "Зупинити показ і очистити список",
+"Some of these keys can be changed in Settings > Hotkeys.": "Деякі з цих клавіш можна змінити в Налаштування > Гарячі клавіші.",
+"App": "Програма",
+"Preview the selection (hold)": "Попередній перегляд вибраного (утримувати)"
 }
