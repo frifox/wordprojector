@@ -225,13 +225,15 @@ export default function Operator() {
     const inList = !!(e.target as HTMLElement | null)?.closest?.('.list, .table');
     if (is('stop') || (keys.stop === 'Delete' && combo === 'Backspace' && !typing && !inList)) { api.stop().then(() => { if (!inLive) act()?.focusBrowser?.(); }); return true; }
     if (is('play')) {
-      // in multi-verse mode Play first applies a pending selection from the live list
-      const ev = { handled: false };
-      window.dispatchEvent(new CustomEvent('wp-live-update', { detail: ev }));
-      if (ev.handled) return true;
-      // with a verse or song focused in a browser list it pushes that item instead
-      const inBrowserList = !!(e.target as HTMLElement | null)?.closest?.('.tabpage .list, .tabpage .table');
-      if (inBrowserList && act()?.goLive) act()?.goLive?.();
+      // With the cursor in the Currently Playing panel Play presents what is selected in its list (in multi-verse mode first a
+      // pending selection). With it anywhere else (a list, a field such as Exact Number or Search, nothing) it goes live with what is
+      // selected in the tab: the item of the list, the number typed, ...
+      const inLive = !!(e.target as HTMLElement | null)?.closest?.('.live-panel');
+      if (inLive) {
+        const ev = { handled: false };
+        window.dispatchEvent(new CustomEvent('wp-live-update', { detail: ev }));
+        if (!ev.handled) api.show();
+      } else if (act()?.goLive) act()?.goLive?.();
       else api.show();
       return true;
     }
