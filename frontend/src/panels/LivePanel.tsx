@@ -233,7 +233,7 @@ export default function LivePanel() {
   };
 
   return (
-    <div className="col fill" style={{ gap: 4, minHeight: 0 }}>
+    <div className="col fill live-panel" style={{ gap: 4, minHeight: 0 }}>
       <div className="row" style={{ minHeight: 28, flexWrap: 'wrap', rowGap: 2 }}>
         {isBible ? (
           <>

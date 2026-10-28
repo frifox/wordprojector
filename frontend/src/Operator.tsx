@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from './lib/store';
 import { api } from './lib/api';
 import { t } from './i18n';
@@ -96,6 +96,52 @@ export default function Operator() {
   );
 
   const act = (tabName: TabName = tab) => registry.actions(tabName);
+
+  // Where the keyboard goes follows the clicks. A click on the Currently Playing panel (its header, the preview, the list) puts the
+  // cursor on the selected item of its list. A click anywhere else that does not take the focus itself (the menu, the tab headers, empty
+  // places of a tab) brings back what had the cursor before the panel took it: a list, or a field such as the Exact Number box.
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  const actRef = useRef(act);
+  actRef.current = act;
+  useEffect(() => {
+    const away = '.live-panel, .modal, .modal-backdrop, .menubar, .menu-popup';
+    let lastBrowser: HTMLElement | null = null; // what had the focus last, outside the Currently Playing panel
+    let tabAtDown = tabRef.current;
+    const onFocusIn = (e: FocusEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && el !== document.body && !el.closest?.(away)) lastBrowser = el;
+    };
+    const onDown = () => { tabAtDown = tabRef.current; };
+    const restoreBrowser = () => {
+      const el = lastBrowser;
+      if (el && el.isConnected && el.offsetParent !== null && !el.closest(away)) el.focus({ preventScroll: true });
+      else actRef.current()?.focusBrowser?.();
+    };
+    const onClick = (e: MouseEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (!t?.closest || t.closest('.modal, .modal-backdrop')) return;
+      if (t.closest('input, textarea, select, [contenteditable="true"]')) return; // text fields keep what they got
+      const inLive = !!t.closest('.live-panel');
+      const inMenu = !!t.closest('.menubar, .menu-popup, .topbar');
+      const inTabbar = !!t.closest('.tabbar');
+      if (!inLive && !inMenu && !inTabbar && t.closest('button, label, a, .list, .table, .thumb-list, [class*="dd-"], .sidebar, .splitter > .gutter')) return; // controls and lists see to their focus themselves
+      window.setTimeout(() => {
+        if (document.querySelector('.modal-backdrop')) return; // a dialog came up
+        if (inLive) window.dispatchEvent(new Event('wp-focus-live'));
+        else if (inTabbar && tabRef.current !== tabAtDown) return; // another tab: it puts the cursor where it wants it
+        else restoreBrowser();
+      }, 0);
+    };
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('mousedown', onDown, true);
+    document.addEventListener('click', onClick);
+    return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('mousedown', onDown, true);
+      document.removeEventListener('click', onClick);
+    };
+  }, []);
 
   // ---- schedule / file actions ----
   const saveSchedule = async (as: boolean) => {

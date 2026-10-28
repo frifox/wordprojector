@@ -9,14 +9,14 @@
   --accent: #2f6fcf;
   --accent-text: #fff;
   --sel: #cfe0f7;
-  --sel-inactive: #dbe6f5; /* a selection that has no focus: a quieter blue than --sel */
+  --sel-inactive: #e4e4e4; /* a selection that has no focus: a gray of the same lightness as the blue it was (EXPERIMENT: was #dbe6f5) */
   /* the highlight of the selected row of a list: a little lighter at the top: a gentle step, like the hover gradient */
   --sel-bg: linear-gradient(#d4e3f9, #cbdcf6);
-  --sel-inactive-bg: linear-gradient(#dde8f6, #d7e2f3);
+  --sel-inactive-bg: linear-gradient(#e7e7e7, #e1e1e1); /* was linear-gradient(#dde8f6, #d7e2f3) */
   --btn: linear-gradient(#fdfdfd, #e6e6e6);
   --btn-hover: linear-gradient(#ffffff, #f0f0f0);
   /* under the pointer in lists: a faint tint, well below the selection colour */
-  --row-hover: linear-gradient(#fbfbfb, #f4f4f4);
+  --row-hover: linear-gradient(#e8eff9, #e3ebf7); /* EXPERIMENT: a faint light blue (was linear-gradient(#fbfbfb, #f4f4f4); the unfocused selection used to be linear-gradient(#dde8f6, #d7e2f3)) */
   --btn-active: #d8d8d8;
   --tab: #e4e4e4;
   --tab-active: #f8f8f8;
@@ -39,12 +39,12 @@
   --border-light: #444;
   --accent: #4a8ae0;
   --sel: #2d4b73;
-  --sel-inactive: #27374c;
+  --sel-inactive: #353535; /* was #27374c */
   --sel-bg: linear-gradient(#30507b, #2b4a73);
-  --sel-inactive-bg: linear-gradient(#293a50, #243549);
+  --sel-inactive-bg: linear-gradient(#383838, #333333); /* was linear-gradient(#293a50, #243549) */
   --btn: linear-gradient(#4a4a4a, #383838);
   --btn-hover: linear-gradient(#555, #444);
-  --row-hover: linear-gradient(#292929, #2e2e2e);
+  --row-hover: linear-gradient(#28323f, #242d3a); /* a faint dark blue (was linear-gradient(#292929, #2e2e2e)) */
   --btn-active: #2e2e2e;
   --tab: #3a3a3a;
   --tab-active: #474747;
