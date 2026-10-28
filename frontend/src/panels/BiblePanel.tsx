@@ -7,6 +7,7 @@ import { useData } from '../lib/hooks';
 import type { Book, ChapterVerse, SearchHit, BibleRef, ScheduleItem } from '../lib/types';
 import { Highlight } from '../components/Highlight';
 import { focusLive, bibleShown } from '../lib/focus';
+import { startScheduleDrag } from '../lib/dnd';
 import { phoneticContains, phoneticStartsWith } from '../lib/translit';
 
 const VerseID = (b: number, c: number, v: number) => `B${String(b).padStart(3, '0')}C${String(c).padStart(3, '0')}V${String(v).padStart(3, '0')}`;
@@ -405,8 +406,31 @@ export default function BiblePanel({ active }: { active: boolean }) {
     return out;
   };
   // press selects (shift extends), dragging across verses extends the range
+  // A press on a verse that is already selected leaves the selection alone: dragging it takes the selected verses to the Schedule
+  // (HTML drag and drop, see onVerseDragStart); letting go without dragging selects just that verse. A press on a verse that is
+  // not selected selects (and dragging then extends the selection over more verses).
+  // The verses are draggable only while such a press is on: the attribute is set when the mouse goes down (the browser decides
+  // whether a drag starts after that) and taken off again at the end, so that a press on a verse that is not selected, which
+  // selects it, is never a drag of it.
+  const releaseSelected = useRef<(() => void) | null>(null);
   const onVerseDown = (i: number, e: React.MouseEvent) => {
     if (e.button !== 0) return;
+    const el = e.currentTarget as HTMLElement;
+    el.draggable = false;
+    if (!e.shiftKey && sel.includes(i)) {
+      releaseSelected.current?.();
+      el.draggable = true;
+      const up = () => {
+        window.removeEventListener('mouseup', up);
+        releaseSelected.current = null;
+        el.draggable = false;
+        anchor.current = i;
+        setSel([i]);
+      };
+      releaseSelected.current = () => { window.removeEventListener('mouseup', up); releaseSelected.current = null; };
+      window.addEventListener('mouseup', up);
+      return;
+    }
     if (e.shiftKey) setSel(range(anchor.current, i));
     else {
       anchor.current = i;
@@ -418,6 +442,10 @@ export default function BiblePanel({ active }: { active: boolean }) {
       window.removeEventListener('mouseup', up);
     };
     window.addEventListener('mouseup', up);
+  };
+  const onVerseDragStart = (e: React.DragEvent) => {
+    releaseSelected.current?.(); // it is a drag: the press does not select just one verse any more
+    startScheduleDrag(e, { type: 'bible', name: '', bible: captionFor(sel) });
   };
   const onVerseEnter = (i: number) => {
     if (dragging.current) setSel(range(anchor.current, i));
@@ -692,7 +720,7 @@ export default function BiblePanel({ active }: { active: boolean }) {
               {visible.map((i) => {
                 const v = verses[i];
                 return (
-                <div key={i} className={`item verse ${sel.includes(i) ? 'sel' : ''}`} style={{ padding: '3px 6px' }} onMouseDown={(e) => onVerseDown(i, e)} onMouseEnter={() => onVerseEnter(i)} onDoubleClick={() => goLive(true)}>
+                <div key={i} className={`item verse ${sel.includes(i) ? 'sel' : ''}`} style={{ padding: '3px 6px' }} onDragStart={onVerseDragStart} onDragEnd={(e) => { e.currentTarget.draggable = false; }} onMouseDown={(e) => onVerseDown(i, e)} onMouseEnter={() => onVerseEnter(i)} onDoubleClick={() => goLive(true)}>
                   <span className="verse-num">{v.num}.</span>
                   <span className="verse-text">{v.text}</span>
                 </div>

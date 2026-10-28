@@ -26,12 +26,15 @@ type updateState struct {
 	pending    string // the tag installed, waiting for a restart
 }
 
-func newUpdateState(current string) *updateState {
-	return &updateState{u: update.New(current)}
+func newUpdateState(current, commit string) *updateState {
+	u := update.New(current)
+	u.Commit = commit
+	return &updateState{u: u}
 }
 
 type updateStatus struct {
 	Current     string           `json:"current"`
+	Commit      string           `json:"commit,omitempty"` // the commit the running program was built from
 	Supported   bool             `json:"supported"`
 	Reason      string           `json:"reason,omitempty"`
 	Repo        string           `json:"repo"`
@@ -51,7 +54,7 @@ func (s *Server) updateStatus() updateStatus {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	ok, why := st.u.Supported()
-	out := updateStatus{Current: st.u.Current, Supported: ok, Reason: why, Repo: st.u.Repo, Releases: st.releases, Error: st.checkErr,
+	out := updateStatus{Current: st.u.Current, Commit: st.u.Commit, Supported: ok, Reason: why, Repo: st.u.Repo, Releases: st.releases, Error: st.checkErr,
 		Installing: st.installing, Progress: st.progress, Pending: st.pending, CanRestart: ok && s.Quit != nil}
 	if out.Releases == nil {
 		out.Releases = []update.Release{}

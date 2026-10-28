@@ -3,5 +3,5 @@
 # linux-arm64).
 set -euo pipefail
 mkdir -p "dist/$NAME"
-CGO_ENABLED=1 go build -tags gtk3 -ldflags "-s -w -X main.version=$VERSION" -o "dist/$NAME/WordProjector" ./cmd/wordprojector
+CGO_ENABLED=1 go build -tags gtk3 -ldflags "-s -w -X main.version=$VERSION -X main.commit=${COMMIT:-}" -o "dist/$NAME/WordProjector" ./cmd/wordprojector
 cp LICENSE build/icon.png build/linux/wordprojector.desktop build/linux/README-linux.txt "dist/$NAME/"

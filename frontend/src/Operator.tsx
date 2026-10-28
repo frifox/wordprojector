@@ -108,9 +108,12 @@ export default function Operator() {
     const away = '.live-panel, .modal, .modal-backdrop, .menubar, .menu-popup';
     let lastBrowser: HTMLElement | null = null; // what had the focus last, outside the Currently Playing panel
     let tabAtDown = tabRef.current;
+    // only a list (of books, chapters, verses, songs, stanzas, slides ...) or a text field (Exact Number, Search ...) is what the
+    // cursor goes back to; a button such as Go Live, a checkbox or a menu is not
+    const remembered = 'input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=range]):not([type=color]), textarea, .list, .table, .thumb-list, [role="listbox"]';
     const onFocusIn = (e: FocusEvent) => {
       const el = e.target as HTMLElement | null;
-      if (el && el !== document.body && !el.closest?.(away)) lastBrowser = el;
+      if (el && el !== document.body && el.matches?.(remembered) && !el.closest?.(away)) lastBrowser = el;
     };
     const onDown = () => { tabAtDown = tabRef.current; };
     const restoreBrowser = () => {

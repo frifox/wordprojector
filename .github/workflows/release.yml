@@ -71,7 +71,7 @@ jobs:
           CGO_LDFLAGS: ${{ matrix.goos == 'darwin' && '-mmacosx-version-min=11.0' || '' }}
         run: |
           mkdir -p dist
-          go build -tags "$TAGS" -ldflags "-s -w -X main.version=${{ steps.ver.outputs.version }}" -o dist/wordprojector ./cmd/wordprojector
+          go build -tags "$TAGS" -ldflags "-s -w -X main.version=${{ steps.ver.outputs.version }} -X main.commit=${{ github.sha }}" -o dist/wordprojector ./cmd/wordprojector
       - name: Build (windows)
         if: matrix.goos == 'windows'
         shell: bash
@@ -80,7 +80,7 @@ jobs:
           CGO_ENABLED: '0'
         run: |
           mkdir -p dist
-          go build -ldflags "-s -w -H windowsgui -X main.version=${{ steps.ver.outputs.version }}" -o dist/WordProjector.exe ./cmd/wordprojector
+          go build -ldflags "-s -w -H windowsgui -X main.version=${{ steps.ver.outputs.version }} -X main.commit=${{ github.sha }}" -o dist/WordProjector.exe ./cmd/wordprojector
       - name: Package macOS
         if: matrix.goos == 'darwin'
         shell: bash

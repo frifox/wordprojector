@@ -50,7 +50,10 @@ export default function UpdatesPage({ s, setS }: { s: Settings; setS: (f: (x: Se
   if (!st) return <div className="muted">{t('Loading…')}</div>;
   const rel: UpdateRelease | undefined = st.releases.find((r) => r.tag === picked);
   const installing = !!st.installing || busy;
-  const canInstall = !!rel && rel.installable && st.supported && !sameVersion(rel.tag, st.current) && !installing;
+  // a release is the one installed only when the running program is that very build: a program made after the tag
+  // ("2026-10-27-1-gabc1234") or from another commit (the tag was moved) is not, and the tag can be installed over it
+  const isInstalled = (r: UpdateRelease) => r.tag === st.current.trim() && (!r.commit || !st.commit || r.commit === st.commit);
+  const canInstall = !!rel && rel.installable && st.supported && !isInstalled(rel) && !installing;
 
   const install = async () => {
     if (!rel) return;
@@ -120,7 +123,7 @@ export default function UpdatesPage({ s, setS }: { s: Settings; setS: (f: (x: Se
             <div key={r.tag} className={`item spaced ${picked === r.tag ? 'sel' : ''}`} onClick={() => setPicked(r.tag)} style={{ opacity: r.installable ? 1 : 0.55 }}>
               <span className="update-tagcell">
                 <span className="update-tag">{r.tag}</span>
-                {sameVersion(r.tag, st.current) && <span className="update-chip on">{t('Installed')}</span>}
+                {isInstalled(r) && <span className="update-chip on">{t('Installed')}</span>}
               </span>
               <span className="update-name">{r.name && r.name !== r.tag ? r.name : ''}</span>
               <span className="update-marks">
@@ -137,7 +140,7 @@ export default function UpdatesPage({ s, setS }: { s: Settings; setS: (f: (x: Se
         <div className="row" style={{ marginTop: 6 }}>
           <span className="grow" />
           {installing && <span className="muted">{st.progress || t('Installing…')}</span>}
-          {rel && !sameVersion(rel.tag, st.current) && (
+          {rel && !isInstalled(rel) && (
             <button className="primary" disabled={!canInstall} onClick={install} title={!st.supported ? t(st.reason || '') : !rel.installable ? t('This release has no download for this computer') : undefined}>
               {t('Install Now')}
             </button>

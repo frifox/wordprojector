@@ -274,10 +274,14 @@ export interface UpdateRelease {
   url: string;
   /** has a build for this computer */
   installable: boolean;
+  /** the commit the tag points to (only looked up for the release named like the running version) */
+  commit?: string;
 }
 
 export interface UpdateStatus {
   current: string;
+  /** the commit the running program was built from, when known */
+  commit?: string;
   supported: boolean;
   reason?: string;
   repo: string;

@@ -1,7 +1,8 @@
 APP      := Word Projector
 BIN      := wordprojector
 VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
-LDFLAGS  := -s -w -X main.version=$(VERSION)
+COMMIT   ?= $(shell git rev-parse HEAD 2>/dev/null)
+LDFLAGS  := -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 GOFLAGS  :=
 # Linux: the window uses GTK 3 and WebKitGTK 4.1
 ifeq ($(shell uname -s),Linux)

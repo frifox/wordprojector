@@ -36,6 +36,9 @@ type Release struct {
 	URL        string `json:"url"`
 	// Installable is true when the release has a build for this computer.
 	Installable bool `json:"installable"`
+	// Commit is the commit the tag points to. It is looked up only for the release that has the name of the running version,
+	// to tell whether the running program is that very build (a tag can be moved).
+	Commit string `json:"commit,omitempty"`
 
 	asset, sums *asset
 }
@@ -55,7 +58,9 @@ type Updater struct {
 	Web string
 	// Current is the version of the running program (a date like "2026-10-22", or "dev" for an unnumbered build).
 	Current string
-	Client  *http.Client
+	// Commit is the commit the running program was built from ("" when not known).
+	Commit string
+	Client *http.Client
 	// Exe is the running executable; GOOS and GOARCH say which build of a release is wanted. They are the real ones
 	// unless a test sets them.
 	Exe, GOOS, GOARCH string
@@ -170,9 +175,47 @@ func (u *Updater) List(ctx context.Context) ([]Release, error) {
 			}
 		}
 		rel.Installable = rel.asset != nil
+		if u.Commit != "" && r.Tag == strings.TrimSpace(u.Current) {
+			rel.Commit = u.tagCommit(ctx, r.Tag)
+		}
 		out = append(out, rel)
 	}
 	return out, nil
+}
+
+// tagCommit is the commit a tag points to ("" when GitHub does not say).
+func (u *Updater) tagCommit(ctx context.Context, tag string) string {
+	var ref struct {
+		Object struct{ SHA, Type string } `json:"object"`
+	}
+	if !u.getJSON(ctx, u.API+"/git/ref/tags/"+tag, &ref) {
+		return ""
+	}
+	if ref.Object.Type == "tag" { // an annotated tag: it names the commit
+		var t struct {
+			Object struct{ SHA string } `json:"object"`
+		}
+		if !u.getJSON(ctx, u.API+"/git/tags/"+ref.Object.SHA, &t) {
+			return ""
+		}
+		return t.Object.SHA
+	}
+	return ref.Object.SHA
+}
+
+func (u *Updater) getJSON(ctx context.Context, url string, into any) bool {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return false
+	}
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("User-Agent", "WordProjector/"+u.Current)
+	resp, err := u.Client.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode == 200 && json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(into) == nil
 }
 
 // ---- versions ---------------------------------------------------------------------------------------------------

@@ -31,6 +31,9 @@ import (
 // version is injected at build time with -ldflags "-X main.version=...".
 var version = "dev"
 
+// commit is injected the same way (-X main.commit=...): the commit the program was built from.
+var commit = ""
+
 type runtimeOpts struct {
 	dataDir  string
 	listen   string
@@ -55,6 +58,7 @@ func parseFlags() runtimeOpts {
 // boot opens the database and builds engine + server.
 func boot(o runtimeOpts, d desktop.Desktop) (*server.Server, *live.Engine, string, error) {
 	server.Version = version
+	server.Commit = commit
 	dir := o.dataDir
 	if dir == "" {
 		var err error

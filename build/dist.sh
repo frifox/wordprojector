@@ -7,7 +7,8 @@ cd "$(dirname "$0")/.."
 VERSION="${1:-dev}"
 shift || true
 WANT=" ${*:-macos windows linux} "
-LD="-s -w -X main.version=$VERSION"
+COMMIT="$(git rev-parse HEAD 2>/dev/null || true)"
+LD="-s -w -X main.version=$VERSION -X main.commit=$COMMIT"
 mkdir -p dist
 
 macos() {
@@ -43,7 +44,7 @@ linux_build() {
   gover="$(go env GOVERSION)"
   image="wordprojector-$name-build:$gover"
   docker image inspect "$image" >/dev/null 2>&1 || docker build --platform "$platform" --build-arg GOVER="$gover" --build-arg GOTAR="$gotar" -t "$image" -f build/linux.Dockerfile build
-  docker run --rm --platform "$platform" -v "$PWD":/src -w /src -v "wordprojector-$name-gocache:/root/.cache" -e NAME="$name" -e VERSION="$VERSION" "$image" bash build/linux-dist.sh
+  docker run --rm --platform "$platform" -v "$PWD":/src -w /src -v "wordprojector-$name-gocache:/root/.cache" -e NAME="$name" -e VERSION="$VERSION" -e COMMIT="$COMMIT" "$image" bash build/linux-dist.sh
 }
 
 # Linux: x64 and arm64 (also a Raspberry Pi with a 64-bit system), each in a container of its own architecture. "linux" builds

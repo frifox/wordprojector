@@ -29,8 +29,9 @@ import (
 //go:embed all:dist
 var dist embed.FS
 
-// Version is set from main.
+// Version is set from main, and Commit (the commit the program was built from, "" when not known).
 var Version = "dev"
+var Commit = ""
 
 // Server bundles everything.
 type Server struct {
@@ -57,7 +58,7 @@ func New(e *live.Engine, d desktop.Desktop, dataDir string) *Server {
 	s := &Server{Engine: e, Desktop: d, DataDir: dataDir, Importer: &modules.Importer{DB: e.DB}}
 	s.hub = newHub()
 	s.jobs = &jobs{}
-	s.upd = newUpdateState(Version)
+	s.upd = newUpdateState(Version, Commit)
 	e.Broadcast = s.hub.broadcast
 	s.mux = http.NewServeMux()
 	s.routes()
