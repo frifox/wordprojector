@@ -116,6 +116,16 @@ export default function Operator() {
       if (el && el !== document.body && el.matches?.(remembered) && !el.closest?.(away)) lastBrowser = el;
     };
     const onDown = () => { tabAtDown = tabRef.current; };
+    // The list a click on the header of a column belongs to (the label above the book list, the title above the stanzas ...): the
+    // nearest column that has just one list in it.
+    const listOfColumn = (t: HTMLElement): HTMLElement | null => {
+      for (let c = t.closest('.col') as HTMLElement | null; c && c.closest('.tabpage'); c = c.parentElement?.closest('.col') as HTMLElement | null) {
+        const lists = c.querySelectorAll<HTMLElement>('.list, .table, .thumb-list');
+        if (lists.length === 1) return lists[0];
+        if (lists.length > 1) return null; // several columns together: not the header of one of them
+      }
+      return null;
+    };
     const restoreBrowser = () => {
       const el = lastBrowser;
       if (el && el.isConnected && el.offsetParent !== null && !el.closest(away)) el.focus({ preventScroll: true });
@@ -133,6 +143,7 @@ export default function Operator() {
         if (document.querySelector('.modal-backdrop')) return; // a dialog came up
         if (inLive) window.dispatchEvent(new Event('wp-focus-live'));
         else if (inTabbar && tabRef.current !== tabAtDown) return; // another tab: it puts the cursor where it wants it
+        else if (!inMenu && !inTabbar && t.closest('.tabpage') && (() => { const l = listOfColumn(t); if (l) l.focus({ preventScroll: true }); return !!l; })()) return;
         else restoreBrowser();
       }, 0);
     };
