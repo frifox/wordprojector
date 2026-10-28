@@ -446,6 +446,48 @@ export default function BiblePanel({ active }: { active: boolean }) {
   const onVerseDragStart = (e: React.DragEvent) => {
     releaseSelected.current?.(); // it is a drag: the press does not select just one verse any more
     startScheduleDrag(e, { type: 'bible', name: '', bible: captionFor(sel) });
+    // the picture that follows the pointer shows every selected verse, not only the one that was pressed
+    const pressed = e.currentTarget as HTMLElement;
+    const picked = [...(pressed.parentElement?.querySelectorAll('.item.verse.sel') ?? [])] as HTMLElement[];
+    if (picked.length < 2) return;
+    const shown = picked.slice(0, 8);
+    const box = document.createElement('div');
+    box.className = 'list active'; // the look of a list with the focus: the selected rows in the strong blue
+    box.style.cssText = `position:fixed;top:-10000px;left:0;width:${pressed.offsetWidth}px;overflow:hidden;pointer-events:none;opacity:.92`;
+    let top = 0;
+    let before = true;
+    for (const el of shown) {
+      if (el === pressed) before = false;
+      else if (before) top += el.offsetHeight;
+      const c = el.cloneNode(true) as HTMLElement;
+      c.removeAttribute('draggable');
+      box.appendChild(c);
+    }
+    if (picked.length > shown.length) {
+      const more = document.createElement('div');
+      more.className = 'item';
+      more.textContent = `… +${picked.length - shown.length}`;
+      box.appendChild(more);
+    }
+    document.body.appendChild(box);
+    e.dataTransfer.setDragImage(box, Math.max(0, Math.min(e.nativeEvent.offsetX, pressed.offsetWidth - 1)), Math.max(0, Math.min(top + e.nativeEvent.offsetY, box.offsetHeight - 1)));
+    window.setTimeout(() => box.remove(), 0);
+  };
+  // A press on a book or a chapter selects it. Holding the button and moving over the others keeps selecting what is under the pointer:
+  // the press was on the wrong one. It ends when the button is let go.
+  const pickDrag = useRef<'book' | 'chapter' | null>(null);
+  const pressPick = (kind: 'book' | 'chapter', e: React.MouseEvent, select: () => void) => {
+    if (e.button !== 0) return;
+    select();
+    pickDrag.current = kind;
+    const up = () => {
+      pickDrag.current = null;
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mouseup', up);
+  };
+  const overPick = (kind: 'book' | 'chapter', select: () => void) => {
+    if (pickDrag.current === kind) select();
   };
   const onVerseEnter = (i: number) => {
     if (dragging.current) setSel(range(anchor.current, i));
@@ -687,7 +729,7 @@ export default function BiblePanel({ active }: { active: boolean }) {
                 <Fragment key={b.id}>
                   {/* the line between the Old and the New Testament is a row of its own, so a selected Matthew does not take the space above it */}
                   {b.id === NEW_TESTAMENT && bookFilter === '' && i > 0 && <div style={{ height: 1, margin: '14px 0 16px', background: 'var(--border)' }} />}
-                  <div className={`item ${i === bookIdx ? 'sel' : ''}`} style={bookGap(b.id, i, bookFilter === '')} onClick={() => setBookIdx(i)}>{b.name}</div>
+                  <div className={`item ${i === bookIdx ? 'sel' : ''}`} style={bookGap(b.id, i, bookFilter === '')} onMouseDown={(e) => pressPick('book', e, () => setBookIdx(i))} onMouseEnter={() => overPick('book', () => setBookIdx(i))}>{b.name}</div>
                 </Fragment>
               ))}
             </div>
@@ -697,7 +739,7 @@ export default function BiblePanel({ active }: { active: boolean }) {
             <input ref={chapterInput} onKeyDown={(e) => { onInputTab(1)(e); paneNav(1, e, true); }} className="hdr-ctl" type="text" tabIndex={-1} maxLength={3} style={{ padding: '3px 5px', textAlign: 'left', width: '100%', minWidth: 0 }} value={chapterText} onChange={(e) => applyChapterText(e.target.value)} />
             <div ref={chapterList} className="list grow hover-items" tabIndex={0} onKeyDown={onChapterKey}>
               {visibleChapters.map((n) => (
-                <div key={n} className={`item ${n === chapter ? 'sel' : ''}`} onClick={() => setChapter(n)}>{n}</div>
+                <div key={n} className={`item ${n === chapter ? 'sel' : ''}`} onMouseDown={(e) => pressPick('chapter', e, () => setChapter(n))} onMouseEnter={() => overPick('chapter', () => setChapter(n))}>{n}</div>
               ))}
             </div>
           </div>
