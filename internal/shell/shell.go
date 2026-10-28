@@ -779,6 +779,7 @@ func (s *Shell) projectorWindow(disp int, sc *application.Screen, onTop bool) *a
 		Linux:   application.LinuxWindow{Icon: iconPNG},
 	})
 	setDisplayWindowIcon(w)
+	squareDisplayWindow(w)
 	s.mu.Lock()
 	s.projectors[disp] = w
 	s.mu.Unlock()
@@ -828,6 +829,7 @@ func (s *Shell) ShowProjector(disp int, screen int, show bool, onTop bool) {
 				if runtime.GOOS != "darwin" {
 					w.SetBounds(application.Rect{X: sc.Bounds.X, Y: sc.Bounds.Y, Width: sc.Bounds.Width, Height: sc.Bounds.Height})
 				}
+				coverMonitor(w) // Windows: exactly the whole monitor, in device pixels
 			}
 			// one screen: the projection covers the operator's screen, so the Dock and menu bar must not show on it
 			if len(screens) == 1 {

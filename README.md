@@ -8,8 +8,7 @@ Church projection software to display Bible, Songs, or Slide shows on one or mor
 
 ## Install
 
-Download the latest release from [Releases](../../releases) and unpack it.
-Nothing else needs installing.
+Download the latest release from [Releases](../../releases) and unpack it. No installation necessary.
 
 | System                | File                                         |
 |-----------------------|----------------------------------------------|
