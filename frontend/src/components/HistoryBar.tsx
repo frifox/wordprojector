@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { t } from '../i18n';
 import { useUI, historyTabs } from '../lib/ui';
+import { undoLast, useCanUndo, type UndoScope } from '../lib/undo';
 
 const MIN_H = 60;
 
@@ -16,6 +17,8 @@ export default function HistoryBar({ saved }: { saved: Record<string, number> })
   const timer = useRef<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const tab = ui.tab;
+  const scope: UndoScope = tab === 'songs' ? 'history-songs' : 'history-bible';
+  const canUndo = useCanUndo(scope);
   const entries: { label: string; right?: string; open: () => void; show: () => void }[] =
     tab === 'bible'
       ? ui.bibleHistory.map((h) => ({
@@ -91,6 +94,11 @@ export default function HistoryBar({ saved }: { saved: Record<string, number> })
           <div className="history-header">
             <span style={{ fontWeight: 600 }}>{t('History')}</span>
             <span className="grow" />
+            {canUndo && (
+              <button className="tbtn-s" onClick={() => undoLast(scope)} title={t('Undo')}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14l-4 -4l4 -4" /><path d="M5 10h11a4 4 0 1 1 0 8h-1" /></svg>
+              </button>
+            )}
             <button className="tbtn-s" disabled={count === 0} onClick={() => ui.clearHistory(tab)} title={t('Clear History')}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 20h-10.5l-4.21 -4.3a1 1 0 0 1 0 -1.41l10 -10a1 1 0 0 1 1.41 0l5 5a1 1 0 0 1 0 1.41l-9.2 9.3" /><path d="M18 13.3l-6.3 -6.3" /></svg>
             </button>
@@ -113,7 +121,7 @@ export default function HistoryBar({ saved }: { saved: Record<string, number> })
                     <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.label}</span>
                     <span className="muted" style={{ flex: '0 0 auto' }}>{h.right}</span>
                   </div>
-                ) : h.label}
+                ) : <div style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.label}</div>}
               </div>
             ))}
           </div>

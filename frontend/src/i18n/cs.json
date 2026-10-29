@@ -1053,5 +1053,7 @@
 "Stop and clear the running presentation": "Zastavit běžící prezentaci a vymazat",
 "Some of these keys can be changed in Settings > Hotkeys.": "Některé z těchto kláves lze změnit v Nastavení > Klávesové zkratky.",
 "App": "Aplikace",
-"Preview the selection (hold)": "Náhled výběru (podržet)"
+"Preview the selection (hold)": "Náhled výběru (podržet)",
+"Undo removing an item": "Vrátit odebrání položky",
+"Undo": "Zpět"
 }

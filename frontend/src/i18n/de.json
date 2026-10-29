@@ -1043,5 +1043,7 @@
 "Stop and clear the running presentation": "Laufende Präsentation beenden und leeren",
 "Some of these keys can be changed in Settings > Hotkeys.": "Einige dieser Tasten lassen sich unter Einstellungen > Tastenkürzel ändern.",
 "App": "Programm",
-"Preview the selection (hold)": "Auswahl in der Vorschau zeigen (halten)"
+"Preview the selection (hold)": "Auswahl in der Vorschau zeigen (halten)",
+"Undo removing an item": "Entfernen eines Eintrags rückgängig machen",
+"Undo": "Rückgängig"
 }

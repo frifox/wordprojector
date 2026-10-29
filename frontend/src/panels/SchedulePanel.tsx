@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import { focusLive } from '../lib/focus';
+import { removeScheduled, clearScheduled, undoLast, useCanUndo } from '../lib/undo';
 import { t } from '../i18n';
 import { Icon, useUI, type TabName } from '../lib/ui';
 import type { ScheduleItem } from '../lib/types';
@@ -12,6 +13,7 @@ const tabOf: Record<ScheduleItem['type'], TabName> = { bible: 'bible', song: 'so
 
 export default function SchedulePanel({ selected, setSelected, onAdd }: { selected: number; setSelected: (i: number) => void; onAdd: () => void }) {
   const { schedule } = useStore();
+  const canUndo = useCanUndo('schedule');
   const ui = useUI();
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -77,9 +79,10 @@ export default function SchedulePanel({ selected, setSelected, onAdd }: { select
       <div className="row" style={{ gap: 2 }}>
         <span style={{ fontWeight: 600 }}>{t('Schedule')}</span>
         <span className="grow" />
+        {canUndo && <button className="tbtn-s" title={t('Undo')} onClick={() => undoLast('schedule')}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14l-4 -4l4 -4" /><path d="M5 10h11a4 4 0 1 1 0 8h-1" /></svg></button>}
         <button className="tbtn-s" title={t('Add to Schedule')} onClick={onAdd}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg></button>
-        <button className="tbtn-s" title={t('Remove from Schedule')} disabled={selected < 0} onClick={() => api.scheduleRemove(selected)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l14 0" /></svg></button>
-        <button className="tbtn-s" title={t('Clear Schedule')} disabled={schedule.items.length === 0} onClick={() => api.scheduleClear()}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 20h-10.5l-4.21 -4.3a1 1 0 0 1 0 -1.41l10 -10a1 1 0 0 1 1.41 0l5 5a1 1 0 0 1 0 1.41l-9.2 9.3" /><path d="M18 13.3l-6.3 -6.3" /></svg></button>
+        <button className="tbtn-s" title={t('Remove from Schedule')} disabled={selected < 0} onClick={() => removeScheduled(schedule.items, selected)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l14 0" /></svg></button>
+        <button className="tbtn-s" title={t('Clear Schedule')} disabled={schedule.items.length === 0} onClick={() => clearScheduled(schedule.items)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 20h-10.5l-4.21 -4.3a1 1 0 0 1 0 -1.41l10 -10a1 1 0 0 1 1.41 0l5 5a1 1 0 0 1 0 1.41l-9.2 9.3" /><path d="M18 13.3l-6.3 -6.3" /></svg></button>
       </div>
       <div
         ref={ref}
@@ -169,7 +172,7 @@ export default function SchedulePanel({ selected, setSelected, onAdd }: { select
               title={t('Remove from Schedule')}
               aria-label={t('Remove from Schedule')}
               draggable={false}
-              onClick={(e) => { e.stopPropagation(); if (i < selected) setSelected(selected - 1); api.scheduleRemove(i); }}
+              onClick={(e) => { e.stopPropagation(); if (i < selected) setSelected(selected - 1); removeScheduled(schedule.items, i); }}
               onDoubleClick={(e) => e.stopPropagation()}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>

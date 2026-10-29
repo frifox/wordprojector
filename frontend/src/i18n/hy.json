@@ -875,5 +875,7 @@
 "Stop and clear the running presentation": "Կանգնեցնել ցուցադրությունը և մաքրել ցանկը",
 "Some of these keys can be changed in Settings > Hotkeys.": "Այս ստեղներից մի քանիսը կարելի է փոխել Կարգավորումներ > Արագ ստեղներ բաժնում։",
 "App": "Ծրագիր",
-"Preview the selection (hold)": "Ընտրվածի նախադիտում (պահել)"
+"Preview the selection (hold)": "Ընտրվածի նախադիտում (պահել)",
+"Undo removing an item": "Չեղարկել տարրի հեռացումը",
+"Undo": "Հետարկել"
 }

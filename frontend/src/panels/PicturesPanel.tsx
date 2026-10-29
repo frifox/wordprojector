@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import { focusLive } from '../lib/focus';
+import { pushUndo, undoLast, useCanUndo } from '../lib/undo';
 import { t } from '../i18n';
 import { useRegisterPanel, useUI, GoLiveIcon } from '../lib/ui';
 import Splitter from '../components/Splitter';
@@ -20,6 +21,7 @@ export function slideURL(s: Slide, size: 'full' | 'small' | 'prev') {
 }
 
 const PlusIcon = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>;
+const UndoIcon = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14l-4 -4l4 -4" /><path d="M5 10h11a4 4 0 1 1 0 8h-1" /></svg>;
 const MinusIcon = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l14 0" /></svg>;
 const FolderPlusIcon = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><path d="M12 10.5v5" /><path d="M9.5 13h5" /></svg>;
 const PencilIcon = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" /><path d="M13.5 6.5l4 4" /></svg>;
@@ -189,12 +191,42 @@ export default function PicturesPanel({ active }: { active: boolean }) {
     anchor.current = slides.length;
     return true;
   };
-  const removePhotos = (idxs: number[]) => {
+  // the latest state for an undo that runs later
+  const slidesRef = useRef(slides);
+  slidesRef.current = slides;
+  const currentRef = useRef(current);
+  currentRef.current = current;
+  const canUndo = useCanUndo('slides');
+  const removePhotos = async (idxs: number[]) => {
     if (!idxs.length) return;
     const gone = new Set(idxs);
     const next = slides.filter((_, i) => !gone.has(i));
     const first = Math.min(...idxs);
+    const showId = current?.id ?? 0;
+    const saved = !!current && current.id > 0 && !fromSchedule.current;
+    // what is taken out, with the place it had; the pictures of a saved slide show are copied to memory first, as the removal
+    // deletes them
+    let removed = [...gone].sort((a, b) => a - b).map((i) => ({ slide: slides[i], index: i }));
+    if (saved) {
+      const copies = await api.stashSlides(showId, removed.map((r) => r.slide.id).filter((id) => id > 0)).catch(() => [] as Slide[]);
+      removed = removed.map((r) => ({ ...r, slide: copies.find((c) => c.name === r.slide.name && c.path === r.slide.path) ?? r.slide }));
+    }
     saveSlides(next, next.length ? [Math.min(first, next.length - 1)] : []);
+    const put = (list: Slide[]) => {
+      const out = [...list];
+      for (const r of removed) out.splice(Math.min(r.index, out.length), 0, r.slide);
+      return out;
+    };
+    pushUndo('slides', async () => {
+      const open = currentRef.current;
+      if (open && open.id === showId && (open.id <= 0 || !saved || !fromSchedule.current)) {
+        const back = put(slidesRef.current);
+        await saveSlides(back, removed.map((r) => Math.min(r.index, back.length - 1)));
+      } else if (saved) {
+        const ss = await api.slideshow(showId);
+        await api.saveSlideshow({ ...ss, slides: put(ss.slides) });
+      }
+    });
   };
   const onPhotoClick = (i: number, e: React.MouseEvent) => {
     if (e.shiftKey) {
@@ -370,6 +402,7 @@ export default function PicturesPanel({ active }: { active: boolean }) {
           <div className="row" style={{ gap: 2 }}>
             <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{current && current.name ? current.name : ''}</span>
             <span className="grow" />
+            {canUndo && <button className="tbtn-s" title={t('Undo')} onClick={() => undoLast('slides')}><UndoIcon /></button>}
             <button className="tbtn-s" title={t('Add Images from Folder...')} disabled={!current || picking} onClick={() => setFolderDialog('add')}><FolderPlusIcon /></button>
             <button className="tbtn-s" title={t('Add Images...')} disabled={!current || picking} onClick={addImages}><PlusIcon /></button>
             <button className="tbtn-s" title={t('Remove Image')} disabled={!picked.length} onClick={() => removePhotos(picked)}><MinusIcon /></button>

@@ -210,7 +210,7 @@ export default function BiblePanel({ active }: { active: boolean }) {
       return { verseIds: ids, caption: `${book?.name} ${chapter}:${first + 1}`, captionLong: `${book?.name} ${chapter}:${first + 1}. ${vt}` };
     }
     const cap = `${book?.name} ${chapter}:${first + 1}-${last + 1}`;
-    return { verseIds: ids, caption: cap, captionLong: `${cap}. ${vt}...` };
+    return { verseIds: ids, caption: cap, captionLong: `${cap}. ${s.map((i) => verses[i]?.text || '').filter(Boolean).join(' ')}` };
   };
 
   const goLive = (addHistory = true) => {

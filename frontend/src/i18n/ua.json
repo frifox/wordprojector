@@ -978,5 +978,7 @@
 "Stop and clear the running presentation": "Зупинити показ і очистити список",
 "Some of these keys can be changed in Settings > Hotkeys.": "Деякі з цих клавіш можна змінити в Налаштування > Гарячі клавіші.",
 "App": "Програма",
-"Preview the selection (hold)": "Попередній перегляд вибраного (утримувати)"
+"Preview the selection (hold)": "Попередній перегляд вибраного (утримувати)",
+"Undo removing an item": "Скасувати видалення елемента",
+"Undo": "Скасувати"
 }

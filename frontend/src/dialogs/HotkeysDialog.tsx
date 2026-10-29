@@ -19,7 +19,7 @@ export default function HotkeysDialog({ onClose }: { onClose: () => void }) {
         [t('Stop and clear the running presentation'), keys.stop],
       ],
     },
-    { title: t('App'), rows: [[t('Settings'), keys.settings], [t('Exit'), keys.exit]] },
+    { title: t('App'), rows: [[t('Undo removing an item'), keys.undo], [t('Settings'), keys.settings], [t('Exit'), keys.exit]] },
   ];
   return (
     <Modal title={t('Hotkeys')} onClose={onClose} width={460} buttons={<button className="primary" onClick={onClose}>{t('Close')}</button>}>

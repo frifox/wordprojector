@@ -88,6 +88,8 @@ export const api = {
 
   slideshows: () => get<SlideShow[]>('/api/slideshows'),
   slideshow: (id: number) => get<SlideShowFull>(`/api/slideshows/${id}`),
+  /** copies saved slides into memory (they come back with a temp key) so that removing them can be taken back */
+  stashSlides: (show: number, ids: number[]) => post<Slide[]>('/api/slideshows/stash', { show, ids }),
   saveSlideshow: (ss: SlideShowFull) => post<{ id: number }>('/api/slideshows', ss),
   deleteSlideshow: (id: number) => del(`/api/slideshows/${id}`),
   folderImages: (path: string, recursive = true, link = false) => post<Slide[]>('/api/slideshows/folder-images', { path, recursive, link }),

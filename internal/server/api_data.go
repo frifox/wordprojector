@@ -1,6 +1,7 @@
 package server
 
 import (
+	"slices"
 	"bytes"
 	"errors"
 	"fmt"
@@ -429,6 +430,7 @@ func (s *Server) routes() {
 		s.notify("slideshows")
 		ok(w)
 	})
+	m.HandleFunc("POST /api/slideshows/stash", s.stashSlides)
 	m.HandleFunc("POST /api/slideshows/images", s.addImages)
 	m.HandleFunc("POST /api/slideshows/folder-images", s.addFolderImages)
 	m.HandleFunc("GET /api/slides/{id}/image", func(w http.ResponseWriter, r *http.Request) {
@@ -941,6 +943,39 @@ func (s *Server) addImages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, s.prepareImages(in.Paths, in.Link, s.progress(imagesJob)))
+}
+
+// stashSlides copies saved slides into memory as if they had just been added (they come back with a Temp key), so that a
+// removal from the slide show can be taken back: saving the show with them puts the pictures back.
+func (s *Server) stashSlides(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Show int64   `json:"show"`
+		IDs  []int64 `json:"ids"`
+	}
+	if err := readJSON(r, &in); err != nil {
+		writeErr(w, 400, err)
+		return
+	}
+	show, err := s.Engine.Slides.Get(in.Show)
+	if err != nil {
+		writeErr(w, 404, err)
+		return
+	}
+	out := []slides.Slide{}
+	for _, sl := range show.Slides {
+		if !slices.Contains(in.IDs, sl.ID) {
+			continue
+		}
+		img := &slides.Images{Width: sl.Width, Height: sl.Height}
+		img.Full, _ = s.Engine.Slides.Image(sl.ID, "full")
+		img.Small, _ = s.Engine.Slides.Image(sl.ID, "small")
+		img.Preview, _ = s.Engine.Slides.Image(sl.ID, "prev")
+		key := fmt.Sprintf("tmp%d_%d", time.Now().UnixNano(), sl.ID)
+		s.Engine.AddTempImage(key, img)
+		sl.ID, sl.Temp = 0, key
+		out = append(out, sl)
+	}
+	writeJSON(w, out)
 }
 
 // imagesJob is the job whose progress is reported while the pictures of a folder are prepared.

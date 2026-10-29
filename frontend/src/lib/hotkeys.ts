@@ -40,6 +40,7 @@ const FIXED: Record<string, string> = {
   pauseOnly: 'Shift+Escape',
   stop: 'Delete', // turn off and clear the live list
   removeItem: 'Mod+Delete',
+  undo: 'Mod+Z', // takes back the last removal from the Schedule or a history
   settings: 'Mod+,',
   help: 'Mod+Shift+?', // Cmd/Ctrl + ? (the question mark needs Shift); Mod+/ works too
   exit: 'Mod+Q',

@@ -27,6 +27,7 @@ import EditAnnouncementDialog from './dialogs/EditAnnouncementDialog';
 import SlideShowEditor from './dialogs/SlideShowEditor';
 import SongCounterDialog from './dialogs/SongCounterDialog';
 import AboutDialog from './dialogs/AboutDialog';
+import { pushUndo, undoLast, removeScheduled } from './lib/undo';
 import HotkeysDialog from './dialogs/HotkeysDialog';
 import PrintDialog from './dialogs/PrintDialog';
 import ProgressDialog from './dialogs/ProgressDialog';
@@ -50,14 +51,16 @@ export default function Operator() {
   const addBibleHistory = useCallback((r: BibleRef) => setBibleHistory((h) => [...h, r]), []);
   const addSongHistory = useCallback((s: SongHistoryItem) => setSongHistory((h) => (h.length && h[h.length - 1].id === s.id ? h : [...h, s])), []);
   const removeHistory = useCallback((tb: TabName, i: number) => {
+    // taking it back puts the entry where it was
     const drop = <T,>(h: T[]) => h.filter((_, k) => k !== i);
-    if (tb === 'bible') setBibleHistory(drop);
-    else if (tb === 'songs') setSongHistory(drop);
-  }, []);
+    const back = <T,>(item: T) => (h: T[]) => [...h.slice(0, i), item, ...h.slice(i)];
+    if (tb === 'bible') { const it = bibleHistory[i]; if (it) { setBibleHistory(drop); pushUndo('history-bible', () => setBibleHistory(back(it))); } }
+    else if (tb === 'songs') { const it = songHistory[i]; if (it) { setSongHistory(drop); pushUndo('history-songs', () => setSongHistory(back(it))); } }
+  }, [bibleHistory, songHistory]);
   const clearHistory = useCallback((tb: TabName) => {
-    if (tb === 'bible') setBibleHistory([]);
-    else if (tb === 'songs') setSongHistory([]);
-  }, []);
+    if (tb === 'bible') { const all = bibleHistory; if (all.length) { setBibleHistory([]); pushUndo('history-bible', () => setBibleHistory(all)); } }
+    else if (tb === 'songs') { const all = songHistory; if (all.length) { setSongHistory([]); pushUndo('history-songs', () => setSongHistory(all)); } }
+  }, [bibleHistory, songHistory]);
 
   // UI theme (light/dark)
   useEffect(() => {
@@ -256,13 +259,15 @@ export default function Operator() {
     if (is('prev')) { api.prev(); return true; }
     if (is('removeItem') || (keys.removeItem === 'Mod+Delete' && combo === 'Mod+Backspace')) { act()?.remove?.(); return true; }
     if (is('help') || (keys.help === 'Mod+Shift+?' && combo === 'Mod+/')) { openDialog({ kind: 'hotkeys' }); return true; }
+    // the undo key of the system takes back the last removal from the Schedule or a history, unless a text field has its own undo (on a Mac Ctrl+Z works too)
+    if ((combo === 'Mod+Z' || (isMac && combo === 'Ctrl+Z')) && !typing) { if (undoLast()) return true; }
     if (is('settings')) { openDialog({ kind: 'settings' }); return true; }
     if (is('print')) { if (canPrint) act()?.print?.(); return true; }
     if (is('exit')) { quit(); return true; }
     if (!typing && (k === 'Delete' || k === 'Backspace') && !cmd) {
       const target = e.target as HTMLElement;
       if (target && target.closest && target.closest('.schedule-area')) {
-        if (schedSel >= 0) api.scheduleRemove(schedSel);
+        if (schedSel >= 0) removeScheduled(schedule.items, schedSel);
         return true;
       }
       return false;

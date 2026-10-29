@@ -873,5 +873,7 @@
 "Stop and clear the running presentation": "Остановить показ и очистить список",
 "Some of these keys can be changed in Settings > Hotkeys.": "Некоторые из этих клавиш можно изменить в Настройки > Горячие клавиши.",
 "App": "Программа",
-"Preview the selection (hold)": "Предпросмотр выбранного (удерживать)"
+"Preview the selection (hold)": "Предпросмотр выбранного (удерживать)",
+"Undo removing an item": "Отменить удаление элемента",
+"Undo": "Отменить"
 }
