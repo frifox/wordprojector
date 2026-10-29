@@ -16,7 +16,7 @@ Download the latest release from [Releases](../../releases) and unpack it. No in
 | macOS (Intel)         | `WordProjector-<version>-macos-x64.zip`      |
 | Windows (arm64)       | `WordProjector-<version>-windows-arm64.zip`  |
 | Windows (x64)         | `WordProjector-<version>-windows-x64.zip`    |
-| Linux (arm6)          | `WordProjector-<version>-linux-arm64.tar.gz` |
+| Linux (arm64)         | `WordProjector-<version>-linux-arm64.tar.gz` |
 | Linux (x64)           | `WordProjector-<version>-linux-x64.tar.gz`   |
 
 Starting it:
