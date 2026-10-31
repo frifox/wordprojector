@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -124,16 +125,45 @@ const songCols = `s.id, s.songbook_id, s.number, s.title, s.category, s.tune, s.
  s.use_private, s.alignment_v, s.alignment_h, s.color, s.font, s.info_color, s.info_font, s.ending_color, s.ending_font,
  s.use_background, s.background_name, (s.background IS NOT NULL AND length(s.background) > 0), s.count, s.date, COALESCE(b.name,'')`
 
+// lenientInt is a nullable integer column that also accepts what other programs leave in it: an empty or
+// non-numeric text counts as NULL instead of failing the scan (and with it the whole song list).
+type lenientInt struct {
+	Int64 int64
+	Valid bool
+}
+
+func (n *lenientInt) Scan(v any) error {
+	n.Int64, n.Valid = 0, false
+	switch t := v.(type) {
+	case int64:
+		n.Int64, n.Valid = t, true
+	case float64:
+		n.Int64, n.Valid = int64(t), true
+	case bool:
+		n.Valid = true
+		if t {
+			n.Int64 = 1
+		}
+	case []byte:
+		return n.Scan(string(t))
+	case string:
+		if i, err := strconv.ParseInt(strings.TrimSpace(t), 10, 64); err == nil {
+			n.Int64, n.Valid = i, true
+		}
+	}
+	return nil
+}
+
 func scanSong(sc interface{ Scan(...any) error }, withText bool) (Song, error) {
 	s := NewSong()
 	var (
-		sbid, number, category                       sql.NullInt64
+		sbid, number, category                       lenientInt
 		title, tune, words, music, text, notes, date sql.NullString
 		usePrivate, useBack, hasBack                 any
-		alignV, alignH                               sql.NullInt64
-		color, infoColor, endingColor                sql.NullInt64
+		alignV, alignH                               lenientInt
+		color, infoColor, endingColor                lenientInt
 		font, infoFont, endingFont, backName         sql.NullString
-		count                                        sql.NullInt64
+		count                                        lenientInt
 		sbname                                       sql.NullString
 	)
 	err := sc.Scan(&s.ID, &sbid, &number, &title, &category, &tune, &words, &music, &text, &notes,
