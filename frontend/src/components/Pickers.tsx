@@ -311,7 +311,7 @@ export function DropSelect({ value, options, onChange, disabled, style, classNam
         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6" /></svg>
       </button>
       {open && rect && createPortal(
-        <div ref={list} role="listbox" className="dd-list"
+        <div ref={list} role="listbox" className="dd-list" onMouseDown={(e) => e.preventDefault()} /* the box keeps the focus: its blur would close the list before the click lands */
           style={{ left: rect.left, top: Math.min(rect.bottom + 1, window.innerHeight - 304), minWidth: rect.width, maxHeight: 300 }}>
           {options.map((o, i) => (
             <div key={String(o.value)} role="option" aria-selected={i === selected} data-opt={i} data-current={i === cur}
