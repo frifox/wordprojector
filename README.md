@@ -23,8 +23,7 @@ No installation is necessary - Word Projector can run as-is from any location. H
 
 ## Data
 
-You can download Bibles and Songbooks from **Edit → Books → Import from Cloud** (hosted at [wordprojector.com](https://wordprojector.com), a mirror of the SoftProjector team's books), or import
-your own files directly.
+You can download Bibles and Songbooks from **Edit → Books → Import from Cloud** or import your own files directly.
 
 Database, downloaded books and the log live here:
 
