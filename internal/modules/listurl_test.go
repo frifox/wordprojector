@@ -6,7 +6,8 @@ func TestListURL(t *testing.T) {
 	cases := []struct{ kind, src, custom, want string; err bool }{
 		{"bible", "wordprojector", "", "https://wordprojector.com/bibles/bible.xml", false},
 		{"songbook", "", "", "https://wordprojector.com/songbooks/songbooks.xml", false},
-		{"bible", "softprojector", "", "", true},
+		{"bible", "softprojector", "", "http://softprojector.org/bibles/bible.xml", false},
+		{"theme", "softprojector", "", "http://softprojector.org/themes/themes.xml", false},
 		{"theme", "custom", "example.org/", "http://example.org/themes/themes.xml", false},
 		{"bible", "custom", "https://x.org/files/my.xml", "https://x.org/files/my.xml", false},
 		{"bible", "custom", "", "", true},

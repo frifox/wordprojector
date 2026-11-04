@@ -24,8 +24,8 @@ export default function ManageDataDialog({ onClose, initialTab }: { onClose: () 
   const [sel, setSel] = useState<Record<Tab, number>>({ bibles: 0, songbooks: 0 });
   const [edit, setEdit] = useState<{ kind: Tab; mode: 'new' | 'edit' } | null>(null);
   const [modules, setModules] = useState<{ kind: Tab; list: Module[] | null; msg?: string } | null>(null); // list is null while it is being fetched
-  // where the module lists come from: wordprojector or custom (an address the user types)
-  const [source, setSource] = useState<string>(() => (settings.app.moduleSource === 'custom' ? 'custom' : 'wordprojector'));
+  // where the module lists come from: wordprojector, softprojector (the original server) or custom (an address the user types)
+  const [source, setSource] = useState<string>(() => (['custom', 'softprojector'].includes(settings.app.moduleSource || '') ? settings.app.moduleSource! : 'wordprojector'));
   // the address typed for Custom, one for each kind of book; it starts as the address of the default list
   const [customUrls, setCustomUrls] = useState<Record<string, string>>(() => {
     const out: Record<string, string> = {};
@@ -186,7 +186,7 @@ export default function ManageDataDialog({ onClose, initialTab }: { onClose: () 
           buttons={<><button onClick={closeModules}>{t('Cancel')}</button><button className="primary" onClick={startDownload} disabled={!modSel.size}>{t('OK')}</button></>}>
           <div className="row">
             <span>{t('Source:')}</span>
-            <DropSelect value={source} onChange={(v) => pickSource(String(v))} options={[{ value: 'wordprojector', label: 'wordprojector.com' }, { value: 'custom', label: t('Custom') }]} />
+            <DropSelect value={source} onChange={(v) => pickSource(String(v))} options={[{ value: 'wordprojector', label: 'wordprojector.com' }, { value: 'softprojector', label: 'softprojector.org' }, { value: 'custom', label: t('Custom') }]} />
             {source === 'custom' && (
               <>
                 <input type="text" className="grow" style={{ minWidth: 0 }} placeholder="http://example.org" value={customUrls[modules.kind]} onChange={(e) => setCustomUrls((u) => ({ ...u, [modules.kind]: e.target.value }))}

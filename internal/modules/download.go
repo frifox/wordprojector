@@ -20,10 +20,13 @@ import (
 // the docs/ folder of the repository.
 const WordProjectorURL = "https://wordprojector.com"
 
+// SoftProjectorURL is the original server, the other source the user can pick.
+const SoftProjectorURL = "http://softprojector.org"
+
 var listPaths = map[string]string{"bible": "/bibles/bible.xml", "songbook": "/songbooks/songbooks.xml", "theme": "/themes/themes.xml"}
 
-// ListURL is the module list address of a kind (bible, songbook, theme) on a source: "wordprojector"
-// or "custom", whose address is a site (the usual list paths are added) or the address of a list itself (.xml).
+// ListURL is the module list address of a kind (bible, songbook, theme) on a source: "wordprojector",
+// "softprojector" or "custom", whose address is a site (the usual list paths are added) or the address of a list itself (.xml).
 func ListURL(kind, source, custom string) (string, error) {
 	path, ok := listPaths[kind]
 	if !ok {
@@ -33,6 +36,8 @@ func ListURL(kind, source, custom string) (string, error) {
 	switch source {
 	case "", "wordprojector":
 		base = WordProjectorURL
+	case "softprojector":
+		base = SoftProjectorURL
 	case "custom":
 		base = strings.TrimSpace(custom)
 		if !strings.Contains(base, "://") {
