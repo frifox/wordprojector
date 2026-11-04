@@ -15,7 +15,7 @@ export interface InstallChoice {
 }
 
 export function initialChoice(info: InstallInfo, skipAsk: boolean): InstallChoice {
-  return { install: false, skipAsk, dir: info.defaultDir, desktop: true, start: info.os === 'windows' };
+  return { install: false, skipAsk, dir: info.defaultDir, desktop: info.os !== 'darwin', start: info.os === 'windows' };
 }
 
 /** The form of installing: keep the program as it is, or put it in the folder where programs belong. */

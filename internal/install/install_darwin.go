@@ -30,6 +30,28 @@ func platformInstallable(exe string) (bool, string) {
 	return true, ""
 }
 
+// recoverMarker finds the install of a program that macOS runs from a temporary place (App Translocation: an app that
+// was copied with the "downloaded" flag still on it). The record names the app in /Applications; when that is the same
+// app, the flag is taken off it so that it starts from there the next time, and the program counts as installed.
+func recoverMarker(exe string) (Marker, bool) {
+	if !strings.Contains(exe, "/AppTranslocation/") {
+		return Marker{}, false
+	}
+	m, ok := readMarker()
+	if !ok {
+		return Marker{}, false
+	}
+	installed, here := bundleOf(m.Exe), bundleOf(exe)
+	if installed == "" || here == "" || filepath.Base(installed) != filepath.Base(here) {
+		return Marker{}, false
+	}
+	if _, err := os.Stat(installed); err != nil {
+		return Marker{}, false
+	}
+	_ = exec.Command("xattr", "-dr", "com.apple.quarantine", installed).Run()
+	return m, true
+}
+
 func appPath(m Marker) string { return bundleOf(m.Exe) }
 
 // copySelf copies the app bundle into dir (with ditto, which keeps the signature) and returns the program inside it.
@@ -48,6 +70,9 @@ func copySelf(exe, dir string) (string, error) {
 	if out, err := exec.Command("ditto", bundle, dst).CombinedOutput(); err != nil {
 		return "", fmt.Errorf("cannot copy to %s: %v %s", dir, err, strings.TrimSpace(string(out)))
 	}
+	// a copy that kept the "downloaded" flag is run by macOS from a temporary read-only place (App Translocation),
+	// which is not where it was installed (ditto copies the flag whatever its options say)
+	_ = exec.Command("xattr", "-dr", "com.apple.quarantine", dst).Run()
 	return dst + exe[len(bundle):], nil
 }
 
@@ -74,7 +99,6 @@ func deleteUninstallKey() {}
 
 func pinnedShortcuts(string) []string { return nil }
 
-func recoverMarker(string) (Marker, bool) { return Marker{}, false }
 
 func registerUninstall(exe, dir, version string) error { return nil }
 
