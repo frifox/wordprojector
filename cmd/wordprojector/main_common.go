@@ -26,6 +26,7 @@ import (
 	"wordprojector/internal/live"
 	"wordprojector/internal/server"
 	"wordprojector/internal/settings"
+	"wordprojector/internal/update"
 )
 
 // version is injected at build time with -ldflags "-X main.version=...".
@@ -43,6 +44,10 @@ type runtimeOpts struct {
 }
 
 func parseFlags() runtimeOpts {
+	// the helper an update starts with administrator permission to replace this program (see internal/update)
+	if len(os.Args) > 1 && os.Args[1] == update.ApplyFlag {
+		os.Exit(update.ApplyUpdate(os.Args[2:]))
+	}
 	var o runtimeOpts
 	flag.StringVar(&o.dataDir, "data", "", "data directory (default: per-user application data)")
 	flag.StringVar(&o.listen, "listen", "", "address to listen on, e.g. 127.0.0.1:8080 (default: random localhost port)")

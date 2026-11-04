@@ -85,8 +85,9 @@ func (s *Server) checkUpdates(ctx context.Context) {
 	s.notify("update")
 }
 
-// installUpdate puts a release in the place of the running program.
-func (s *Server) installUpdate(ctx context.Context, tag string) error {
+// installUpdate puts a release in the place of the running program. Only when a user started it (interactive) may it
+// ask for administrator permission; the automatic update in the background never opens such a question.
+func (s *Server) installUpdate(ctx context.Context, tag string, interactive bool) error {
 	st := s.upd
 	st.mu.Lock()
 	if st.installing != "" {
@@ -108,6 +109,9 @@ func (s *Server) installUpdate(ctx context.Context, tag string) error {
 	st.mu.Unlock()
 	s.notify("update")
 
+	if interactive {
+		ctx = update.WithElevation(ctx)
+	}
 	err := st.u.Install(ctx, r, func(p string) {
 		st.mu.Lock()
 		st.progress = p
@@ -156,7 +160,7 @@ func (s *Server) backgroundUpdate() {
 	}
 	ctx, cancel = context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cancel()
-	if err := s.installUpdate(ctx, st.Latest); err != nil {
+	if err := s.installUpdate(ctx, st.Latest, false); err != nil {
 		log.Printf("automatic update: %v", err)
 	}
 }
@@ -185,7 +189,7 @@ func (s *Server) updateRoutes() {
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 		defer cancel()
-		if err := s.installUpdate(ctx, in.Tag); err != nil {
+		if err := s.installUpdate(ctx, in.Tag, true); err != nil {
 			writeErr(w, 500, err)
 			return
 		}

@@ -5,6 +5,8 @@ import (
 	"archive/zip"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -47,7 +49,13 @@ func (u *Updater) Install(ctx context.Context, rel Release, progress func(string
 		parent = filepath.Dir(pl.bundle)
 	}
 	// work next to the program, on the same disk, so that the replacement is a rename
+	elevate := false
 	staging, err := os.MkdirTemp(parent, stagingPrefix)
+	if err != nil && u.GOOS == "windows" && os.IsPermission(err) && wantsElevation(ctx) {
+		// a folder like Program Files: unpack where the user may write, and let an administrator copy the program in
+		staging, err = os.MkdirTemp("", stagingPrefix)
+		elevate = true
+	}
 	if err != nil {
 		return fmt.Errorf("cannot write to %s: %w", parent, err)
 	}
@@ -71,6 +79,10 @@ func (u *Updater) Install(ctx context.Context, rel Release, progress func(string
 	_ = os.Remove(archive)
 
 	say("Installing")
+	if elevate {
+		say("Waiting for administrator permission")
+		return replaceElevated(root, pl.exe, u.Current, staging)
+	}
 	if pl.bundle != "" {
 		return replaceBundle(root, pl.bundle)
 	}
@@ -106,8 +118,8 @@ func replaceBundle(dir, bundle string) error {
 	return nil
 }
 
-// replaceExecutable puts the program file found in dir in the place of the running one.
-func replaceExecutable(dir, exe, goos, current string) error {
+// findFresh is the program file inside dir (the unpacked download) that belongs in the place of exe.
+func findFresh(dir, exe string) string {
 	var fresh string
 	want := strings.ToLower(filepath.Base(exe))
 	_ = filepath.WalkDir(dir, func(p string, d os.DirEntry, err error) error {
@@ -120,6 +132,12 @@ func replaceExecutable(dir, exe, goos, current string) error {
 		}
 		return nil
 	})
+	return fresh
+}
+
+// replaceExecutable puts the program file found in dir in the place of the running one.
+func replaceExecutable(dir, exe, goos, current string) error {
+	fresh := findFresh(dir, exe)
 	if fresh == "" {
 		return fmt.Errorf("the download holds no program")
 	}
@@ -371,4 +389,79 @@ func (u *Updater) Restart(args []string, quit func()) error {
 	go func() { _ = cmd.Wait() }()
 	quit()
 	return nil
+}
+
+// ---- administrator permission (Windows, e.g. Program Files) ------------------------------------------------------
+
+type elevationKey struct{}
+
+// WithElevation says that an update may ask for administrator permission (a user started it, so a question on the
+// screen is fine; the automatic update in the background never asks).
+func WithElevation(ctx context.Context) context.Context {
+	return context.WithValue(ctx, elevationKey{}, true)
+}
+
+func wantsElevation(ctx context.Context) bool { v, _ := ctx.Value(elevationKey{}).(bool); return v }
+
+// ApplyFlag starts the arguments of the helper that the program runs with administrator permission.
+const ApplyFlag = "--apply-update"
+
+// replaceElevated runs this program again with administrator permission (the user is asked on the screen) to put the
+// new program file in the place of the old one. The fresh file is named with its checksum, so a file swapped in the
+// meantime is not copied.
+func replaceElevated(root, exe, tag, staging string) error {
+	fresh := findFresh(root, exe)
+	if fresh == "" {
+		return fmt.Errorf("the download holds no program")
+	}
+	data, err := os.ReadFile(fresh)
+	if err != nil {
+		return err
+	}
+	sum := sha256.Sum256(data)
+	errFile := filepath.Join(staging, "apply-error.txt")
+	if err := runElevated(exe, []string{ApplyFlag, fresh, hex.EncodeToString(sum[:]), exe, tag, errFile}); err != nil {
+		return err
+	}
+	if b, err := os.ReadFile(errFile); err == nil && len(b) > 0 {
+		return fmt.Errorf("%s", strings.TrimSpace(string(b)))
+	}
+	return nil
+}
+
+// ApplyUpdate is what the elevated helper does: args are the fresh file, its checksum, the program to replace, the
+// version in use and a file for an error text. It returns the exit code.
+func ApplyUpdate(args []string) int {
+	if len(args) != 5 {
+		return 2
+	}
+	fresh, want, exe, tag, errFile := args[0], args[1], args[2], args[3], args[4]
+	fail := func(err error) int {
+		_ = os.WriteFile(errFile, []byte(err.Error()), 0o644)
+		return 1
+	}
+	data, err := os.ReadFile(fresh)
+	if err != nil {
+		return fail(err)
+	}
+	if sum := sha256.Sum256(data); hex.EncodeToString(sum[:]) != want {
+		return fail(fmt.Errorf("the downloaded program changed before it was installed"))
+	}
+	(&Updater{Exe: exe, GOOS: "windows"}).Cleanup() // what earlier updates left next to the program
+	next := exe + ".new"
+	if err := os.WriteFile(next, data, 0o755); err != nil {
+		return fail(fmt.Errorf("cannot write to %s: %w", filepath.Dir(exe), err))
+	}
+	old := oldExecutable(exe, tag)
+	_ = os.Remove(old)
+	if err := os.Rename(exe, old); err != nil {
+		_ = os.Remove(next)
+		return fail(fmt.Errorf("cannot replace %s: %w", exe, err))
+	}
+	if err := os.Rename(next, exe); err != nil {
+		_ = os.Rename(old, exe)
+		_ = os.Remove(next)
+		return fail(fmt.Errorf("cannot install into %s: %w", exe, err))
+	}
+	return 0
 }

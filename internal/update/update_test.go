@@ -382,3 +382,34 @@ func TestTagCommitsFromList(t *testing.T) {
 		t.Fatalf("commits = %q %q", list[0].Commit, list[1].Commit)
 	}
 }
+
+// The helper that runs with administrator permission replaces the program with the checked file, and refuses a file
+// whose checksum is not the one it was given.
+func TestApplyUpdate(t *testing.T) {
+	dir := t.TempDir()
+	exe := filepath.Join(dir, "WordProjector.exe")
+	fresh := filepath.Join(t.TempDir(), "WordProjector.exe")
+	os.WriteFile(exe, []byte("old"), 0o755)
+	os.WriteFile(fresh, []byte("new program"), 0o755)
+	sum := sha256.Sum256([]byte("new program"))
+	errFile := filepath.Join(t.TempDir(), "err.txt")
+
+	if code := ApplyUpdate([]string{fresh, "00" + hex.EncodeToString(sum[:]), exe, "2026-01-01", errFile}); code == 0 {
+		t.Fatal("a wrong checksum was accepted")
+	}
+	if b, _ := os.ReadFile(exe); string(b) != "old" {
+		t.Fatalf("the program changed: %q", b)
+	}
+	if b, _ := os.ReadFile(errFile); !strings.Contains(string(b), "changed") {
+		t.Fatalf("error text = %q", b)
+	}
+	if code := ApplyUpdate([]string{fresh, hex.EncodeToString(sum[:]), exe, "2026-01-01", errFile}); code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if b, _ := os.ReadFile(exe); string(b) != "new program" {
+		t.Fatalf("program = %q", b)
+	}
+	if b, _ := os.ReadFile(filepath.Join(dir, "WordProjector.2026-01-01.exe")); string(b) != "old" {
+		t.Fatalf("the old program was not kept: %q", b)
+	}
+}
