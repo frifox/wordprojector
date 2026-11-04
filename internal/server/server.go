@@ -33,6 +33,9 @@ var dist embed.FS
 var Version = "dev"
 var Commit = ""
 
+// UninstallMode is set when the program was started from the uninstall entry of the system (--uninstall).
+var UninstallMode = false
+
 // Server bundles everything.
 type Server struct {
 	Engine  *live.Engine
@@ -63,6 +66,7 @@ func New(e *live.Engine, d desktop.Desktop, dataDir string) *Server {
 	s.mux = http.NewServeMux()
 	s.routes()
 	s.updateRoutes()
+	s.installRoutes()
 	s.openRoutes()
 	return s
 }

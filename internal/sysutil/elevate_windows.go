@@ -1,6 +1,7 @@
 //go:build windows
 
-package update
+// Package sysutil holds the few operating system calls the updater and the installer share.
+package sysutil
 
 import (
 	"fmt"
@@ -27,25 +28,37 @@ type shellExecuteInfo struct {
 	hProcess     syscall.Handle
 }
 
-// runElevated runs the program with the arguments as an administrator (Windows asks the user first) and waits for it.
-func runElevated(exe string, args []string) error {
-	quoted := make([]string, len(args))
+// Run runs the program with the arguments as an administrator (Windows asks the user first) and waits for it.
+func Run(exe string, args []string) error { return shellExec(exe, quote(args), true) }
+
+// Start runs the program as an administrator without waiting; params is the command line after the program, as it is.
+func Start(exe, params string) error { return shellExec(exe, params, false) }
+
+func quote(args []string) string {
+	q := make([]string, len(args))
 	for i, a := range args {
-		quoted[i] = syscall.EscapeArg(a)
+		q[i] = syscall.EscapeArg(a)
 	}
+	return strings.Join(q, " ")
+}
+
+func shellExec(exe, params string, wait bool) error {
 	verb, _ := syscall.UTF16PtrFromString("runas")
 	file, _ := syscall.UTF16PtrFromString(exe)
-	params, _ := syscall.UTF16PtrFromString(strings.Join(quoted, " "))
-	info := shellExecuteInfo{fMask: 0x40 /* SEE_MASK_NOCLOSEPROCESS */, lpVerb: verb, lpFile: file, lpParameters: params, nShow: 0 /* SW_HIDE */}
+	p, _ := syscall.UTF16PtrFromString(params)
+	info := shellExecuteInfo{fMask: 0x40 /* SEE_MASK_NOCLOSEPROCESS */, lpVerb: verb, lpFile: file, lpParameters: p, nShow: 0 /* SW_HIDE */}
 	info.cbSize = uint32(unsafe.Sizeof(info))
 	r, _, callErr := syscall.NewLazyDLL("shell32.dll").NewProc("ShellExecuteExW").Call(uintptr(unsafe.Pointer(&info)))
 	if r == 0 {
 		if errno, ok := callErr.(syscall.Errno); ok && errno == 1223 { // ERROR_CANCELLED
-			return fmt.Errorf("administrator permission was not given, so the program in %s could not be replaced", exe)
+			return fmt.Errorf("administrator permission was not given")
 		}
 		return fmt.Errorf("cannot ask for administrator permission: %v", callErr)
 	}
 	defer syscall.CloseHandle(info.hProcess)
+	if !wait {
+		return nil
+	}
 	if ev, err := syscall.WaitForSingleObject(info.hProcess, syscall.INFINITE); err != nil || ev != syscall.WAIT_OBJECT_0 {
 		return fmt.Errorf("the administrator step did not finish")
 	}
@@ -53,7 +66,7 @@ func runElevated(exe string, args []string) error {
 	if err := syscall.GetExitCodeProcess(info.hProcess, &code); err != nil {
 		return err
 	}
-	if code != 0 && code != 1 { // 1 comes with an error text in the file
+	if code != 0 && code != 1 { // 1 comes with an error text in a file the caller reads
 		return fmt.Errorf("the administrator step stopped with code %d", code)
 	}
 	return nil

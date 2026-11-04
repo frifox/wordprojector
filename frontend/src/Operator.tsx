@@ -29,6 +29,8 @@ import SongCounterDialog from './dialogs/SongCounterDialog';
 import AboutDialog from './dialogs/AboutDialog';
 import { pushUndo, undoLast, removeScheduled } from './lib/undo';
 import HotkeysDialog from './dialogs/HotkeysDialog';
+import InstallDialog from './dialogs/InstallDialog';
+import UninstallDialog from './dialogs/UninstallDialog';
 import PrintDialog from './dialogs/PrintDialog';
 import ProgressDialog from './dialogs/ProgressDialog';
 
@@ -61,6 +63,19 @@ export default function Operator() {
     if (tb === 'bible') { const all = bibleHistory; if (all.length) { setBibleHistory([]); pushUndo('history-bible', () => setBibleHistory(all)); } }
     else if (tb === 'songs') { const all = songHistory; if (all.length) { setSongHistory([]); pushUndo('history-songs', () => setSongHistory(all)); } }
   }, [bibleHistory, songHistory]);
+
+  // At start: the uninstall question when the system's uninstall entry started the program, else the offer to install
+  // it (only in the program's own window, not in a browser that is looking at it from elsewhere).
+  const askedInstall = useRef(false);
+  useEffect(() => {
+    if (askedInstall.current || !boot.desktop || !['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) return;
+    askedInstall.current = true;
+    api.installInfo().then((info) => {
+      if (info.uninstall && info.installed) setDialog({ kind: 'uninstall', info });
+      else if (info.canInstall && !info.installed && !settings.app.skipInstallPrompt) setDialog({ kind: 'install', info });
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boot.desktop]);
 
   // UI theme (light/dark)
   useEffect(() => {
@@ -386,6 +401,8 @@ export default function Operator() {
       {dialog?.kind === 'slideshow' && <SlideShowEditor slideshow={dialog.slideshow} onClose={() => setDialog(null)} />}
       {dialog?.kind === 'counter' && <SongCounterDialog onClose={() => setDialog(null)} />}
       {dialog?.kind === 'hotkeys' && <HotkeysDialog onClose={() => setDialog(null)} />}
+      {dialog?.kind === 'install' && <InstallDialog info={dialog.info} onClose={() => setDialog(null)} />}
+      {dialog?.kind === 'uninstall' && <UninstallDialog info={dialog.info} onClose={() => setDialog(null)} />}
       {dialog?.kind === 'about' && <AboutDialog onClose={() => setDialog(null)} version={boot.version} />}
       {dialog?.kind === 'print' && <PrintDialog title={dialog.title} text={dialog.text} fontSize={dialog.fontSize} onClose={() => setDialog(null)} />}
       <ProgressDialog />

@@ -1,7 +1,7 @@
 import { trackPicker } from './picker';
 import type {
   Announcement, BibleInfo, Book, Bootstrap, ChapterVerse, CountRow, MediaItem, Module, ScheduleItem, ScheduleState,
-  RenderSlide, ThemeImage, UpdateStatus, SearchHit, Settings, Slide, SlideShow, SlideShowFull, Song, Songbook, Theme, ThemeInfo, Screen,
+  InstallInfo, InstallOptions, UninstallOptions, RenderSlide, ThemeImage, UpdateStatus, SearchHit, Settings, Slide, SlideShow, SlideShowFull, Song, Songbook, Theme, ThemeInfo, Screen,
 } from './types';
 
 export class ApiError extends Error {
@@ -117,9 +117,12 @@ export const api = {
   updateStatus: (refresh = false) => get<UpdateStatus>(`/api/update${refresh ? '?refresh=1' : ''}`),
   installUpdate: (tag: string, restart: boolean) => post('/api/update/install', { tag, restart }),
   restartApp: () => post('/api/update/restart', {}),
+  installInfo: () => get<InstallInfo>('/api/install'),
+  install: (o: InstallOptions) => post<{ exe: string; warning: string }>('/api/install', o),
+  uninstall: (o: UninstallOptions) => post('/api/uninstall', o),
   remoteInfo: () => get<{ listen: string; urls: string[]; ips: string[] }>('/api/remote/info'),
   saveSettings: (s: Settings) => put('/api/settings', s),
-  patchApp: (p: Partial<{ splitters: Record<string, number>; language: string; uiTheme: string; livePreview: boolean; slideshowOrder: number[]; bibleButtonOrder: string[]; moduleSource: string; moduleUrls: Record<string, string> }>) =>
+  patchApp: (p: Partial<{ splitters: Record<string, number>; language: string; uiTheme: string; livePreview: boolean; slideshowOrder: number[]; bibleButtonOrder: string[]; moduleSource: string; moduleUrls: Record<string, string>; skipInstallPrompt: boolean }>) =>
     patch('/api/settings/app', p),
 
   // live

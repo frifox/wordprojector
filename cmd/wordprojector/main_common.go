@@ -23,9 +23,11 @@ import (
 	"wordprojector/internal/appdata"
 	"wordprojector/internal/db"
 	"wordprojector/internal/desktop"
+	"wordprojector/internal/install"
 	"wordprojector/internal/live"
 	"wordprojector/internal/server"
 	"wordprojector/internal/settings"
+	"wordprojector/internal/sysutil"
 	"wordprojector/internal/update"
 )
 
@@ -40,6 +42,9 @@ type runtimeOpts struct {
 	listen   string
 	headless bool
 	noUI     bool
+	uninstall bool
+	waitPID   int
+	removeOld string
 	openUI   bool
 }
 
@@ -48,12 +53,28 @@ func parseFlags() runtimeOpts {
 	if len(os.Args) > 1 && os.Args[1] == update.ApplyFlag {
 		os.Exit(update.ApplyUpdate(os.Args[2:]))
 	}
+	if len(os.Args) > 1 && os.Args[1] == install.ApplyFlag {
+		os.Exit(install.ApplyCopy(os.Args[2:]))
+	}
+	if len(os.Args) > 1 && os.Args[1] == install.CleanupFlag {
+		os.Exit(install.RunCleanup(os.Args[2:]))
+	}
 	var o runtimeOpts
 	flag.StringVar(&o.dataDir, "data", "", "data directory (default: per-user application data)")
 	flag.StringVar(&o.listen, "listen", "", "address to listen on, e.g. 127.0.0.1:8080 (default: random localhost port)")
 	flag.BoolVar(&o.headless, "headless", false, "run only the web server without native windows")
 	flag.BoolVar(&o.noUI, "no-ui", false, "start without the operator window (display windows still open); operate from a browser")
+	flag.BoolVar(&o.uninstall, "uninstall", false, "offer to uninstall the program (the uninstall entry of Windows starts it so)")
+	flag.IntVar(&o.waitPID, "wait-pid", 0, "wait for this process to quit before starting (a restart starts the new program this way)")
+	flag.StringVar(&o.removeOld, "remove-old", "", "delete this copy of the program once the process of --wait-pid has quit (an install moves it this way)")
 	flag.Parse()
+	if o.waitPID > 0 {
+		sysutil.WaitPID(o.waitPID, 30*time.Second)
+	}
+	if o.removeOld != "" {
+		install.RemoveOld(o.removeOld)
+	}
+	install.CleanTemp()
 	if v := os.Getenv("WORDPROJECTOR_LISTEN"); v != "" && o.listen == "" {
 		o.listen = v
 	}
@@ -64,6 +85,7 @@ func parseFlags() runtimeOpts {
 func boot(o runtimeOpts, d desktop.Desktop) (*server.Server, *live.Engine, string, error) {
 	server.Version = version
 	server.Commit = commit
+	server.UninstallMode = o.uninstall
 	dir := o.dataDir
 	if dir == "" {
 		var err error

@@ -138,7 +138,7 @@ func (s *Server) restartForUpdate() error {
 	if s.Quit == nil {
 		return fmt.Errorf("this program cannot restart itself")
 	}
-	return s.upd.u.Restart(os.Args[1:], s.Quit)
+	return s.upd.u.Restart(update.WithoutRestartFlags(os.Args[1:]), s.Quit)
 }
 
 // backgroundUpdate looks for a newer release a few seconds after the start (unless that is turned off) and, when asked

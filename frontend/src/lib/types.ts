@@ -259,6 +259,8 @@ export interface AppSettings {
   moduleSource?: string;
   moduleUrls?: Record<string, string>;
   skipUpdateCheck?: boolean;
+  /** the offer to install the program is not shown at start */
+  skipInstallPrompt?: boolean;
   /** a newer release is installed by itself (used from the next start) */
   autoInstallUpdates?: boolean;
   /** the keys the user chose for the program's actions (see lib/hotkeys.ts) */
@@ -542,3 +544,27 @@ export interface ProgressMsg {
   done?: boolean;
   error?: string;
 }
+
+/** Where the program is and what installing or uninstalling it would do (see internal/install). */
+export interface InstallInfo {
+  os: 'windows' | 'darwin' | 'linux' | string;
+  canInstall: boolean;
+  why?: string;
+  installed: boolean;
+  exe: string;
+  defaultDir: string;
+  /** "Program Files", "Applications" */
+  folderName: string;
+  /** the system has a program menu for a shortcut */
+  hasStart: boolean;
+  appPath?: string;
+  desktop?: string;
+  start?: string;
+  dataDir: string;
+  docsDir: string;
+  /** started from the uninstall entry of the system */
+  uninstall: boolean;
+}
+
+export interface InstallOptions { dir: string; desktop: boolean; start: boolean }
+export interface UninstallOptions { app: boolean; shortcuts: boolean; data: boolean; docs: boolean }

@@ -413,3 +413,10 @@ func TestApplyUpdate(t *testing.T) {
 		t.Fatalf("the old program was not kept: %q", b)
 	}
 }
+
+func TestWithoutRestartFlags(t *testing.T) {
+	got := WithoutRestartFlags([]string{"--headless", "--wait-pid", "12", "--remove-old", `C:\x y\a.exe`, "--listen=1"})
+	if strings.Join(got, "|") != "--headless|--listen=1" {
+		t.Fatalf("got %q", got)
+	}
+}

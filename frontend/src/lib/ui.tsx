@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useId, useRef } from 'react';
-import type { Announcement, Song, SlideShowFull, BibleRef } from './types';
+import type { Announcement, Song, SlideShowFull, BibleRef, InstallInfo } from './types';
 
 export type TabName = 'bible' | 'songs' | 'pictures' | 'media' | 'announce';
 
@@ -32,6 +32,8 @@ export type DialogSpec =
   | { kind: 'counter' }
   | { kind: 'about' }
   | { kind: 'hotkeys' }
+  | { kind: 'install'; info: InstallInfo }
+  | { kind: 'uninstall'; info: InstallInfo }
   | { kind: 'print'; title: string; text: string; fontSize?: number };
 
 export interface UIContextValue {

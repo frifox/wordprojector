@@ -11,6 +11,3 @@ import (
 func detach(cmd *exec.Cmd) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 }
-
-// rawCommandLine is only needed on Windows.
-func rawCommandLine(*exec.Cmd, string) {}

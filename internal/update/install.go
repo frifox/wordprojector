@@ -13,7 +13,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
+
+	"wordprojector/internal/sysutil"
 )
 
 const stagingPrefix = ".wordprojector-update-"
@@ -374,15 +377,13 @@ func (u *Updater) Restart(args []string, quit func()) error {
 	case pl.bundle != "":
 		cmd = exec.Command("sh", "-c", `sleep 1.5; exec open -n "$0"`, pl.bundle)
 	case u.GOOS == "windows":
-		cmd = exec.Command("cmd")
+		// the program itself, started directly (a cmd that pings and then starts it is what antivirus programs take
+		// for malware); it waits for this one to quit before it goes on
+		cmd = exec.Command(pl.exe, append(append([]string{}, args...), WaitFlag, strconv.Itoa(os.Getpid()))...)
 	default:
 		cmd = exec.Command("sh", append([]string{"-c", `sleep 1.5; exec "$0" "$@"`, pl.exe}, args...)...)
 	}
 	detach(cmd)
-	if u.GOOS == "windows" && pl.bundle == "" {
-		// Go would escape the quotes with backslashes, which cmd does not understand: the line goes as it is
-		rawCommandLine(cmd, `cmd /C ping -n 3 127.0.0.1 >nul & start "" "`+pl.exe+`"`)
-	}
 	if err := cmd.Start(); err != nil {
 		return err
 	}
@@ -390,6 +391,24 @@ func (u *Updater) Restart(args []string, quit func()) error {
 	quit()
 	return nil
 }
+
+// WithoutRestartFlags drops what an earlier restart added to the arguments, so that it is not passed on again.
+func WithoutRestartFlags(args []string) []string {
+	out := []string{}
+	for i := 0; i < len(args); i++ {
+		if a := args[i]; a == WaitFlag || a == "--remove-old" {
+			i++ // and its value
+			continue
+		} else if strings.HasPrefix(a, WaitFlag+"=") || strings.HasPrefix(a, "--remove-old=") {
+			continue
+		}
+		out = append(out, args[i])
+	}
+	return out
+}
+
+// WaitFlag makes a program that was started to take over wait for the one that starts it to quit.
+const WaitFlag = "--wait-pid"
 
 // ---- administrator permission (Windows, e.g. Program Files) ------------------------------------------------------
 
@@ -420,8 +439,8 @@ func replaceElevated(root, exe, tag, staging string) error {
 	}
 	sum := sha256.Sum256(data)
 	errFile := filepath.Join(staging, "apply-error.txt")
-	if err := runElevated(exe, []string{ApplyFlag, fresh, hex.EncodeToString(sum[:]), exe, tag, errFile}); err != nil {
-		return err
+	if err := sysutil.Run(exe, []string{ApplyFlag, fresh, hex.EncodeToString(sum[:]), exe, tag, errFile}); err != nil {
+		return fmt.Errorf("%w, so the program in %s could not be replaced", err, filepath.Dir(exe))
 	}
 	if b, err := os.ReadFile(errFile); err == nil && len(b) > 0 {
 		return fmt.Errorf("%s", strings.TrimSpace(string(b)))

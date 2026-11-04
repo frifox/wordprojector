@@ -111,6 +111,8 @@ type App struct {
 	DefaultBible int `json:"defaultBible"`
 	// SkipUpdateCheck turns off the look for a newer release when the program starts (it is on by default).
 	SkipUpdateCheck bool `json:"skipUpdateCheck"`
+	// SkipInstallPrompt stops the offer to install the program that is shown when it starts from somewhere else.
+	SkipInstallPrompt bool `json:"skipInstallPrompt"`
 	// BibleButtonOrder is the order of the Bible version buttons (Bible ids), as the user dragged them.
 	BibleButtonOrder []string `json:"bibleButtonOrder"`
 	// ModuleSource ("softprojector" or "custom") and ModuleURLs (the address typed for Custom, per kind of book) are

@@ -783,6 +783,7 @@ func (s *Server) routes() {
 			BibleButtonOrder *[]string   `json:"bibleButtonOrder"`
 			ModuleSource *string         `json:"moduleSource"`
 			ModuleURLs map[string]string `json:"moduleUrls"`
+			SkipInstallPrompt *bool `json:"skipInstallPrompt"`
 		}
 		if err := readJSON(r, &in); err != nil {
 			writeErr(w, 400, err)
@@ -801,6 +802,9 @@ func (s *Server) routes() {
 			}
 			if in.LivePreview != nil {
 				s.Engine.Settings.App.LivePreview = *in.LivePreview
+			}
+			if in.SkipInstallPrompt != nil {
+				s.Engine.Settings.App.SkipInstallPrompt = *in.SkipInstallPrompt
 			}
 			if in.SlideshowOrder != nil {
 				s.Engine.Settings.App.SlideshowOrder = *in.SlideshowOrder

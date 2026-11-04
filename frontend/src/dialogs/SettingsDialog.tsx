@@ -2,23 +2,25 @@ import { useEffect, useRef, useState } from 'react';
 import Modal, { alertDialog, useDiscardGuard } from '../components/Modal';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
-import { useT } from '../lib/hooks';
+import { useData, useT } from '../lib/hooks';
 import { t, languages, setLanguage, getLanguage } from '../i18n';
 import type { BibleSettings, Settings, SongSettings, TextSettings, Screen } from '../lib/types';
 import { FontPicker, FontStyleButtons, ColorField, Select, AlignGroup, IconChoice, POSITION_ICONS } from '../components/Pickers';
 import { UserInterfaceSection } from './UiSections';
 import UpdatesPage from './UpdatesPage';
+import InstallPage from './InstallPage';
 import HotkeysPage from './HotkeysPage';
 import ScreenMap from '../components/ScreenMap';
 import { CountdownDisc } from '../projector/SlideView';
 
-type Page = 'general' | 'display' | 'hotkeys' | 'remote' | 'updates';
+type Page = 'general' | 'display' | 'hotkeys' | 'remote' | 'updates' | 'install';
 
 export default function SettingsDialog({ onClose, initialPage }: { onClose: () => void; initialPage?: Page }) {
   const store = useStore();
   const [page, setPage] = useState<Page>(initialPage ?? 'general');
   const [s, setS] = useState<Settings>(() => JSON.parse(JSON.stringify(store.settings)));
   const [screens, setScreens] = useState<Screen[]>(store.boot.screens || []);
+  const [install] = useData('install', () => api.installInfo());
   const baseline = useRef(JSON.stringify(store.settings));
   // the address settings as the window was opened with them: the restart note shows when they are changed from these
   const openedRemote = useRef(store.settings.app.remote ?? { public: false, port: 8777 });
@@ -53,8 +55,10 @@ export default function SettingsDialog({ onClose, initialPage }: { onClose: () =
     { id: 'general', label: t('General') }, { id: 'display', label: t('Display') }, { id: 'hotkeys', label: t('Hotkeys') },
     { id: 'remote', label: t('Remote') },
     { id: 'updates', label: t('Updates') },
+    // a program that cannot be moved (a development build, a portable copy) has nothing to install
+    ...(install && (install.canInstall || install.installed) ? [{ id: 'install' as Page, label: install.installed ? t('Uninstall') : t('Install') }] : []),
   ];
-  const headers: Record<Page, string> = { general: t('General Word Projector Settings'), display: t('Display Settings'), hotkeys: t('Global Hotkeys'), remote: t('Remote Access Settings'), updates: t('Updates') };
+  const headers: Record<Page, string> = { general: t('General Word Projector Settings'), display: t('Display Settings'), hotkeys: t('Global Hotkeys'), remote: t('Remote Access Settings'), updates: t('Updates'), install: install?.installed ? t('Uninstall Word Projector') : t('Install Word Projector') };
 
   return (
     <Modal title={t('Word Projector - Settings')} onClose={requestClose} width={900} height="90vh"
@@ -71,6 +75,7 @@ export default function SettingsDialog({ onClose, initialPage }: { onClose: () =
           {page === 'hotkeys' && <HotkeysPage s={s} setS={setS} />}
           {page === 'remote' && <RemotePage s={s} setS={setS} opened={openedRemote.current} />}
           {page === 'updates' && <UpdatesPage s={s} setS={setS} />}
+          {page === 'install' && install && <InstallPage info={install} s={s} setS={setS} />}
         </div>
         </div>
       </div>
