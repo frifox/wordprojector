@@ -183,7 +183,7 @@ export const api = {
   exportFile: (kind: 'songbook' | 'bible' | 'theme', body: { id?: number; ids?: number[]; name?: string; path?: string }) =>
     // the export opens a native save dialog on the server
     trackPicker(post<{ ok?: boolean; cancelled?: boolean; path?: string; title?: string; download?: string }>(`/api/export/${kind}`, body)),
-  moduleList: (kind: 'bible' | 'songbook' | 'theme', source = 'softprojector', url = '') =>
+  moduleList: (kind: 'bible' | 'songbook' | 'theme', source = 'wordprojector', url = '') =>
     get<Module[]>(`/api/modules/list?kind=${kind}&source=${source}&url=${encodeURIComponent(url)}`),
   moduleDownload: (kind: string, modules: Module[]) => post<{ job: string }>('/api/modules/download', { kind, modules }),
 };

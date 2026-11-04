@@ -115,7 +115,7 @@ type App struct {
 	SkipInstallPrompt bool `json:"skipInstallPrompt"`
 	// BibleButtonOrder is the order of the Bible version buttons (Bible ids), as the user dragged them.
 	BibleButtonOrder []string `json:"bibleButtonOrder"`
-	// ModuleSource ("softprojector" or "custom") and ModuleURLs (the address typed for Custom, per kind of book) are
+	// ModuleSource ("wordprojector" or "custom") and ModuleURLs (the address typed for Custom, per kind of book) are
 	// what Books > Import from Cloud last used.
 	ModuleSource string            `json:"moduleSource"`
 	ModuleURLs   map[string]string `json:"moduleUrls"`

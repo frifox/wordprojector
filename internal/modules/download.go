@@ -15,20 +15,14 @@ import (
 	"time"
 )
 
-// Module servers of the original project.
-const (
-	BibleListURL    = "http://softprojector.org/bibles/bible.xml"
-	SongbookListURL = "http://softprojector.org/songbooks/songbooks.xml"
-	ThemeListURL    = "http://softprojector.org/themes/themes.xml"
-)
-
-// Sources of module lists the user can pick (Books > Import from Cloud). A source has the same layout as the original
-// server: /bibles/bible.xml, /songbooks/songbooks.xml and /themes/themes.xml.
-const SoftProjectorURL = "http://softprojector.org"
+// The default source of module lists (Books > Import from Cloud). A source has the layout of the original SoftProjector
+// server: /bibles/bible.xml, /songbooks/songbooks.xml and /themes/themes.xml. It is a mirror of that server; the site is
+// the docs/ folder of the repository.
+const WordProjectorURL = "https://wordprojector.com"
 
 var listPaths = map[string]string{"bible": "/bibles/bible.xml", "songbook": "/songbooks/songbooks.xml", "theme": "/themes/themes.xml"}
 
-// ListURL is the module list address of a kind (bible, songbook, theme) on a source: "softprojector"
+// ListURL is the module list address of a kind (bible, songbook, theme) on a source: "wordprojector"
 // or "custom", whose address is a site (the usual list paths are added) or the address of a list itself (.xml).
 func ListURL(kind, source, custom string) (string, error) {
 	path, ok := listPaths[kind]
@@ -37,8 +31,8 @@ func ListURL(kind, source, custom string) (string, error) {
 	}
 	base := ""
 	switch source {
-	case "", "softprojector":
-		base = SoftProjectorURL
+	case "", "wordprojector":
+		base = WordProjectorURL
 	case "custom":
 		base = strings.TrimSpace(custom)
 		if !strings.Contains(base, "://") {
@@ -70,7 +64,7 @@ type moduleList struct {
 }
 
 // UserAgent is sent to the module servers (they reject the default Go agent).
-var UserAgent = "WordProjector/1.0 (+https://github.com/wordprojector)"
+var UserAgent = "WordProjector/1.0 (+https://wordprojector.com)"
 
 var client = &http.Client{Timeout: 10 * time.Minute}
 
