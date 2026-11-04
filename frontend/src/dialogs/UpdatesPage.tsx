@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { alertDialog, confirmDialog } from '../components/Modal';
 import { api } from '../lib/api';
 import { useData } from '../lib/hooks';
+import { useStore } from '../lib/store';
 import { t } from '../i18n';
 import type { Settings, UpdateRelease } from '../lib/types';
 
@@ -18,6 +19,7 @@ function sameVersion(a: string, b: string): boolean {
 
 /** Settings > Updates: the version in use, every release to pick from, and how updating happens. */
 export default function UpdatesPage({ s, setS }: { s: Settings; setS: (f: (x: Settings) => Settings) => void }) {
+  const { boot } = useStore();
   const [st, reload] = useData('update', () => api.updateStatus());
   const [picked, setPicked] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
@@ -131,12 +133,18 @@ export default function UpdatesPage({ s, setS }: { s: Settings; setS: (f: (x: Se
                 {r.prerelease && <span className="update-chip">{t('Pre-release')}</span>}
                 {!r.installable && <span className="update-chip">{t('No download for this computer')}</span>}
               </span>
-              <span className="update-date">{r.published}</span>
+              <span className="update-date" title={r.commit}>{r.commit ? r.commit.slice(0, 7) : ''}</span>
             </div>
           ))}
           {!st.releases.length && <div className="item muted">{st.error ? t('The releases could not be fetched.') : t('No releases found.')}</div>}
         </div>
         {rel?.notes && <div className="update-notes">{rel.notes}</div>}
+        {rel?.url && (
+          // the program's own window cannot browse: the desktop app asks the computer to open the page in its browser
+          <div style={{ marginTop: 4 }}>
+            <a href={rel.url} target="_blank" rel="noreferrer" onClick={(e) => { if (!boot.desktop) return; e.preventDefault(); api.openURL(rel.url).catch(() => {}); }}>{rel.url}</a>
+          </div>
+        )}
         <div className="row" style={{ marginTop: 6 }}>
           <span className="grow" />
           {installing && <span className="muted">{st.progress || t('Installing…')}</span>}

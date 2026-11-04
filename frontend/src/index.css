@@ -1679,6 +1679,7 @@ button.screen-tile.on {
 .update-list .update-date {
   text-align: right;
   color: var(--muted);
+  font-family: Menlo, Consolas, monospace;
 }
 .update-chip {
   font-size: 11px;

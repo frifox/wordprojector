@@ -354,10 +354,31 @@ func TestTagCommit(t *testing.T) {
 		t.Fatalf("the release of the running version has commit %q", list[0].Commit)
 	}
 	if list[1].Commit != "" {
-		t.Fatalf("another release was looked up: %q", list[1].Commit)
+		t.Fatalf("a release with no tag listed has commit %q", list[1].Commit)
 	}
-	u.Commit = "" // a build that does not know its commit: nothing is looked up
+	u.Commit = "" // a build that does not know its commit: only the list of tags tells
 	if list, _ = u.List(context.Background()); list[0].Commit != "" {
 		t.Fatal("looked up without a commit of our own")
+	}
+}
+
+// One question to the list of tags gives the commit of every release.
+func TestTagCommitsFromList(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/releases", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode([]map[string]any{{"tag_name": "2026-01-02", "published_at": "2026-01-02T10:00:00Z"}, {"tag_name": "2026-01-01", "published_at": "2026-01-01T10:00:00Z"}})
+	})
+	mux.HandleFunc("/tags", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode([]map[string]any{{"name": "2026-01-02", "commit": map[string]any{"sha": "aaa"}}, {"name": "2026-01-01", "commit": map[string]any{"sha": "bbb"}}})
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	u := &Updater{Repo: "x/y", API: srv.URL, Current: "2026-01-02", Client: srv.Client(), GOOS: "linux", GOARCH: "amd64"}
+	list, err := u.List(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if list[0].Commit != "aaa" || list[1].Commit != "bbb" {
+		t.Fatalf("commits = %q %q", list[0].Commit, list[1].Commit)
 	}
 }

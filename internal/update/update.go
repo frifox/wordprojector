@@ -36,8 +36,8 @@ type Release struct {
 	URL        string `json:"url"`
 	// Installable is true when the release has a build for this computer.
 	Installable bool `json:"installable"`
-	// Commit is the commit the tag points to. It is looked up only for the release that has the name of the running version,
-	// to tell whether the running program is that very build (a tag can be moved).
+	// Commit is the commit the tag points to (empty when GitHub does not say). It tells whether the running program is
+	// that very build (a tag can be moved) and is shown in the list.
 	Commit string `json:"commit,omitempty"`
 
 	asset, sums *asset
@@ -156,6 +156,7 @@ func (u *Updater) List(ctx context.Context) ([]Release, error) {
 		return nil, fmt.Errorf("unreadable answer from GitHub: %w", err)
 	}
 	suf := u.suffix()
+	commits := u.tagCommits(ctx)
 	out := []Release{}
 	for _, r := range in {
 		if r.Draft || r.Tag == "" {
@@ -175,12 +176,29 @@ func (u *Updater) List(ctx context.Context) ([]Release, error) {
 			}
 		}
 		rel.Installable = rel.asset != nil
-		if u.Commit != "" && r.Tag == strings.TrimSpace(u.Current) {
+		rel.Commit = commits[r.Tag]
+		if rel.Commit == "" && u.Commit != "" && r.Tag == strings.TrimSpace(u.Current) {
 			rel.Commit = u.tagCommit(ctx, r.Tag)
 		}
 		out = append(out, rel)
 	}
 	return out, nil
+}
+
+// tagCommits is the commit of each tag, from one question (a question for each tag would use up the hourly limit).
+func (u *Updater) tagCommits(ctx context.Context) map[string]string {
+	var tags []struct {
+		Name   string `json:"name"`
+		Commit struct{ SHA string } `json:"commit"`
+	}
+	out := map[string]string{}
+	if !u.getJSON(ctx, u.API+"/tags?per_page=100", &tags) {
+		return out
+	}
+	for _, t := range tags {
+		out[t.Name] = t.Commit.SHA
+	}
+	return out
 }
 
 // tagCommit is the commit a tag points to ("" when GitHub does not say).

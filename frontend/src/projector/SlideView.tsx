@@ -175,7 +175,11 @@ function SongView({ s, width, height }: { s: SongSlide; width: number; height: n
     // Fit every stanza of the song and use the smallest size (and wrapping if any stanza needs it) for all of them,
     // so the text keeps one size and one line height from stanza to stanza.
     const texts = Array.from(new Set([s.text, ...(s.stanzas || [])]));
-    const fits = texts.map((txt) => fitText(txt, s.style.font, tx.w, box.h, caph + endh));
+    // a centred stanza keeps the room of the caption / ending on both sides, so they never reach it
+    const needTop = s.infoAlign === 0 ? caph : 0;
+    const needBot = (s.infoAlign === 0 ? 0 : caph) + endh;
+    const extra = s.style.alignV === 1 ? 2 * Math.max(needTop, needBot) : needTop + needBot;
+    const fits = texts.map((txt) => fitText(txt, s.style.font, tx.w, box.h, extra));
     const px = Math.min(...fits.map((f) => f.px));
     const wrap = fits.some((f) => f.wrap);
     const cur = measureText(s.text, fontCss(s.style.font, px), tx.w, wrap);
@@ -184,11 +188,15 @@ function SongView({ s, width, height }: { s: SongSlide; width: number; height: n
   }, [key]);
   if (!fit) return null;
   const infoPx = fontPx(s.infoFont);
-  const mainH = box.h - fit.caph - fit.endh;
   const infoTop = s.infoAlign === 0;
   const endingBottom = s.endingPosition === 1;
-  // main text block placement
-  const mainTop = infoTop ? box.top + fit.caph : box.top;
+  // A centred stanza is centred on the whole screen area: the caption and the ending are drawn above and below it
+  // and never move it (the font size leaves them room). A stanza at the top or bottom keeps clear of them.
+  const needTop = infoTop ? fit.caph : 0;
+  const needBot = (infoTop ? 0 : fit.caph) + fit.endh;
+  const centred = s.style.alignV === 1;
+  const mainTop = centred ? box.top : box.top + needTop;
+  const mainH = centred ? box.h : box.h - needTop - needBot;
   const mainStyle: React.CSSProperties = {
     position: 'absolute', left: tx.left, width: tx.w, ...tx.css, top: mainTop, height: mainH,
     display: 'flex', alignItems: justifyCss(s.style.alignV), justifyContent: alignCss(s.style.alignH) === 'left' ? 'flex-start' : alignCss(s.style.alignH) === 'right' ? 'flex-end' : 'center',
