@@ -3,7 +3,7 @@
 Church projection software to display Bible, Songs, or Slide shows on one or more screens. A vibecode rewrite of [SoftProjector](http://softprojector.org) using Go/React for macOS, Windows and Linux.
 
 <p align="center">
-  <img src="docs/screenshot.jpg" alt="Word Projector screenshot" width="800">
+  <img src="docs/screenshot.png" alt="Word Projector screenshot" width="800">
 </p>
 
 ## Install
