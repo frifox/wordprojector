@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 
 	"wordprojector/internal/sysutil"
@@ -156,6 +157,79 @@ func app(p *plan, m Marker) {
 		p.EmptyDirs = append(p.EmptyDirs, m.Dir)
 		p.Elevate = !writable(m.Dir)
 	}
+}
+
+// recoverMarker rebuilds the record of an install from the entry in "Apps & features" and the shortcuts in their usual
+// places, for a program that is started from that entry.
+func recoverMarker(exe string) (Marker, bool) {
+	k, err := registry.OpenKey(registry.CURRENT_USER, uninstallKey, registry.QUERY_VALUE)
+	if err != nil {
+		return Marker{}, false
+	}
+	defer k.Close()
+	icon, _, err := k.GetStringValue("DisplayIcon")
+	if err != nil || !samePath(icon, exe) {
+		return Marker{}, false
+	}
+	m := Marker{Exe: exe, Dir: filepath.Dir(exe)}
+	if v, _, err := k.GetStringValue("DisplayVersion"); err == nil {
+		m.Version = v
+	}
+	for _, f := range []struct {
+		id  *windows.KNOWNFOLDERID
+		dst *string
+	}{{windows.FOLDERID_Desktop, &m.Desktop}, {windows.FOLDERID_Programs, &m.Start}} {
+		if dir, err := windows.KnownFolderPath(f.id, 0); err == nil {
+			if p := filepath.Join(dir, "Word Projector.lnk"); existing(p) != "" {
+				*f.dst = p
+			}
+		}
+	}
+	return m, true
+}
+
+// pinnedShortcuts are the shortcuts of the program that the user pinned to the taskbar or the Start menu: Windows keeps
+// them in folders of their own. A shortcut that has the program's file name in it is asked about its target.
+func pinnedShortcuts(exe string) []string {
+	base := os.Getenv("APPDATA")
+	if base == "" || exe == "" {
+		return nil
+	}
+	var candidates []string
+	for _, sub := range []string{"TaskBar", "StartMenu"} {
+		dir := filepath.Join(base, "Microsoft", "Internet Explorer", "Quick Launch", "User Pinned", sub)
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+		for _, e := range entries {
+			if e.IsDir() || !strings.EqualFold(filepath.Ext(e.Name()), ".lnk") {
+				continue
+			}
+			p := filepath.Join(dir, e.Name())
+			if b, err := os.ReadFile(p); err == nil && lnkMentions(b, filepath.Base(exe)) {
+				candidates = append(candidates, p)
+			}
+		}
+	}
+	if len(candidates) == 0 {
+		return nil
+	}
+	const script = `$w=New-Object -ComObject WScript.Shell; foreach($p in ($env:WP_LNKS -split '\|')){ try { $p + "` + "`" + `t" + $w.CreateShortcut($p).TargetPath } catch {} }`
+	cmd := exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", script)
+	cmd.Env = append(os.Environ(), "WP_LNKS="+strings.Join(candidates, "|"))
+	sysutil.Hide(cmd)
+	out, err := cmd.Output()
+	if err != nil {
+		return nil
+	}
+	var pinned []string
+	for _, line := range strings.Split(string(out), "\n") {
+		if p, target, ok := strings.Cut(strings.TrimSpace(line), "\t"); ok && samePath(target, exe) {
+			pinned = append(pinned, p)
+		}
+	}
+	return pinned
 }
 
 // deleteUninstallKey takes the program out of "Apps & features".

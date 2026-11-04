@@ -72,6 +72,10 @@ func dropStaleEntry() {}
 
 func deleteUninstallKey() {}
 
+func pinnedShortcuts(string) []string { return nil }
+
+func recoverMarker(string) (Marker, bool) { return Marker{}, false }
+
 func registerUninstall(exe, dir, version string) error { return nil }
 
 // oldCopyPlan takes away the app bundle the installer was started from.

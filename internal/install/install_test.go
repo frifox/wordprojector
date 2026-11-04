@@ -37,3 +37,16 @@ func TestSafe(t *testing.T) {
 		t.Error("a folder of the program is not safe")
 	}
 }
+
+func TestLnkMentions(t *testing.T) {
+	wide := []byte{}
+	for _, c := range []byte("WordProjector.exe") {
+		wide = append(wide, c, 0)
+	}
+	if !lnkMentions(append([]byte("Program Files|Word Projector|WordProjector.exe"), 0), "wordprojector.exe") || !lnkMentions(append([]byte("xx"), wide...), "WordProjector.exe") {
+		t.Error("a shortcut with the name as plain text or as UTF-16 was not recognised")
+	}
+	if lnkMentions([]byte(`C:\Windows\notepad.exe`), "WordProjector.exe") || lnkMentions(nil, "") {
+		t.Error("another program's shortcut was recognised")
+	}
+}

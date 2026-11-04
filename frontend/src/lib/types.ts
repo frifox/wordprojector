@@ -560,6 +560,8 @@ export interface InstallInfo {
   appPath?: string;
   desktop?: string;
   start?: string;
+  /** shortcuts the user pinned to the taskbar or the Start menu (Windows) */
+  pinned?: string[];
   dataDir: string;
   docsDir: string;
   /** started from the uninstall entry of the system */

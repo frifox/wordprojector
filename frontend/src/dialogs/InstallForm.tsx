@@ -64,7 +64,7 @@ export function runInstall(c: InstallChoice) {
 /** The form of uninstalling: what to take away. */
 export function UninstallForm({ info, value, onChange }: { info: InstallInfo; value: UninstallOptions; onChange: (v: UninstallOptions) => void }) {
   const set = (p: Partial<UninstallOptions>) => onChange({ ...value, ...p });
-  const shortcuts = [info.desktop, info.start].filter(Boolean) as string[];
+  const shortcuts = [info.desktop, info.start, ...(info.pinned ?? [])].filter(Boolean) as string[];
   const row = (checked: boolean, on: (b: boolean) => void, label: string, path: string | string[], disabled = false) => (
     <div>
       <label className="chk"><input type="checkbox" disabled={disabled} checked={checked && !disabled} onChange={(e) => on(e.target.checked)} />{label}</label>

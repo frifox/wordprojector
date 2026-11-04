@@ -3,6 +3,7 @@
 package install
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -55,9 +56,10 @@ type Info struct {
 	FolderName string `json:"folderName"` // "Program Files", "Applications"
 	HasStart   bool   `json:"hasStart"`   // the system has a program menu to put a shortcut in
 	// what an installed program would take away
-	AppPath   string `json:"appPath,omitempty"`
-	Desktop   string `json:"desktop,omitempty"`
-	Start     string `json:"start,omitempty"`
+	AppPath   string   `json:"appPath,omitempty"`
+	Desktop   string   `json:"desktop,omitempty"`
+	Start     string   `json:"start,omitempty"`
+	Pinned    []string `json:"pinned,omitempty"` // shortcuts the user pinned to the taskbar or the Start menu (Windows)
 	DataDir   string `json:"dataDir"`
 	DocsDir   string `json:"docsDir"`
 	Uninstall bool   `json:"uninstall"` // started from the uninstall entry of the system
@@ -152,6 +154,15 @@ func installable(exe string) (bool, string) {
 	return platformInstallable(exe)
 }
 
+// current is the record of the install this running program belongs to. When the marker is lost (an uninstall that
+// did not finish, a copied data folder) the system's own entry for the program (Windows) is the way back to it.
+func current(exe string) (Marker, bool) {
+	if m, ok := readMarker(); ok && samePath(m.Exe, exe) {
+		return m, true
+	}
+	return recoverMarker(exe)
+}
+
 // Status describes the running program for the install and uninstall pages.
 func Status(uninstallMode bool) Info {
 	exe := selfExe()
@@ -163,10 +174,11 @@ func Status(uninstallMode bool) Info {
 		in.DataDir = d
 	}
 	in.DocsDir = docsDir()
-	if m, ok := readMarker(); ok && samePath(m.Exe, exe) {
+	if m, ok := current(exe); ok {
 		in.Installed = true
 		in.AppPath = appPath(m)
 		in.Desktop, in.Start = existing(m.Desktop), existing(m.Start)
+		in.Pinned = pinnedShortcuts(m.Exe)
 	}
 	return in
 }
@@ -282,13 +294,14 @@ func safe(p string) bool {
 // Uninstall takes away what the options say. The program's own files and the data it has open go after it has quit:
 // the caller quits right after this returns.
 func Uninstall(o UninstallOptions) error {
-	m, ok := readMarker()
-	if !ok || !samePath(m.Exe, selfExe()) {
+	m, ok := current(selfExe())
+	if !ok {
 		return errors.New("this program was not installed by the installer")
 	}
 	var p plan
 	if o.Shortcuts {
-		for _, f := range []string{m.Desktop, m.Start} {
+		// the ones the installer made, and the ones the user pinned to the taskbar or the Start menu
+		for _, f := range append([]string{m.Desktop, m.Start}, pinnedShortcuts(m.Exe)...) {
 			if f != "" && safe(f) {
 				p.Files = append(p.Files, f)
 			}
@@ -310,14 +323,19 @@ func Uninstall(o UninstallOptions) error {
 			p.Trees = append(p.Trees, d)
 		}
 	}
-	if o.App {
-		if mp, err := markerPath(); err == nil {
-			_ = os.Remove(mp)
-		}
-	} else if err := writeMarker(m); err != nil {
+	// what is written down changes only once the removal is under way: if it could not start (the administrator
+	// question was declined) the program is still installed, and the record says so
+	if err := runPlan(p); err != nil {
 		return err
 	}
-	return runPlan(p)
+	if mp, err := markerPath(); err == nil {
+		if o.App {
+			_ = os.Remove(mp)
+		} else {
+			_ = writeMarker(m)
+		}
+	}
+	return nil
 }
 
 // ---- helpers shared by the system files -----------------------------------------------------------------------------
@@ -467,4 +485,26 @@ func CleanTemp() {
 			_ = os.Remove(m)
 		}
 	}
+}
+
+// lnkMentions says whether a shortcut file (.lnk) has the name in it, as plain bytes or as UTF-16 (a shortcut keeps the
+// folders and the file of its target as separate names, so this only tells which shortcuts are worth asking Windows
+// about).
+func lnkMentions(data []byte, name string) bool {
+	if name == "" {
+		return false
+	}
+	want := []byte(strings.ToLower(name))
+	wide := make([]byte, 0, len(want)*2)
+	for _, c := range want {
+		wide = append(wide, c, 0) // the names here are plain letters
+	}
+	low := make([]byte, len(data))
+	for i, c := range data {
+		if c >= 'A' && c <= 'Z' {
+			c += 'a' - 'A'
+		}
+		low[i] = c
+	}
+	return bytes.Contains(low, want) || bytes.Contains(low, wide)
 }
