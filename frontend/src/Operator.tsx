@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from './lib/store';
 import { api } from './lib/api';
+import { downloadURL } from './lib/files';
 import { t } from './i18n';
 import { useShortcuts, useT, useData, cmdKey, isTyping, isMac } from './lib/hooks';
 import { hotkeyMap, comboOf, comboLabel } from './lib/hotkeys';
@@ -183,7 +184,6 @@ export default function Operator() {
       return null;
     });
     if (r && r.download) {
-      const { downloadURL } = await import('./lib/files');
       downloadURL(r.download);
     }
   };

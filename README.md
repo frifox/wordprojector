@@ -48,8 +48,9 @@ You need Go 1.26+ and Node 22+. Linux also needs
 `libgtk-3-dev libwebkit2gtk-4.1-dev`; macOS needs the Xcode command line tools.
 
 ```bash
-make build      # frontend + bin/wordprojector
+make all      # build for all OS, dist/<system>-<architecture>
+make macos    # build for specific OS
+make install  # macOS: build, bundle, and install app into /Applications
 make test
-make dev        # Go API on :8777, Vite on :5173
-make install    # macOS: build and install the app into /Applications
+make dev      # run API on :8777, Vite on :5173
 ```
