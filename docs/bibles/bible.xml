@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Modules>
+	<Module>
+		<name>King James Version</name>
+		<link>https://wordprojector.com/bibles/sp_kjv.spb</link>
+		<size>4795480</size>
+	</Module>
+	<Module>
+		<name>Russian Synadal Translation</name>
+		<link>https://wordprojector.com/bibles/sp_rst.spb</link>
+		<size>6689398</size>
+	</Module>
+	<Module>
+		<name>Ukrainian - І. Огієнка</name>
+		<link>https://wordprojector.com/bibles/sp_uaBible.spb</link>
+		<size>6766521</size>
+	</Module>
+</Modules>
