@@ -4,31 +4,41 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Word Projector</title>
-<meta name="description" content="Word Projector: Bible, songs and slide shows for projection in church.">
+<meta name="description" content="Church projection software to display Bible, Songs, or Slide shows on one or more screens.">
+<meta property="og:title" content="Word Projector">
+<meta property="og:description" content="Church projection software to display Bible, Songs, or Slide shows on one or more screens.">
+<meta property="og:image" content="https://wordprojector.com/screenshot.png">
 <style>
-  :root { color-scheme: light dark; --bg: #fff; --text: #1d1d1f; --muted: #6e6e73; --link: #0a64c8; --border: #d8d8dc; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #1c1c1e; --text: #f2f2f7; --muted: #98989f; --link: #5aa9ff; --border: #3a3a3c; } }
+  :root { color-scheme: light dark; --bg: #fff; --text: #1d1d1f; --muted: #6e6e73; --link: #0a64c8; --border: #d8d8dc; --btn: #1d1d1f; --btn-text: #fff; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1c1c1e; --text: #f2f2f7; --muted: #98989f; --link: #5aa9ff; --border: #3a3a3c; --btn: #f2f2f7; --btn-text: #1c1c1e; } }
+  * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-  main { max-width: 720px; margin: 0 auto; padding: 48px 16px; }
-  h1 { margin: 0 0 4px; font-size: 32px; }
-  p { margin: 12px 0; }
-  .muted { color: var(--muted); }
+  main { max-width: 880px; margin: 0 auto; padding: 72px 16px 40px; text-align: center; }
+  h1 { margin: 0; font-size: 44px; line-height: 1.15; font-weight: 600; letter-spacing: -0.5px; }
+  .tagline { margin: 14px auto 28px; max-width: 540px; font-size: 19px; color: var(--muted); }
+  .buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .btn { display: inline-block; padding: 10px 20px; border-radius: 10px; font-size: 16px; font-weight: 500; text-decoration: none; border: 1px solid var(--border); color: var(--text); }
+  .btn.primary { background: var(--btn); border-color: var(--btn); color: var(--btn-text); }
+  .btn:hover { opacity: 0.85; }
+  .shot { margin: 48px 0 0; padding: 8px; border: 1px solid var(--border); border-radius: 16px; }
+  .shot img { display: block; width: 100%; height: auto; border-radius: 10px; }
+  .note { margin: 14px 0 0; font-size: 14px; color: var(--muted); }
+  footer { margin-top: 56px; font-size: 14px; color: var(--muted); }
+  footer a { color: inherit; }
   a { color: var(--link); }
-  img { display: block; width: 100%; height: auto; margin: 24px 0; border: 1px solid var(--border); border-radius: 8px; }
-  ul { padding-left: 20px; }
 </style>
 </head>
 <body>
 <main>
   <h1>Word Projector</h1>
-  <p class="muted">Bible, songs and slide shows for projection in church.</p>
-  <img src="screenshot.png" alt="Word Projector screenshot">
-  <p><a href="https://github.com/frifox/wordprojector/releases/latest">Download the latest release</a> for macOS, Windows or Linux.</p>
-  <ul>
-    <li><a href="https://github.com/frifox/wordprojector">Source code, instructions and bug reports</a></li>
-    <li>Bibles and songbooks: in the program, open <b>Edit &rarr; Books &rarr; Import from Cloud</b>. They are also listed here: <a href="bibles/bible.xml">Bibles</a>, <a href="songbooks/songbooks.xml">songbooks</a>.</li>
-  </ul>
-  <p class="muted">A re-implementation of <a href="http://softprojector.org">SoftProjector</a>, free software under the GNU GPL v3.</p>
+  <p class="tagline">Church projection software to display Bible, Songs, or Slide shows on one or more screens.</p>
+  <div class="buttons">
+    <a class="btn primary" href="https://github.com/frifox/wordprojector/releases/latest">Download</a>
+    <a class="btn" href="https://github.com/frifox/wordprojector">GitHub</a>
+  </div>
+  <p class="note">For macOS, Windows and Linux. Free and open source.</p>
+  <div class="shot"><img src="screenshot.png" alt="Word Projector screenshot"></div>
+  <footer>A re-implementation of <a href="http://softprojector.org">SoftProjector</a>, under the GNU GPL v3.</footer>
 </main>
 </body>
 </html>
