@@ -8,7 +8,7 @@ Church projection software to display Bible, Songs, or Slide shows on one or mor
 
 ## Install
 
-Download the latest release from [Releases](../../releases) and unpack it. No installation necessary.
+Download the latest release from [Releases](../../releases) and unpack it.
 
 | System                | File                                         |
 |-----------------------|----------------------------------------------|
@@ -19,18 +19,12 @@ Download the latest release from [Releases](../../releases) and unpack it. No in
 | Linux (arm64)         | `WordProjector-<version>-linux-arm64.tar.gz` |
 | Linux (x64)           | `WordProjector-<version>-linux-x64.tar.gz`   |
 
-Starting it:
+No installation is necessary - Word Projector can run as-is from any location. However, for convenience, on first launch you will be presented with an option to install it.
 
-* **macOS**: move **Word Projector** to Applications and open it.
-* **Windows**: run `WordProjector.exe`.
-* **Linux**: run `./WordProjector` (needs `libwebkit2gtk-4.1-0`).
-
-After that you can update/downgrade or configure auto-upate in **Settings → Updates**.
+## Data
 
 You can download Bibles and Songbooks from **Edit → Books → Import from Cloud** (hosted by SoftProjector team), or import
 your own files directly.
-
-## Your data
 
 Database, downloaded books and the log live here:
 
