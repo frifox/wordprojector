@@ -13,11 +13,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
+          - os: macos-15 # Apple Silicon (the macos-14 image is no longer supported)
             goos: darwin
             goarch: arm64
             name: macos-arm64
-          - os: macos-14 # the Intel build is cross-compiled here (the macos-13 runners are gone)
+          - os: macos-15 # the Intel build is cross-compiled here, on the Apple Silicon runner
             goos: darwin
             goarch: amd64
             name: macos-x64
