@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"syscall"
 	"time"
-	"unsafe"
 )
 
 // Detach lets the started program go on when this one quits.
@@ -31,13 +30,4 @@ func WaitPID(pid int, timeout time.Duration) {
 	}
 	defer syscall.CloseHandle(h)
 	_, _ = syscall.WaitForSingleObject(h, uint32(timeout.Milliseconds()))
-}
-
-// DeleteOnReboot asks Windows to delete a file that cannot be deleted now (a program that is running) at the next start.
-func DeleteOnReboot(path string) {
-	p, err := syscall.UTF16PtrFromString(path)
-	if err != nil {
-		return
-	}
-	_, _, _ = syscall.NewLazyDLL("kernel32.dll").NewProc("MoveFileExW").Call(uintptr(unsafe.Pointer(p)), 0, 0x4 /* MOVEFILE_DELAY_UNTIL_REBOOT */)
 }

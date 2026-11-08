@@ -1,4 +1,8 @@
-//go:build windows
+//go:build windows && winsetup
+
+// This is the Windows installer and uninstaller. It is switched off in the Windows builds for now (some antivirus programs
+// take a program that copies itself, makes shortcuts and an uninstall entry for malware): it is compiled in only with
+// -tags winsetup, which build/dist.sh and the release workflow do not pass. See install_windows_off.go.
 
 package install
 

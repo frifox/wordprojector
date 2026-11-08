@@ -29,6 +29,7 @@ windows() {
     name=windows-$([ "$arch" = amd64 ] && echo x64 || echo arm64)
     echo "== $name"
     rm -rf dist/$name && mkdir -p dist/$name
+    # no -tags winsetup: the Windows builds do not install or uninstall themselves for now (see internal/install/install_windows.go)
     CGO_ENABLED=0 GOOS=windows GOARCH=$arch go build -ldflags "$LD -H windowsgui" -o dist/$name/WordProjector.exe ./cmd/wordprojector
     cp LICENSE dist/$name/LICENSE.txt
   done

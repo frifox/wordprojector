@@ -78,6 +78,7 @@ jobs:
         env:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: '0'
+        # no -tags winsetup: the Windows builds do not install or uninstall themselves for now (see internal/install/install_windows.go)
         run: |
           mkdir -p dist
           go build -ldflags "-s -w -H windowsgui -X main.version=${{ steps.ver.outputs.version }} -X main.commit=${{ github.sha }}" -o dist/WordProjector.exe ./cmd/wordprojector
