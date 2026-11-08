@@ -64,6 +64,7 @@ func (s *Server) routes() {
 			return
 		}
 		s.notify("songbooks")
+		s.notify("songs") // the songs table shows the songbook of each song, and a deleted songbook takes its songs along
 		writeJSON(w, map[string]int64{"id": id})
 	})
 	m.HandleFunc("PUT /api/songbooks/{id}", func(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +79,7 @@ func (s *Server) routes() {
 			return
 		}
 		s.notify("songbooks")
+		s.notify("songs") // the songs table shows the songbook of each song, and a deleted songbook takes its songs along
 		ok(w)
 	})
 	m.HandleFunc("DELETE /api/songbooks/{id}", func(w http.ResponseWriter, r *http.Request) {
@@ -87,6 +89,7 @@ func (s *Server) routes() {
 			return
 		}
 		s.notify("songbooks")
+		s.notify("songs") // the songs table shows the songbook of each song, and a deleted songbook takes its songs along
 		ok(w)
 	})
 	m.HandleFunc("GET /api/songs", func(w http.ResponseWriter, r *http.Request) { s.list(w, s.Engine.Songs.Songs) })

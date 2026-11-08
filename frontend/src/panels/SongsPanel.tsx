@@ -261,6 +261,8 @@ export default function SongsPanel({ active }: { active: boolean }) {
     },
   });
 
+  // what the shown results were searched with, to search again when the songs change
+  const lastSearch = useRef<{ text: string; type: number } | null>(null);
   const doSearch = async () => {
     const text = filter.trim();
     if (!text) {
@@ -269,6 +271,7 @@ export default function SongsPanel({ active }: { active: boolean }) {
     }
     try {
       const r = await api.searchSongs(text, searchType);
+      lastSearch.current = { text, type: searchType };
       setSearchIds(r.ids);
       setHighlight(r.highlight);
     } catch (e) {
@@ -277,7 +280,24 @@ export default function SongsPanel({ active }: { active: boolean }) {
   };
   // choosing a songbook ends the look in all of them
   useEffect(() => setAllBooks(false), [songbook]);
+  // songs were added or removed (a songbook was imported, added or deleted): the results are searched again, so that they
+  // hold no song that is gone and all of a new songbook
+  useEffect(() => {
+    const last = lastSearch.current;
+    if (!searchIds || !last) return;
+    let live = true;
+    api.searchSongs(last.text, last.type).then((r) => {
+      if (live) { setSearchIds(r.ids); setHighlight(r.highlight); }
+    }).catch(() => {});
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [songs, songbooks]);
+  // the songbook that was chosen is gone
+  useEffect(() => {
+    if (songbook && songbooks.length && !songbooks.some((b) => b.id === songbook)) setSongbook(0);
+  }, [songbooks, songbook]);
   const clearSearch = () => {
+    lastSearch.current = null;
     setAllBooks(false);
     setSearchIds(null);
     setHighlight('');
