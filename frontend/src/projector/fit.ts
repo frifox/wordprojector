@@ -61,7 +61,10 @@ export function measureText(text: string, font: string, maxWidth: number, wrap: 
     const px = parseFloat(/([\d.]+)px/.exec(font)?.[1] || '0');
     if (px > 0) return { width: Math.ceil(r.width), height: Math.max(1, text.split('\n').length) * lineBox(px, lineHeight) };
   }
-  return { width: Math.ceil(r.width), height: Math.ceil(r.height) };
+  // Wrapped text is as wide as its box. Rounding that up must not make it wider than the box (a box of 1917.5px would
+  // read as 1918px, "too wide" at every font size, and the text would shrink to the smallest size).
+  const width = wrap ? Math.min(Math.ceil(r.width), maxWidth) : Math.ceil(r.width);
+  return { width, height: Math.ceil(r.height) };
 }
 
 /** Height of one line of text in px. Using one fixed value everywhere keeps lines the same height from slide to slide. */
