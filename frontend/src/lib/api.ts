@@ -1,4 +1,5 @@
 import { trackPicker } from './picker';
+import { liveSent, report } from './diag';
 import type {
   Announcement, BibleInfo, Book, Bootstrap, ChapterVerse, CountRow, MediaItem, Module, ScheduleItem, ScheduleState,
   InstallInfo, InstallOptions, UninstallOptions, RenderSlide, ThemeImage, UpdateStatus, SearchHit, Settings, Slide, SlideShow, SlideShowFull, Song, Songbook, Theme, ThemeInfo, Screen,
@@ -13,11 +14,15 @@ export class ApiError extends Error {
 }
 
 async function req<T>(method: string, url: string, body?: unknown): Promise<T> {
+  const live = method === 'POST' && url.startsWith('/api/live/');
+  const t0 = performance.now();
+  if (live) liveSent(url);
   const res = await fetch(url, {
     method,
     headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+  if (live && performance.now() - t0 > 400) report(`${url} answered after ${Math.round(performance.now() - t0)} ms`);
   if (!res.ok) {
     let msg = res.statusText;
     try {

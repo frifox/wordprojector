@@ -79,6 +79,10 @@ func New(name string, noUI bool) *Shell {
 		OnShutdown: func() { s.quitting = true },
 		// Cmd+Q
 		ShouldQuit: func() bool { return s.confirmDisconnect() },
+		// The windows only show pages of the program's own server on this computer, so they never need a proxy. Without this
+		// WebView2 looks up the proxy settings of Windows (and may search for a proxy script) again whenever the network
+		// changes, and holds the requests of the windows until that is done: a few seconds of delay after a network glitch.
+		Windows: application.WindowsOptions{AdditionalBrowserArgs: []string{"--no-proxy-server"}},
 	})
 	return s
 }
@@ -809,7 +813,16 @@ func (s *Shell) ShowProjector(disp int, screen int, show bool, onTop bool) {
 	}
 	sc := screens[screen]
 	log.Printf("display %d: %s on screen %d (%d,%d %dx%d)", disp, map[bool]string{true: "show", false: "hide"}[show], screen, sc.Bounds.X, sc.Bounds.Y, sc.Bounds.Width, sc.Bounds.Height)
+	// the window work runs on the thread that also runs the operator window, so a slow one freezes that window too
+	queued := time.Now()
+	var began time.Time
+	defer func() {
+		if total := time.Since(queued); total > 250*time.Millisecond {
+			log.Printf("display %d: window work took %d ms (%d ms of it waiting for the window thread)", disp, total.Milliseconds(), began.Sub(queued).Milliseconds())
+		}
+	}()
 	application.InvokeSync(func() {
+		began = time.Now()
 		s.mu.Lock()
 		w := s.projectors[disp]
 		s.mu.Unlock()

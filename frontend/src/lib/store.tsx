@@ -1,3 +1,4 @@
+import { stateArrived } from './diag';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api';
 import Socket, { type WsMessage } from './ws';
@@ -69,6 +70,7 @@ export function StoreProvider({ boot, children }: { boot: Bootstrap; children: R
     const off = socket.on((m: WsMessage) => {
       switch (m.type) {
         case 'state':
+          stateArrived();
           setLive(m.state);
           break;
         case 'schedule':

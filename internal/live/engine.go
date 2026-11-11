@@ -217,7 +217,21 @@ func (e *Engine) publish() {
 		e.Broadcast(map[string]any{"type": "state", "state": st})
 	}
 	if e.OnDisplays != nil {
+		start := time.Now()
 		e.OnDisplays(st)
+		if d := time.Since(start); d > 250*time.Millisecond {
+			log.Printf("engine: updating the display windows took %d ms (state %d)", d.Milliseconds(), st.Version)
+		}
+	}
+}
+
+// lockTimed takes the engine lock and writes to the log when it had to wait long for it: whatever held it (a slow
+// query, a screen question) delayed this action by that long.
+func (e *Engine) lockTimed(what string) {
+	start := time.Now()
+	e.mu.Lock()
+	if d := time.Since(start); d > 250*time.Millisecond {
+		log.Printf("engine: %s waited %d ms for the engine lock", what, d.Milliseconds())
 	}
 }
 
@@ -370,7 +384,7 @@ func (e *Engine) startShowing(kind string, title string, items []Item, index int
 // ShowBible shows a chapter of the operator bible with the given selected rows.
 func (e *Engine) ShowBible(book, chapter int, selection []int) error {
 	e.blankFirst()
-	e.mu.Lock()
+	e.lockTimed("show Bible")
 	id := e.operatorBibleID()
 	if id == 0 {
 		e.mu.Unlock()
@@ -560,7 +574,7 @@ func (e *Engine) SetIndex(i int, force bool) {
 
 // SetSelection sets a (contiguous) multi verse selection.
 func (e *Engine) SetSelection(sel []int, project bool) {
-	e.mu.Lock()
+	e.lockTimed("selection")
 	sel = cleanSelection(sel, len(e.state.Items))
 	if len(sel) > 0 {
 		e.state.Index = sel[0]
@@ -978,6 +992,12 @@ func (e *Engine) stopAuto() {
 // ---- slide computation --------------------------------------------------------
 
 func (e *Engine) recompute() {
+	start := time.Now()
+	defer func() {
+		if d := time.Since(start); d > 150*time.Millisecond {
+			log.Printf("engine: building the slides took %d ms", d.Milliseconds())
+		}
+	}()
 	e.state.Version++
 	n := e.screenCount()
 	e.state.SingleScreen = n == 1

@@ -100,6 +100,15 @@ func (s *Server) Start(addr string) (string, error) {
 func (s *Server) Addr() string { return s.addr }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// the actions that run the presentation: one that is slow is a delay the operator sees, so it is written to the log
+	if strings.HasPrefix(r.URL.Path, "/api/live/") {
+		start := time.Now()
+		defer func() {
+			if d := time.Since(start); d > 300*time.Millisecond {
+				log.Printf("slow request: %s %s took %d ms", r.Method, r.URL.Path, d.Milliseconds())
+			}
+		}()
+	}
 	s.mux.ServeHTTP(w, r)
 }
 

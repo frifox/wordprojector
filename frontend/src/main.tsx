@@ -3,8 +3,10 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { setupOverlayScroll } from './lib/overlayScroll'
+import { watchLongTasks } from './lib/diag'
 
 setupOverlayScroll()
+watchLongTasks()
 
 // No browser context menu (Copy / Select All ...) except in fields the user types in, where it offers copy and paste.
 // Everything else is left for the app's own right-click menus later.

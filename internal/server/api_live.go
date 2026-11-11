@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -16,6 +17,19 @@ import (
 func (s *Server) liveRoutes() {
 	m := s.mux
 	e := s.Engine
+	// the pages write down the slow moments they see (see frontend/src/lib/diag.ts), next to those of the program
+	m.HandleFunc("POST /api/clientlog", func(w http.ResponseWriter, r *http.Request) {
+		var in struct {
+			Text string `json:"text"`
+		}
+		if readJSON(r, &in) == nil && in.Text != "" {
+			if len(in.Text) > 300 {
+				in.Text = in.Text[:300]
+			}
+			log.Printf("slow moment, %s", in.Text)
+		}
+		ok(w)
+	})
 	m.HandleFunc("POST /api/live/show-bible", func(w http.ResponseWriter, r *http.Request) {
 		var in struct {
 			Book      int   `json:"book"`
